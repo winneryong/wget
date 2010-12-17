@@ -24,8 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
-import java.net.URI;
-import java.nio.ByteOrder;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -46,7 +44,12 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 
-@SuppressWarnings("unused") // e.g. for org.apache.http.client.HttpClient if we use DefaultHttpCLient with proxy
+/**
+ * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g'` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
+ * 
+ * works without cookies as well
+ *
+ */
 public class DownloadThread extends Thread {
 	static int iThreadcount=0;
 	int iThreadNo = DownloadThread.iThreadcount++;
@@ -77,6 +80,7 @@ public class DownloadThread extends Thread {
 		debugoutput("start.");
 		
 		// TODO GUI option for proxy?
+		// TODO GUI option for HD/480/360/240
 		
 		HttpGet httpget = null;
 		HttpClient httpclient = null;
@@ -100,22 +104,19 @@ public class DownloadThread extends Thread {
 
 				ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, supportedSchemes);
 
-				// with proy
+				// with proxy
 				httpclient = new DefaultHttpClient(ccm, params);
 				httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
 			} else {
 				// without proxy
 				httpclient = new DefaultHttpClient();
 			}
-			
-			httpget = new HttpGet(getURI(sURL));			
-			target = new HttpHost(getHost(sURL), 80, "http");
-			
+			httpget = new HttpGet( getURI(sURL) );			
+			target = new HttpHost( getHost(sURL), 80, "http" );
 		} catch (Exception e) {
 			debugoutput(e.getMessage());
 		}
 		
-
         debugoutput("executing request: ".concat( httpget.getRequestLine().toString()) );
         debugoutput("uri: ".concat( httpget.getURI().toString()) );
         debugoutput("host: ".concat( target.getHostName() ));
@@ -139,6 +140,7 @@ public class DownloadThread extends Thread {
 				debugoutput(response.getAllHeaders()[i].getName().concat("=").concat(response.getAllHeaders()[i].getValue()));
 			}
 			// TODO youtube sends a "HTTP/1.1 303 See Other" response if you try to open a webpage that does not exist
+
 			// abort if HTTP response code is != 200 - wrong URL?
 			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)"))) {
 				return rc;
@@ -185,7 +187,7 @@ public class DownloadThread extends Thread {
             					sline = sline.replaceAll("\\s", "");debugoutput("URL: ".concat(sline));
             					this.sVideoURL = sline;
             				} else if (sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
-            					this.setTitle(sline.replaceFirst("<meta name=\"title\" content=", "").replaceAll("\"", "").replaceAll(">", "").replaceAll("\\s", ""));	
+            					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
             				}
             			} catch (NullPointerException npe) {
             			}
@@ -201,7 +203,8 @@ public class DownloadThread extends Thread {
             				sdirectorychoosed = JFCMainClient.frame.directorytextfield.getText();
             			}
             			// change space to _ and any other to ""
-            			String sfilename = this.getTitle().replaceAll(" ", "_").replaceAll("\\W", "");
+            			String sfilename = this.getFileName();
+            			debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
             			do {
             				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".flv"));
             				idupcount += 1;
@@ -209,10 +212,12 @@ public class DownloadThread extends Thread {
             			this.setFileName(f.getAbsolutePath());
             			
             			Long iBytesReadSum = (long) 0;
+            			Long iPercentage = (long) -1;
             			Long iBytesMax = Long.parseLong(response.getFirstHeader("Content-Length").getValue());
-            			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.sFileName));
-            			output("file size of \"".concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
             			fos = new FileOutputStream(f);
+            			
+            			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.getFileName()));
+            			output("file size of \"".concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
             		    
 //            			debugoutput("Endianness: ".concat(ByteOrder.nativeOrder().toString()));
 
@@ -221,10 +226,14 @@ public class DownloadThread extends Thread {
             			while (!this.bisinterrupted & iBytesRead>0) {
             				iBytesRead = binaryreader.read(bytes);
             				iBytesReadSum += iBytesRead;
-            				// at least 15 lines output with download progress - 1500bytes should be enough to output at least one message (assuming that not more than 1500bytes were read from input stream at once - mayby doenst work if someone uses ethernet with jumbo frames??)
-            				if ((iBytesRead % (iBytesMax/15)) < 1500) { output(Long.toString(iBytesReadSum*100/iBytesMax).concat("% of  \"").concat(this.getTitle()).concat("\"") );}
+            				// every 10% of the download we drop a line for the user 
+            				if ( ((((iBytesReadSum*100/iBytesMax) / 10) % 10) * 10) != iPercentage ) {
+            					iPercentage = ((((iBytesReadSum*100/iBytesMax) / 10) % 10) * 10);
+            					output(Long.toString(iPercentage).concat("% of  \"").concat(this.getTitle()).concat("\"") );
+            					debugoutput( this.getMyName().concat("  ").concat(Long.toString(iPercentage).concat("% ")) );
+            				}
             				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-            				// TODO if terminating a running download works, we should delete the unfinished file
+            				// TODO if a downloading thread gets terminated, than we should consider deleting the unfinished file OR continuing download at offset? :)
             				synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
             			} 
             			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
@@ -309,7 +318,7 @@ public class DownloadThread extends Thread {
 				} // synchronized (JFCMainClient.frame.dlm)
 				
 				// download one webresource and show result
-				output((downloadone(sURL)?"download completed: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
+				output((downloadone(sURL)?"download completed: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to "));
 
 			} catch (InterruptedException e) {
 				this.bisinterrupted = true; // only when we use the interface Runnable to use this.isInterrupted()
@@ -320,7 +329,7 @@ public class DownloadThread extends Thread {
 				e.printStackTrace();
 			}
 		} // while
-		debugoutput("exit.");
+		debugoutput("thread ended: ".concat(this.getMyName()));
 	} // run()
 	
 	private String getTitle() {
@@ -332,7 +341,7 @@ public class DownloadThread extends Thread {
 	}
 	
 	private String getFileName() {
-		if (this.sFileName != null) return this.sFileName; else return("");
+		if (this.sFileName != null) return this.sFileName/*.replaceAll(" ", "_")*/; else return("");
 	}
 
 	private void setFileName(String sFileName) {
