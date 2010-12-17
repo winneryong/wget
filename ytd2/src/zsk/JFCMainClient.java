@@ -30,8 +30,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 /**
- * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g'` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
- * 
  * knoedel@section60:~/workspace/ytd2$ echo `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` javacode lines && echo `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines
  * 613 javacode lines
  * 274 empty/comment line
@@ -46,13 +44,12 @@ import javax.swing.event.DocumentListener;
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								in lovely memory of my grandpa, who used to fly around the clouds. 
  * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">
  * http://www.youtube.com/watch?v=RYXd60D_kgQ&feature=related	<meta name="title" content="Me 262 Flys Again!">
- * 
  * http://www.youtube.com/watch?v=6ejc9_yR5oQ&feature=related	<meta name="title" content="Focke Wulf 190 attacks Boeing B 17 in 2009 at Hahnweide">
  *
+ * technobase.fm / We Are One!
  * 
  * using Eclipse 3.6.1 64Bit Helios
  * TODOs are for Eclipse IDE - Tasks View
- * 
  * 
  * tested on GNU/Linux JRE 1.6.0_22 64bit and M$-Windows XP 64bit JRE 1.6.0_22
  * sourcecode compliance level is 1.5
@@ -60,7 +57,7 @@ import javax.swing.event.DocumentListener;
  * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101217_1800 by MrKnödelmann";
+	public static final String szVersion = "V20101217_2212 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -69,7 +66,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// more or less output
 	static boolean bDEBUG = false;
 	
-	// TODO there are URLs with a playlist-string before the video string .. and others that and with &Nr= or similar
+	// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar
 	// TODO downlaod via cli only?
 			 
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
@@ -279,6 +276,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		// TODO check if initial download directory exists
 		// assume that the users homedir exists
 		String shomedir = System.getProperty("user.home").concat(sfilesep)/*.concat("YTDownloads")*/.concat(sfilesep);
+		if (System.getProperty("user.home").equals("/home/knoedel")) shomedir = "/home/knoedel/YouTube Downloads/Techno_House/";
 		if (sfilesep.equals("\\")) sfilesep += sfilesep; // on m$-windows we need to escape the \
 		shomedir = shomedir.replaceAll(sfilesep.concat(sfilesep), sfilesep) ;
 //		debugoutput("file.separator: ".concat(System.getProperty("file.separator")).concat("  sfilesep: ".concat(sfilesep)));
