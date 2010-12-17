@@ -56,11 +56,11 @@ import javax.swing.event.DocumentListener;
  * 
  * tested on GNU/Linux JRE 1.6.0_22 64bit and M$-Windows XP 64bit JRE 1.6.0_22
  * sourcecode compliance level is 1.5
- * javac shows no warings
- * source code could be easily converted to Java 1.4.2   
+ * javac shows no warnings
+ * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101216_1832 by MrKnödelmann";
+	public static final String szVersion = "V20101217_0116 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -358,9 +358,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		// TODO ensure threads are running even if one ends with an Exception
 
-//		String sproxy = "";
-//		try { sproxy = System.getenv("http_proxy"); } catch (NullPointerException npe) { sproxy = ""; }
-//		output("env var http_proxy: ".concat(sproxy));
+		String sproxy = System.getenv("http_proxy");
+		if (sproxy==null) sproxy="";
+		output("env var http_proxy: ".concat(sproxy));
 
 		// lets honor the upload limit of google (youtube)
 		// downloading is faster than viewing anyway so dont start more than four threads please!!!
