@@ -218,15 +218,14 @@ public class DownloadThread extends Thread {
 
             			byte[] bytes = new byte[4096];
             			Integer iBytesRead = 1;
-            			boolean bq = false;
-            			while (!bq & iBytesRead>0) {
+            			while (!this.bisinterrupted & iBytesRead>0) {
             				iBytesRead = binaryreader.read(bytes);
             				iBytesReadSum += iBytesRead;
-            				if ((iBytesRead % (iBytesMax/5)) < 1024) { output(Long.toString(iBytesReadSum*100/iBytesMax).concat("% of  \"").concat(this.getTitle()).concat("\"") );}
-            				debugoutput("bq: ".concat(Boolean.toString(bq)));
+            				// at least 15 lines output with download progress - 1500bytes should be enough to output at least one message (assuming that not more than 1500bytes were read from input stream at once - mayby doenst work if someone uses ethernet with jumbo frames??)
+            				if ((iBytesRead % (iBytesMax/15)) < 1500) { output(Long.toString(iBytesReadSum*100/iBytesMax).concat("% of  \"").concat(this.getTitle()).concat("\"") );}
             				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
             				// TODO if terminating a running download works, we should delete the unfinished file
-            				synchronized (JFCMainClient.bQuitrequested) { bq = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
+            				synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
             			} 
             			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
             			debugoutput("done writing.");

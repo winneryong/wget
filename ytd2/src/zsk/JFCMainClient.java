@@ -60,14 +60,14 @@ import javax.swing.event.DocumentListener;
  * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101217_0910 by MrKnödelmann";
+	public static final String szVersion = "V20101217_1800 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
 	// more or less output
-	static boolean bDEBUG = true;
+	static boolean bDEBUG = false;
 	
 	// TODO there are URLs with a playlist-string before the video string .. and others that and with &Nr= or similar
 	// TODO downlaod via cli only?
@@ -160,8 +160,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		// running downloads are difficult to terminate (isInterrupted() does not work there)
 		synchronized (JFCMainClient.bQuitrequested) {
 			JFCMainClient.bQuitrequested = true;	
-			debugoutput("bQuitrequested = true");
 		}
+		debugoutput("bQuitrequested = true");
 		
 		output("terminating threads...");
 		try {
@@ -368,7 +368,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		String sproxy = System.getenv("http_proxy");
 		if (sproxy==null) sproxy="";
-		output("env var http_proxy: ".concat(sproxy));
+		sv = "env var http_proxy: ".concat(sproxy);
+		output(sv); debugoutput(sv);
 
 		// lets honor the upload limit of google (youtube)
 		// downloading is faster than viewing anyway so dont start more than four threads please!!!
