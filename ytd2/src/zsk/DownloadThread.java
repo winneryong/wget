@@ -218,13 +218,17 @@ public class DownloadThread extends Thread {
 
             			byte[] bytes = new byte[4096];
             			Integer iBytesRead = 1;
-            			// TODO this.isInterrupted() seems not to work here as expected -> running download cannot be aborted
-            			while (!this.isInterrupted() & iBytesRead>0) {
+            			boolean bq = false;
+            			while (!bq & iBytesRead>0) {
             				iBytesRead = binaryreader.read(bytes);
             				iBytesReadSum += iBytesRead;
-            				if ((iBytesRead % (iBytesMax/5)) < 256) { output(Long.toString(iBytesReadSum*100/iBytesMax).concat("% of  \"").concat(this.getTitle()).concat("\"") );}
+            				if ((iBytesRead % (iBytesMax/5)) < 1024) { output(Long.toString(iBytesReadSum*100/iBytesMax).concat("% of  \"").concat(this.getTitle()).concat("\"") );}
+            				debugoutput("bq: ".concat(Boolean.toString(bq)));
             				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
+            				// TODO if terminating a running download works, we should delete the unfinished file
+            				synchronized (JFCMainClient.bQuitrequested) { bq = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
             			} 
+            			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
             			debugoutput("done writing.");
             		} catch (FileNotFoundException fnfe) {
             			throw(fnfe)		;

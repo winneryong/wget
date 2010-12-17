@@ -60,14 +60,14 @@ import javax.swing.event.DocumentListener;
  * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101217_0116 by MrKnödelmann";
+	public static final String szVersion = "V20101217_0910 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
 	// more or less output
-	static boolean bDEBUG = false;
+	static boolean bDEBUG = true;
 	
 	// TODO there are URLs with a playlist-string before the video string .. and others that and with &Nr= or similar
 	// TODO downlaod via cli only?
@@ -84,6 +84,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	static JFCMainClient frame = null;
 
+	public static Boolean bQuitrequested = false;
+	
 	JPanel panel = null;
 	JSplitPane middlepane = null;
 	JTextArea textarea = null;
@@ -155,6 +157,12 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	} // setfocustotextfield()
 	
 	public void shutdownAppl() {
+		// running downloads are difficult to terminate (isInterrupted() does not work there)
+		synchronized (JFCMainClient.bQuitrequested) {
+			JFCMainClient.bQuitrequested = true;	
+			debugoutput("bQuitrequested = true");
+		}
+		
 		output("terminating threads...");
 		try {
 			try {JFCMainClient.t1.interrupt();} catch (NullPointerException npe) {}
