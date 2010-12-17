@@ -85,13 +85,7 @@ public class DownloadThread extends Thread {
 
 		try {
 			// determine http_proxy var
-
-			
-//			String sproxy = "";
-//			try { sproxy = System.getenv("http_proxy"); } catch (NullPointerException npe) { sproxy = ""; }
-
-			// TODO NPE if http_proxy isn set
-			if (false) {
+			if (!this.getProxy().equals("")) {
 
 				proxy = new HttpHost(System.getenv("http_proxy").replaceFirst(":(.*)", ""), Integer.parseInt( System.getenv("http_proxy").replaceFirst("(.*):", "")), "http");
 
@@ -124,8 +118,8 @@ public class DownloadThread extends Thread {
 
         debugoutput("executing request: ".concat( httpget.getRequestLine().toString()) );
         debugoutput("uri: ".concat( httpget.getURI().toString()) );
-        debugoutput("host: ".concat( target.getHostName()) );
-        debugoutput("via proxy: ".concat( proxy.toString()) );
+        debugoutput("host: ".concat( target.getHostName() ));
+        debugoutput("via proxy: ".concat( this.getProxy() ));
 
         HttpResponse response = null;
         
@@ -206,9 +200,10 @@ public class DownloadThread extends Thread {
             			synchronized (JFCMainClient.frame.directorytextfield) {
             				sdirectorychoosed = JFCMainClient.frame.directorytextfield.getText();
             			}
-
+            			// change space to _ and any other to ""
+            			String sfilename = this.getTitle().replaceAll(" ", "_").replaceAll("\\W", "");
             			do {
-            				f = new File(sdirectorychoosed, this.getTitle().replaceAll(" ", "_").concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".flv"));
+            				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".flv"));
             				idupcount += 1;
             			} while (f.exists());
             			this.setFileName(f.getAbsolutePath());
@@ -280,6 +275,11 @@ public class DownloadThread extends Thread {
 		return(rc);
 		
 	} // downloadone()
+
+	private String getProxy() {
+		String sproxy = System.getenv("http_proxy");
+		if (sproxy==null) return(""); else return(sproxy);
+	} // getProxy() 
 
 	private String getURI(String sURL) {
 		String suri = "/".concat(sURL.replaceFirst(JFCMainClient.szHOSTREGEX, ""));
