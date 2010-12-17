@@ -202,9 +202,8 @@ public class DownloadThread extends Thread {
             			synchronized (JFCMainClient.frame.directorytextfield) {
             				sdirectorychoosed = JFCMainClient.frame.directorytextfield.getText();
             			}
-            			// change space to _ and any other to ""
-            			String sfilename = this.getFileName();
-            			debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
+            			String sfilename = this.getTitle()/*.replaceAll(" ", "_")*/;
+	            		debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
             			do {
             				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".flv"));
             				idupcount += 1;
@@ -341,7 +340,7 @@ public class DownloadThread extends Thread {
 	}
 	
 	private String getFileName() {
-		if (this.sFileName != null) return this.sFileName/*.replaceAll(" ", "_")*/; else return("");
+		if (this.sFileName != null) return this.sFileName; else return("");
 	}
 
 	private void setFileName(String sFileName) {
