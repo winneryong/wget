@@ -310,7 +310,8 @@ public class DownloadThread extends Thread {
 			try {
 				synchronized (JFCMainClient.frame.dlm) {
 //					debugoutput("going to sleep.");
-					JFCMainClient.frame.dlm.wait(2000); // to check for new URLs (if they got pasted faster than threads removing them)
+					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown (in rare situations a running download does not get terminated..)
+					synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
 //					debugoutput("woke up ".concat(this.getClass().getName()));
 					output("try to download: ".concat(sURL = JFCMainClient.getfirstURLFromList()));
 					JFCMainClient.removeURLFromList(sURL);
