@@ -57,7 +57,7 @@ import javax.swing.event.DocumentListener;
  * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101217_2212 by MrKnödelmann";
+	public static final String szVersion = "V20101218_1040 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
