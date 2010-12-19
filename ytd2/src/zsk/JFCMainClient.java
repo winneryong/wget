@@ -57,14 +57,14 @@ import javax.swing.event.DocumentListener;
  * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101218_1040 by MrKnödelmann";
+	public static final String szVersion = "V20101219_1057 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
 	// more or less output
-	static boolean bDEBUG = false;
+	static boolean bDEBUG = true;
 	
 	// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar
 	// TODO downlaod via cli only?

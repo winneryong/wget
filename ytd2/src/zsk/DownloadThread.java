@@ -76,11 +76,14 @@ public class DownloadThread extends Thread {
 		} catch (NullPointerException npe) {
 			return(false);
 		}
+		synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
 		
 		debugoutput("start.");
 		
 		// TODO GUI option for proxy?
 		// TODO GUI option for HD/480/360/240
+		
+		// TODO mp4 URLs dont work yet http://www.youtube.com/watch?v=MDH0hskv3-E
 		
 		HttpGet httpget = null;
 		HttpClient httpclient = null;
@@ -173,7 +176,8 @@ public class DownloadThread extends Thread {
 			}
             try {
             	// test if we got a webpage
-            	if (response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("^text/html(.*)")) {
+            	String sContentType = response.getFirstHeader("Content-Type").getValue().toLowerCase();
+            	if (sContentType.matches("^text/html(.*)")) {
             		// read lines one by one and search for video URL
             		String sline = "";
             		while (sline != null) {
@@ -193,7 +197,7 @@ public class DownloadThread extends Thread {
             			}
             		} // while
             	// test if we got the binary content
-            	} else if (response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("video/x-flv")) {
+            	} else if (sContentType.matches("video/(.)*")) {
             		FileOutputStream fos = null;
             		try {
             			
@@ -205,7 +209,7 @@ public class DownloadThread extends Thread {
             			String sfilename = this.getTitle()/*.replaceAll(" ", "_")*/;
 	            		debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
             			do {
-            				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".flv"));
+            				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".").concat(sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
             				idupcount += 1;
             			} while (f.exists());
             			this.setFileName(f.getAbsolutePath());
@@ -225,14 +229,15 @@ public class DownloadThread extends Thread {
             			while (!this.bisinterrupted & iBytesRead>0) {
             				iBytesRead = binaryreader.read(bytes);
             				iBytesReadSum += iBytesRead;
+//            				if (this.bDEBUG) System.out.println("running ".concat(this.getMyName())); try { Thread.sleep(100);	} catch (InterruptedException e) {}
             				// every 10% of the download we drop a line for the user 
             				if ( ((((iBytesReadSum*100/iBytesMax) / 10) % 10) * 10) != iPercentage ) {
             					iPercentage = ((((iBytesReadSum*100/iBytesMax) / 10) % 10) * 10);
             					output(Long.toString(iPercentage).concat("% of  \"").concat(this.getTitle()).concat("\"") );
-            					debugoutput( this.getMyName().concat("  ").concat(Long.toString(iPercentage).concat("% ")) );
+            					debugoutput( Long.toString(iPercentage).concat("% ") );
             				}
             				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-            				// TODO if a downloading thread gets terminated, than we should consider deleting the unfinished file OR continuing download at offset? :)
+            				// TODO if a downloading thread gets terminated we should consider deleting the unfinished file OR continuing download at offset next time? :)
             				synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
             			} 
             			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
@@ -257,7 +262,10 @@ public class DownloadThread extends Thread {
         				} catch (Exception e) {
         				}
             		} // try
-            	} // if .. content-type
+            	} else { // content-type is not video/
+            		rc = false;
+            		this.sVideoURL = null;
+            	}
             } catch (IOException ex) {
                 try {
 					throw ex;
@@ -311,7 +319,6 @@ public class DownloadThread extends Thread {
 				synchronized (JFCMainClient.frame.dlm) {
 //					debugoutput("going to sleep.");
 					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown (in rare situations a running download does not get terminated..)
-					synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
 //					debugoutput("woke up ".concat(this.getClass().getName()));
 					output("try to download: ".concat(sURL = JFCMainClient.getfirstURLFromList()));
 					JFCMainClient.removeURLFromList(sURL);
@@ -352,8 +359,8 @@ public class DownloadThread extends Thread {
 		if (!JFCMainClient.bDEBUG)
 			return;
 
-		JFCMainClient.addTextToConsole("#DEBUG ".concat(s));
-		System.out.println("#DEBUG ".concat(s));
+		JFCMainClient.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
+		System.out.println("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
 	} // debugoutput
 	
 	void output (String s) {
