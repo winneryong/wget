@@ -66,13 +66,14 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// more or less output
 	static boolean bDEBUG = true;
 	
-	// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar
 	// TODO downlaod via cli only?
 			 
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
 	private static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
 	// something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/   the last / is for marking the end of host, it does not belong to the hostpart
 	public static final String szHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.)*\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
+
+	//private static final String szPLAYLISTREGEX = szHOSTREGEX.concat("view_play_list\\?p=(.)*&playnext=.{1,2}&v=");
 	
 	static Thread t1;
 	static Thread t2;
@@ -492,6 +493,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		checkInputFieldforYTURLs();
 	}
 	
+//	private String getHost(String sURL) {
+//		String shost = sURL.replaceFirst(JFCMainClient.szHOSTREGEX, "");
+//		shost = sURL.substring(0, sURL.length()-shost.length());
+//		shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
+//		return(shost);
+//	} // gethost
+	
 	/**
 	 * check if a youtube-URL was pasted or typed in
 	 * if yes cut it out and send it to the URLList to get processed by one of the threads
@@ -501,7 +509,17 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	void checkInputFieldforYTURLs() {
 		String sinput = frame.textinputfield.getText().replaceAll("&feature=related", "");
 		String surl = sinput.replaceFirst(szYTREGEX, "");
+
+		// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar
+		// http://www.youtube.com/view_play_list?p=0C6EB166A0BEAF85&playnext=1&v=3jz9-WDtrjk
+//		if (sinput.toLowerCase().matches(szPLAYLISTREGEX)) {
+//			debugoutput("host: ".concat( this.getHost(sinput)) );
+//			sinput = this.getHost(sinput).concat( sinput.replaceFirst(szPLAYLISTREGEX, "/watch?v=") );
+//		}
+		
 		if (sinput.equals(surl)) return;
+
+		debugoutput("sinput: ".concat(sinput));
 		
 		// starting at index 0 because szYTREGEX should start with ^ // if szYTREGEX does not start with ^ then you have to find the index where the match is before you can cut out the URL 
 		surl = sinput.substring(0, sinput.length()-surl.length());

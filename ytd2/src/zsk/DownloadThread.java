@@ -81,9 +81,7 @@ public class DownloadThread extends Thread {
 		debugoutput("start.");
 		
 		// TODO GUI option for proxy?
-		// TODO GUI option for HD/480/360/240
-		
-		// TODO mp4 URLs dont work yet http://www.youtube.com/watch?v=MDH0hskv3-E
+		// TODO GUI option for 720/480/360/240 p
 		
 		HttpGet httpget = null;
 		HttpClient httpclient = null;
@@ -358,8 +356,14 @@ public class DownloadThread extends Thread {
 	void debugoutput (String s) {
 		if (!JFCMainClient.bDEBUG)
 			return;
-
-		JFCMainClient.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
+		// sometimes this happens:  Exception in thread "Thread-2" java.lang.Error: Interrupted attempt to aquire write lock (on quit only)
+		// maybe we should use synchronize anyway
+		try {
+			JFCMainClient.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
+		} catch (Exception e) {
+			try { Thread.sleep(50); } catch (InterruptedException e1) {}
+			try { JFCMainClient.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s)); } catch (Exception e2) {}
+		}
 		System.out.println("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
 	} // debugoutput
 	
