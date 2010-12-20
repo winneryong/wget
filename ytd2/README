@@ -1,0 +1,63 @@
+
+            ======================================
+                 README of youtubedownloader2
+            ======================================
+
+
+This file is part of ytd2
+
+ytd2 is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+ytd2 is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with ytd2.
+If not, see <http://www.gnu.org/licenses/>.
+
+
+				
+FILES
+
+	The source code is available via subversion https://sourceforge.net/projects/ytd2/.
+	The repository contains either the last release sources or changes for next 
+	upcoming release. There are no branches or tags for now. 
+
+
+RUNNING
+
+	runytd2.jar should be executable via Java Runtime Environment JRE 1.5 and later.
+
+	running ytd2 via command shell:
+	java -jar runytd2.jar 
+
+	running ytd2 via file explorer:
+	just click on the jar-file  (works if the file has execute file permissions
+	 (on *ix platform) and JRE is a registered application for jar-files)
+	
+
+TODO
+	GUI option for proxy/resolution
+	URls with playlists or other unusual things
+
+
+CHANGES
+
+	V20101219
+		2010-12-19	URLs to mp4 (hd) now work					
+
+	initial version
+		2010-12-17	fixing bugs regarding application shutdown if downloads still running
+		1010-12-16	sf.net project page registered
+					initial version uploaded
+
+					
+	I decided to not provide a single version number but rather a releasedate_time
+	as version. A number does not provide any extra information but	the date does. (IMHO)
+	YTD2 is named after ytd (https://sourceforge.net/projects/ytd/) but the autor never
+	changed any bug reports nor answered emails or forum posts.
+					
