@@ -26,14 +26,16 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 /**
- * knoedel@section60:~/workspace/ytd2$ echo `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` javacode lines && echo `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines
+ * knoedel@section60:~/workspace/ytd2$ echo `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines
  * 613 javacode lines
- * 274 empty/comment line
- * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* 
+ * 274 empty/comment lines
+ * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version 
  * Thu Dec 16 18:38:18 CET 2010
  * Linux section60 2.6.35-23-generic #41-Ubuntu SMP Wed Nov 24 11:55:36 UTC 2010 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
@@ -52,12 +54,12 @@ import javax.swing.event.DocumentListener;
  * TODOs are for Eclipse IDE - Tasks View
  * 
  * tested on GNU/Linux JRE 1.6.0_22 64bit and M$-Windows XP 64bit JRE 1.6.0_22
- * sourcecode compliance level is 1.5
- * javac shows no warnings
+ * source code compliance level is 1.5
+ * javac shows no warning
  * source code could be easily converted to Java 1.4.2
  */
-public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener {
-	public static final String szVersion = "V20101219_1057 by MrKnödelmann";
+public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
+	public static final String szVersion = "V20101222_1954 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -93,6 +95,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	JTextField directorytextfield = null;
 	JTextField textinputfield = null;
 	DefaultListModel dlm = null;
+	JSlider slResolution = null;
 	
 	/**
 	 * append text to textarea
@@ -275,9 +278,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		String sfilesep = System.getProperty("file.separator");
 
 		// TODO check if initial download directory exists
-		// assume that the users homedir exists
+		// assume that at least the users homedir exists
 		String shomedir = System.getProperty("user.home").concat(sfilesep)/*.concat("YTDownloads")*/.concat(sfilesep);
-		if (System.getProperty("user.home").equals("/home/knoedel")) shomedir = "/home/knoedel/YouTube Downloads/Techno_House/";
+		if (System.getProperty("user.home").equals("/home/knoedel")) shomedir = "/home/knoedel/YouTube Downloads/";
 		if (sfilesep.equals("\\")) sfilesep += sfilesep; // on m$-windows we need to escape the \
 		shomedir = shomedir.replaceAll(sfilesep.concat(sfilesep), sfilesep) ;
 //		debugoutput("file.separator: ".concat(System.getProperty("file.separator")).concat("  sfilesep: ".concat(sfilesep)));
@@ -308,6 +311,28 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		gbc.gridwidth = 2;
 		this.panel.add( this.middlepane, gbc );
 
+		final int RES_MIN = 240;
+		final int RES_MAX = 720;
+		final int RES_INIT = 480; 
+		this.slResolution = new JSlider(SwingConstants.HORIZONTAL, RES_MIN, RES_MAX, RES_INIT);
+		this.slResolution.addChangeListener(this);
+
+		this.slResolution.setMajorTickSpacing(120);
+		this.slResolution.setMinorTickSpacing(120);
+		this.slResolution.setPaintTicks(false);
+		this.slResolution.setPaintLabels(true);
+		this.slResolution.setSnapToTicks(true);
+		this.slResolution.setPaintTrack(false);
+		this.slResolution.setPreferredSize(new Dimension(40, 40));
+		gbc.gridx = 1;
+		gbc.gridy = 0;
+		gbc.gridheight = 1;
+		gbc.gridwidth = 1;
+		gbc.fill = GridBagConstraints.NONE;
+		gbc.anchor = GridBagConstraints.WEST;
+		
+		//this.panel.add( this.slResolution, gbc );
+
 		JLabel hint = new JLabel( "(type in, paste in, drop in -> yt-webaddresses or yt-videoimages) URLs:");
 		gbc.fill = 0;
 		gbc.gridwidth = 0;
@@ -315,6 +340,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		gbc.weighty = 0;
 		gbc.gridx = 0;
 		gbc.gridy = 4;
+		gbc.anchor = GridBagConstraints.WEST;
 		this.panel.add( hint, gbc );
 		this.textinputfield = new JTextField( 30 );
 		gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -353,7 +379,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 */
 	static void createAndShowGUI() {
 		setDefaultLookAndFeelDecorated(false);
-		frame = new JFCMainClient( "YTD2" );
+		frame = new JFCMainClient( "YTD2 ".concat(szVersion).concat(" ").concat("https://sourceforge.net/projects/ytd2/") );
 		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 		frame.addComponentsToPane( frame.getContentPane() );
 		frame.pack();
@@ -361,7 +387,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		
 		String sv = "version: ".concat( szVersion ).concat(bDEBUG?" DEBUG ":""); 
 		output(sv); debugoutput(sv);
-		output("");
+		output(""); // \n
 
 		// TODO ensure threads are running even if one ends with an Exception
 
@@ -385,10 +411,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 	
 	public void windowActivated( WindowEvent e ) {
-//		if (this.c.isconnected()) 
-//			setfocustotextfield();
-//		else
-//			frame.startconnectionbutton.requestFocusInWindow();
+			setfocustotextfield();
 	} // windowActivated()
 
 	public void windowClosed( WindowEvent e ) {
@@ -504,7 +527,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 * check if a youtube-URL was pasted or typed in
 	 * if yes cut it out and send it to the URLList to get processed by one of the threads
 	 * 
-	 * the user can paste a long string containing many youtube-URLs .. but here is work to do because we have to erase the string(s) that remain
+	 * the user can paste a long string containing many youtube-URLs .. but here is work to do because we have to erase the string(s) that remain(s)
 	 */
 	void checkInputFieldforYTURLs() {
 		String sinput = frame.textinputfield.getText().replaceAll("&feature=related", "");
@@ -550,5 +573,11 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	        return null;
 	    }
 	} // createImageIcon
+
+
+	public void stateChanged(ChangeEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
 
 } // class JFCMainClient

@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
+import java.net.UnknownHostException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -51,6 +52,9 @@ import org.apache.http.params.HttpProtocolParams;
  *
  */
 public class DownloadThread extends Thread {
+	
+	final String szDLSTATE = "downloading ";
+	
 	static int iThreadcount=0;
 	int iThreadNo = DownloadThread.iThreadcount++;
 	
@@ -129,12 +133,14 @@ public class DownloadThread extends Thread {
 			response = httpclient.execute(target,httpget);
 		} catch (ClientProtocolException cpe) {
 			debugoutput(cpe.getMessage());
+		} catch (UnknownHostException uhe) {
+			output("error connecting to: ".concat(uhe.getMessage()));
+			debugoutput(uhe.getMessage());
 		} catch (IOException ioe) {
 			debugoutput(ioe.getMessage());
 		} catch (IllegalStateException ise) {
 			debugoutput(ise.getMessage());
 		}
-		
 		try {
 			debugoutput("HTTP response status line:".concat( response.getStatusLine().toString()) );
 			for (int i = 0; i < response.getAllHeaders().length; i++) {
@@ -309,33 +315,6 @@ public class DownloadThread extends Thread {
 		shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
 		return(shost);
 	} // gethost
-
-	public void run() {
-		String sURL = null;
-		while (!this.bisinterrupted) {
-			try {
-				synchronized (JFCMainClient.frame.dlm) {
-//					debugoutput("going to sleep.");
-					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown (in rare situations a running download does not get terminated..)
-//					debugoutput("woke up ".concat(this.getClass().getName()));
-					output("try to download: ".concat(sURL = JFCMainClient.getfirstURLFromList()));
-					JFCMainClient.removeURLFromList(sURL);
-				} // synchronized (JFCMainClient.frame.dlm)
-				
-				// download one webresource and show result
-				output((downloadone(sURL)?"download completed: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to "));
-
-			} catch (InterruptedException e) {
-				this.bisinterrupted = true; // only when we use the interface Runnable to use this.isInterrupted()
-			} catch (NullPointerException npe) {
-//				debugoutput("npe - nothing to download?");
-//				npe.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} // while
-		debugoutput("thread ended: ".concat(this.getMyName()));
-	} // run()
 	
 	private String getTitle() {
 		if (this.sTitle != null) return this.sTitle; else return("");
@@ -376,6 +355,40 @@ public class DownloadThread extends Thread {
 	String getMyName() {
 		return this.getClass().getName().concat(Integer.toString(this.iThreadNo));
 	} // getMyName()
+	
+	public void run() {
+		String sURL = null;
+		while (!this.bisinterrupted) {
+			try {
+				synchronized (JFCMainClient.frame.dlm) {
+//					debugoutput("going to sleep.");
+					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown (in rare situations a running download does not get terminated..)
+//					debugoutput("woke up ".concat(this.getClass().getName()));
+					sURL = JFCMainClient.getfirstURLFromList();
+					if (!sURL.startsWith(this.szDLSTATE)) {
+						sURL = sURL.replaceFirst(this.szDLSTATE, "");
+						output("try to download: ".concat(sURL));
+						JFCMainClient.removeURLFromList(sURL);
+						JFCMainClient.addURLToList(this.szDLSTATE.concat(sURL));
+					}
+				} // synchronized (JFCMainClient.frame.dlm)
+				
+				// download one webresource and show result
+				output((downloadone(sURL)?"download completed: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
+				synchronized (JFCMainClient.frame.dlm) {
+					JFCMainClient.removeURLFromList(this.szDLSTATE.concat(sURL));
+				}
+			} catch (InterruptedException e) {
+				this.bisinterrupted = true; // only when we use the interface Runnable to use this.isInterrupted()
+			} catch (NullPointerException npe) {
+//				debugoutput("npe - nothing to download?");
+//				npe.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} // while
+		debugoutput("thread ended: ".concat(this.getMyName()));
+	} // run()
 
 } // class downloadthread
 

@@ -1,7 +1,7 @@
 
-				======================================
-					README of youtubedownloader2
-				======================================
+          ======================================
+               README of youtubedownloader2
+          ======================================
 
 
 This file is part of ytd2
@@ -23,57 +23,57 @@ If not, see <http://www.gnu.org/licenses/>.
 				
 FILES
 
-	The source code is available via subversion at
-	https://sourceforge.net/projects/ytd2/.
-	The repository contains either the latest released sources or
-	changes for the next upcoming release. There are no branches or
-	tags for now. 
+  The source code is available via subversion at
+  https://sourceforge.net/projects/ytd2/.
+  The repository contains either the latest released sources or
+  changes for the next upcoming release. There are no branches or
+  tags for now. 
 
 
 INSTALL
 
-	There is no need to install it. YTD2 consists of just one
-	runnable file. Maybe there is a option of JavaWebstart in the
-	future. 
+  There is no need to install it. YTD2 consists of just one
+  runnable file. Maybe there is a option of JavaWebstart in the
+  future. 
 
 	
 RUNNING
 
-	runytd2.jar should be executable via Java Runtime Environment
-	JRE 1.5 and later.
+  runytd2.jar should be executable via Java Runtime Environment
+  JRE 1.5 and later.
 
-	running ytd2 via command shell:
-	java -jar runytd2.jar 
+  running ytd2 via command shell:
+  java -jar runytd2.jar 
 
-	running ytd2 via file explorer:
-	just click on the jar-file  (works if the file has execute file
-	permissions (on *ix platform) and JRE is a registered application
-	for jar-files)
+  running ytd2 via file explorer:
+  just click on the jar-file  (works if the file has execute file
+  permissions (on *ix platform) and JRE is a registered application
+  for jar-files)
 	
 
 TODO
-	GUI option for proxy/resolution
-	URls with playlists or other unusual things
-	correct handling of Directories for download (esp. on M$-Windows)
+
+  GUI option for proxy/resolution
+  URls with playlists or other unusual things
+  correct handling of directories for download (esp. on M$-Windows)
 	
-	maybe: JavaWebstart
+  maybe: JavaWebstart, translated GUI (or no text at all)
 
 
 CHANGES
 
-	V20101219
-		2010-12-19	URLs to mp4 (hd) now work		
+  V20101219
+    2010-12-19  URLs to mp4 (hd) now work		
 
-	initial version
-		2010-12-17	fixing bugs regarding application shutdown
-		1010-12-16	sf.net project page registered and initial
-					version uploaded
+  initial version
+     2010-12-17  fixing bugs regarding application shutdown
+     1010-12-16  sf.net project page registered and
+                 initial version uploaded
 
 					
-	I decided to not provide a single version number but rather
-	a releasedate_time as version. A number does not provide any
-	extra information but the date does. (IMHO)
-	YTD2 is named after ytd (https://sourceforge.net/projects/ytd/)
-	but the author never changed any bug reports nor answered
-	e-mails or forum posts.
-					
+  I decided to not provide a single version number but rather
+  a releasedate_time as version. A number does not provide any
+  extra information but the date does. (IMHO)
+  YTD2 is named after ytd (https://sourceforge.net/projects/ytd/)
+  but the author never changed any bug reports nor answered
+  e-mails or forum posts.
