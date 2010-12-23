@@ -33,16 +33,21 @@ import javax.swing.event.DocumentListener;
 
 /**
  * knoedel@section60:~/workspace/ytd2$ echo `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines
- * 613 javacode lines
- * 274 empty/comment lines
- * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version 
- * Thu Dec 16 18:38:18 CET 2010
+ * 687 java code lines
+ * 298 empty/comment line
+ * 
+ * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
+ * Fri Dec 24 00:35:36 CET 2010
  * Linux section60 2.6.35-23-generic #41-Ubuntu SMP Wed Nov 24 11:55:36 UTC 2010 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=10.10
  * DISTRIB_CODENAME=maverick
  * DISTRIB_DESCRIPTION="Ubuntu 10.10"
- * 
+ * java version "1.6.0_22"
+ * Java(TM) SE Runtime Environment (build 1.6.0_22-b04)
+ * Java HotSpot(TM) 64-Bit Server VM (build 17.1-b03, mixed mode)
+ * knoedel@section60:~/workspace/ytd2$
+ *  
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								in lovely memory of my grandpa, who used to fly around the clouds. 
  * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">
  * http://www.youtube.com/watch?v=RYXd60D_kgQ&feature=related	<meta name="title" content="Me 262 Flys Again!">
@@ -59,7 +64,7 @@ import javax.swing.event.DocumentListener;
  * source code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20101222_1954 by MrKnödelmann";
+	public static final String szVersion = "V20101223_2354 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -67,6 +72,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	// more or less output
 	static boolean bDEBUG = true;
+	
+	public static final String szDLSTATE = "downloading ";
 	
 	// TODO downlaod via cli only?
 			 
@@ -137,11 +144,18 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	public static String getfirstURLFromList( ) {
 		String src = null;
+//		debugoutput("getfirstURLFromList()");
 		synchronized (JFCMainClient.frame.dlm) {
 			try {
-				src = (String) JFCMainClient.frame.dlm.get(0);
+				int i;
+				// try to find the index of an URL entry in the list without "downloading " at the beginning
+				for ( i = 0; i < JFCMainClient.frame.dlm.getSize(); i++) {
+					if (!((String)JFCMainClient.frame.dlm.get(i)).startsWith(JFCMainClient.szDLSTATE)) break;
+				}
+				src = ((String) JFCMainClient.frame.dlm.get(i)).replaceFirst(JFCMainClient.szDLSTATE, "");
 			} catch (IndexOutOfBoundsException n) {}
 		}
+//		debugoutput("getfirstURLFromList() src: ".concat(src.toString()));
 		return src;
 	} // getfirstURLFromList
 
@@ -158,7 +172,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	} // setfocustotextfield()
 	
 	public void shutdownAppl() {
-		// running downloads are difficult to terminate (isInterrupted() does not work there)
+		// running downloads are difficult to terminate (Thread.isInterrupted() does not work there)
 		synchronized (JFCMainClient.bQuitrequested) {
 			JFCMainClient.bQuitrequested = true;	
 		}
@@ -194,7 +208,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 				else {
 					// TODO some kind of gui-cli :) .. could be used to start/stop/test threads or output some internals at command
 					addTextToConsole(e.getActionCommand());
-					if (e.getActionCommand().toLowerCase().matches("^(help|-h|/\\?|\\?)")) addTextToConsole("need help? comes later.");
+					if (e.getActionCommand().toLowerCase().matches("^(help|-h|/\\?|\\?)")) addTextToConsole("need help? comes later!");
 					else if (e.getActionCommand().toLowerCase().matches("^(version|-v)")) addTextToConsole(szVersion);
 					else addTextToConsole("?");
 				}
@@ -279,13 +293,18 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		// TODO check if initial download directory exists
 		// assume that at least the users homedir exists
-		String shomedir = System.getProperty("user.home").concat(sfilesep)/*.concat("YTDownloads")*/.concat(sfilesep);
+		String shomedir = System.getProperty("user.home").concat(sfilesep)/*.concat("YouTube Downloads")*/.concat(sfilesep);
 		if (System.getProperty("user.home").equals("/home/knoedel")) shomedir = "/home/knoedel/YouTube Downloads/";
 		if (sfilesep.equals("\\")) sfilesep += sfilesep; // on m$-windows we need to escape the \
+		// TODO on m$-windows we need to surround the directory with " " othewise the user cannot create a directory within the dialog if the last directoryname contains a <space>
 		shomedir = shomedir.replaceAll(sfilesep.concat(sfilesep), sfilesep) ;
 //		debugoutput("file.separator: ".concat(System.getProperty("file.separator")).concat("  sfilesep: ".concat(sfilesep)));
 //		debugoutput("user.home: ".concat(System.getProperty("user.home")).concat("  shomedir: ".concat(shomedir)));
 
+		debugoutput("os.name: ".concat(System.getProperty("os.name")));
+		debugoutput("os.arch: ".concat(System.getProperty("os.arch")));
+		debugoutput("os.version: ".concat(System.getProperty("os.version")));
+		
 		gbc.gridx = 0;
 		gbc.gridy = 2;
 		gbc.gridwidth = 2;
@@ -297,7 +316,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.directorytextfield.addActionListener( this );
 		this.panel.add( this.directorytextfield, gbc);
 		
-		JLabel dirhint = new JLabel( "download directory: ");
+		JLabel dirhint = new JLabel( "download to directory: ");
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		this.panel.add( dirhint, gbc);
@@ -531,6 +550,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 */
 	void checkInputFieldforYTURLs() {
 		String sinput = frame.textinputfield.getText().replaceAll("&feature=related", "");
+		sinput = sinput.replaceAll("&feature=fvwp", ""); // after that text could be another yt-URL or more query_string options
 		String surl = sinput.replaceFirst(szYTREGEX, "");
 
 		// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar
@@ -576,8 +596,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 
 	public void stateChanged(ChangeEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 } // class JFCMainClient

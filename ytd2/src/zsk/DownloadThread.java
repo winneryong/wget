@@ -53,8 +53,6 @@ import org.apache.http.params.HttpProtocolParams;
  */
 public class DownloadThread extends Thread {
 	
-	final String szDLSTATE = "downloading ";
-	
 	static int iThreadcount=0;
 	int iThreadNo = DownloadThread.iThreadcount++;
 	
@@ -235,8 +233,8 @@ public class DownloadThread extends Thread {
             				iBytesReadSum += iBytesRead;
 //            				if (this.bDEBUG) System.out.println("running ".concat(this.getMyName())); try { Thread.sleep(100);	} catch (InterruptedException e) {}
             				// every 10% of the download we drop a line for the user 
-            				if ( ((((iBytesReadSum*100/iBytesMax) / 10) % 10) * 10) != iPercentage ) {
-            					iPercentage = ((((iBytesReadSum*100/iBytesMax) / 10) % 10) * 10);
+            				if ( (((iBytesReadSum*100/iBytesMax) / 10) * 10) > iPercentage ) {
+            					iPercentage = (((iBytesReadSum*100/iBytesMax) / 10) * 10);
             					output(Long.toString(iPercentage).concat("% of  \"").concat(this.getTitle()).concat("\"") );
             					debugoutput( Long.toString(iPercentage).concat("% ") );
             				}
@@ -362,21 +360,18 @@ public class DownloadThread extends Thread {
 			try {
 				synchronized (JFCMainClient.frame.dlm) {
 //					debugoutput("going to sleep.");
-					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown (in rare situations a running download does not get terminated..)
+					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown
 //					debugoutput("woke up ".concat(this.getClass().getName()));
 					sURL = JFCMainClient.getfirstURLFromList();
-					if (!sURL.startsWith(this.szDLSTATE)) {
-						sURL = sURL.replaceFirst(this.szDLSTATE, "");
 						output("try to download: ".concat(sURL));
 						JFCMainClient.removeURLFromList(sURL);
-						JFCMainClient.addURLToList(this.szDLSTATE.concat(sURL));
-					}
+						JFCMainClient.addURLToList(JFCMainClient.szDLSTATE.concat(sURL));
 				} // synchronized (JFCMainClient.frame.dlm)
 				
 				// download one webresource and show result
-				output((downloadone(sURL)?"download completed: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
+				output((downloadone(sURL)?"download complete: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 				synchronized (JFCMainClient.frame.dlm) {
-					JFCMainClient.removeURLFromList(this.szDLSTATE.concat(sURL));
+					JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(sURL));
 				}
 			} catch (InterruptedException e) {
 				this.bisinterrupted = true; // only when we use the interface Runnable to use this.isInterrupted()
