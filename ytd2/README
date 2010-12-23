@@ -33,7 +33,7 @@ FILES
 INSTALL
 
   There is no need to install it. YTD2 consists of just one
-  runnable file. Maybe there is a option of JavaWebstart in the
+  runnable file. Maybe there is a option of Java Web Start in the
   future. 
 
 	
@@ -56,20 +56,28 @@ TODO
   GUI option for proxy/resolution
   URls with playlists or other unusual things
   correct handling of directories for download (esp. on M$-Windows)
+  entire GUI as drop target for mouse events
 	
-  maybe: JavaWebstart, translated GUI (or no text at all)
+  maybe: Java Web Start, translated GUI (or no text at all)
 
+  Any hints, suggestions, features, questions .. are welcome!
+  
 
 CHANGES
 
+  V20101223
+  	2010-12-23  files being downloaed are shown with "downloading "
+                percentage is now correct ;)
+                
   V20101219
     2010-12-19  URLs to mp4 (hd) now work		
 
   initial version
-     2010-12-17  fixing bugs regarding application shutdown
-     1010-12-16  sf.net project page registered and
-                 initial version uploaded
-
+    2010-12-17  fixing bugs regarding application shutdown
+    2010-12-16  sf.net project page registered and
+                initial version uploaded
+    2010-12-01? development started
+				
 					
   I decided to not provide a single version number but rather
   a releasedate_time as version. A number does not provide any
