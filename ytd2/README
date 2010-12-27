@@ -66,8 +66,8 @@ TODO
 CHANGES
 
   V20101223
-  	2010-12-27  better handling of URLs pasted in
-  				bugfixes: proxy now works with/without protocol
+    2010-12-27  better handling of URLs pasted in
+                bugfixes: proxy now works with/without protocol
                 application can be shut down while download runs                
     2010-12-23  files being downloaded are shown with "downloading "
                 percentage is correct now ;)

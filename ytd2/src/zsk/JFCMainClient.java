@@ -65,7 +65,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20101223_2354 by MrKnödelmann";
+	public static final String szVersion = "V20101223_2355 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -560,6 +560,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		sinput = sinput.replaceAll("&feature=relatedhttp", "http"); // if somebody writes a regex for notanytURL as replacement for fvwp|related ... ;)
 		sinput = sinput.replaceAll("&feature=related&", "&");
 		sinput = sinput.replaceAll("&feature=related", "");
+		sinput = sinput.replaceAll("&feature=mfu_in_order&list=UL", "");
 		sinput = sinput.replaceAll("&NR=[1-9]&", "&");
 		sinput = sinput.replaceAll("&NR=[1-9]http", "http");
 		sinput = sinput.replaceAll("&NR=[1-9]", "");
