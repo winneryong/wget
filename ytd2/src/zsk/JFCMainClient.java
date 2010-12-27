@@ -24,6 +24,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Locale;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -32,12 +33,12 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 /**
- * knoedel@section60:~/workspace/ytd2$ echo `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines
- * 687 java code lines
- * 298 empty/comment line
+ * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
+ * 700 java code lines
+ * 307 empty/comment lines 
  * 
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Fri Dec 24 00:35:36 CET 2010
+ * Mon Dec 27 23:45:38 CET 2010
  * Linux section60 2.6.35-23-generic #41-Ubuntu SMP Wed Nov 24 11:55:36 UTC 2010 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=10.10
@@ -46,8 +47,7 @@ import javax.swing.event.DocumentListener;
  * java version "1.6.0_22"
  * Java(TM) SE Runtime Environment (build 1.6.0_22-b04)
  * Java HotSpot(TM) 64-Bit Server VM (build 17.1-b03, mixed mode)
- * knoedel@section60:~/workspace/ytd2$
- *  
+ * 
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								in lovely memory of my grandpa, who used to fly around the clouds. 
  * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">
  * http://www.youtube.com/watch?v=RYXd60D_kgQ&feature=related	<meta name="title" content="Me 262 Flys Again!">
@@ -65,7 +65,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20101227_2121 by MrKnödelmann";
+	public static final String szVersion = "V20101223_2354 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -151,9 +151,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 				int i;
 				// try to find the index of an URL entry in the list without "downloading " at the beginning
 				for ( i = 0; i < JFCMainClient.frame.dlm.getSize(); i++) {
-					if (!((String)JFCMainClient.frame.dlm.get(i)).startsWith(JFCMainClient.szDLSTATE)) break;
+					if (!((String)JFCMainClient.frame.dlm.get(i)).startsWith( JFCMainClient.szDLSTATE )) break;
 				}
-				src = ((String) JFCMainClient.frame.dlm.get(i)).replaceFirst(JFCMainClient.szDLSTATE, "");
+				src = ((String) JFCMainClient.frame.dlm.get(i)).replaceFirst( JFCMainClient.szDLSTATE, "" );
 			} catch (IndexOutOfBoundsException n) {}
 		}
 //		debugoutput("getfirstURLFromList() src: ".concat(src.toString()));
@@ -305,6 +305,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		debugoutput("os.name: ".concat(System.getProperty("os.name")));
 		debugoutput("os.arch: ".concat(System.getProperty("os.arch")));
 		debugoutput("os.version: ".concat(System.getProperty("os.version")));
+		debugoutput("Locale.getDefault: ".concat(Locale.getDefault().toString()));
 		
 		gbc.gridx = 0;
 		gbc.gridy = 2;
@@ -550,8 +551,19 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 * the user can paste a long string containing many youtube-URLs .. but here is work to do because we have to erase the string(s) that remain(s)
 	 */
 	void checkInputFieldforYTURLs() {
-		String sinput = frame.textinputfield.getText().replaceAll("&feature=related", "");
-		sinput = sinput.replaceAll("&feature=fvwp", ""); // after that text could be another yt-URL or more query_string options
+		String sinput = frame.textinputfield.getText(); // dont call .toLowerCase() !
+		
+		// TODO this can probably be done better - replace input so URLs get extracted without user activity (works even if URLs are spread across multiple lines)
+		sinput = sinput.replaceAll("&feature=fvwp&", "&"); // after that text could be another yt-URL or more query_string options
+		sinput = sinput.replaceAll("&feature=fvwphttp", "http");
+		sinput = sinput.replaceAll("&feature=fvwp", "");
+		sinput = sinput.replaceAll("&feature=relatedhttp", "http"); // if somebody writes a regex for notanytURL as replacement for fvwp|related ... ;)
+		sinput = sinput.replaceAll("&feature=related&", "&");
+		sinput = sinput.replaceAll("&feature=related", "");
+		sinput = sinput.replaceAll("&NR=[1-9]&", "&");
+		sinput = sinput.replaceAll("&NR=[1-9]http", "http");
+		sinput = sinput.replaceAll("&NR=[1-9]", "");
+		sinput = sinput.replaceAll(" ", "");
 		String surl = sinput.replaceFirst(szYTREGEX, "");
 
 		// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar

@@ -83,7 +83,9 @@ public class DownloadThread extends Thread {
 		debugoutput("start.");
 		
 		// TODO GUI option for proxy?
-		// TODO GUI option for 720/480/360/240 p
+		// TODO GUI option for 1080/720/480/360/240 p
+		
+		// http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !! "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java stays open and free
 		
 		HttpGet httpget = null;
 		HttpClient httpclient = null;
@@ -91,7 +93,7 @@ public class DownloadThread extends Thread {
 		HttpHost target = null;
 
 		try {
-			// determine http_proxy var
+			// determine http_proxy environment variable
 			if (!this.getProxy().equals("")) {
 
 				String sproxy = System.getenv("http_proxy").toLowerCase().replaceFirst("http://", "") ;

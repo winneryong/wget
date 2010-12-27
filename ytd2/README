@@ -33,7 +33,7 @@ FILES
 INSTALL
 
   There is no need to install it. YTD2 consists of just one
-  runnable file. Maybe there is a option of Java Web Start in the
+  runnable file. Maybe there is an option of Java Web Start in the
   future. 
 
 	
@@ -66,7 +66,8 @@ TODO
 CHANGES
 
   V20101223
-  	2010-12-27  bugfixes: proxy now works with/without protocol
+  	2010-12-27  better handling of URLs pasted in
+  				bugfixes: proxy now works with/without protocol
                 application can be shut down while download runs                
     2010-12-23  files being downloaded are shown with "downloading "
                 percentage is correct now ;)
