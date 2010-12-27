@@ -94,7 +94,8 @@ public class DownloadThread extends Thread {
 			// determine http_proxy var
 			if (!this.getProxy().equals("")) {
 
-				proxy = new HttpHost(System.getenv("http_proxy").replaceFirst(":(.*)", ""), Integer.parseInt( System.getenv("http_proxy").replaceFirst("(.*):", "")), "http");
+				String sproxy = System.getenv("http_proxy").toLowerCase().replaceFirst("http://", "") ;
+				proxy = new HttpHost( sproxy.replaceFirst(":(.*)", ""), Integer.parseInt( sproxy.replaceFirst("(.*):", "")), "http");
 
 				SchemeRegistry supportedSchemes = new SchemeRegistry();
 				supportedSchemes.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
@@ -202,7 +203,6 @@ public class DownloadThread extends Thread {
             	} else if (sContentType.matches("video/(.)*")) {
             		FileOutputStream fos = null;
             		try {
-            			
             			File f; Integer idupcount = 0;
             			String sdirectorychoosed;
             			synchronized (JFCMainClient.frame.directorytextfield) {
@@ -242,7 +242,10 @@ public class DownloadThread extends Thread {
             				// TODO if a downloading thread gets terminated we should consider deleting the unfinished file OR continuing download at offset next time? :)
             				synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
             			} 
-            			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
+            			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) {
+            				httpclient.getConnectionManager().shutdown(); // otherwise binaryreader.close() would cause the entire datastream to be transmitted 
+            				debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
+            			}
             			debugoutput("done writing.");
             		} catch (FileNotFoundException fnfe) {
             			throw(fnfe)		;

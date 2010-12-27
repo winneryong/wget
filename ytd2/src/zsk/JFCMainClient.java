@@ -60,11 +60,12 @@ import javax.swing.event.DocumentListener;
  * 
  * tested on GNU/Linux JRE 1.6.0_22 64bit and M$-Windows XP 64bit JRE 1.6.0_22
  * source code compliance level is 1.5
+ * java files are UTF-8 encoded
  * javac shows no warning
- * source code could be easily converted to Java 1.4.2
+ * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20101223_2354 by MrKnödelmann";
+	public static final String szVersion = "V20101227_2121 by MrKnödelmann";
 
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -321,7 +322,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		gbc.gridy = 1;
 		this.panel.add( dirhint, gbc);
 		
-		this.middlepane.setPreferredSize( new Dimension( 900, 200 ) );
+		this.middlepane.setPreferredSize( new Dimension( 900, 200 ) ); // looks OK on a 23" Samsung LCD at 2048x1152 ;)
 		gbc.gridx = 0;
 		gbc.gridy = 3;
 		gbc.fill = GridBagConstraints.BOTH;
