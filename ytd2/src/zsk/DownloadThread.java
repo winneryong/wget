@@ -85,7 +85,12 @@ public class DownloadThread extends Thread {
 		// TODO GUI option for proxy?
 		// TODO GUI option for 1080/720/480/360/240 p
 		
-		// http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !! "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java stays open and free
+		// http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !! "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java stay open and free
+		
+		// http://www.youtube.com/watch?v=86OfBExGSE0&feature=related URZ 720p
+		
+		// lately found: http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
+		// using local squid to save download time for tests
 		
 		HttpGet httpget = null;
 		HttpClient httpclient = null;
@@ -361,25 +366,29 @@ public class DownloadThread extends Thread {
 	
 	public void run() {
 		String sURL = null;
+		boolean bDOWNLOADOK = false;
 		while (!this.bisinterrupted) {
 			try {
 				synchronized (JFCMainClient.frame.dlm) {
 //					debugoutput("going to sleep.");
 					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown
 //					debugoutput("woke up ".concat(this.getClass().getName()));
-					sURL = JFCMainClient.getfirstURLFromList();
-						output("try to download: ".concat(sURL));
-						JFCMainClient.removeURLFromList(sURL);
-						JFCMainClient.addURLToList(JFCMainClient.szDLSTATE.concat(sURL));
-				} // synchronized (JFCMainClient.frame.dlm)
+				}
+				sURL = JFCMainClient.getfirstURLFromList();
+				output("try to download: ".concat(sURL));
+				JFCMainClient.removeURLFromList(sURL);
+				JFCMainClient.addURLToList(JFCMainClient.szDLSTATE.concat(sURL));
 				
 				// download one webresource and show result
-				output((downloadone(sURL)?"download complete: ":"error downloading: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
-				synchronized (JFCMainClient.frame.dlm) {
-					JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(sURL));
-				}
+				bDOWNLOADOK = downloadone(sURL);
+				if (bDOWNLOADOK) 
+					output("download complete: ".concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
+				else
+					output("error downloading: ".concat(sURL));
+				
+				JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(sURL));
 			} catch (InterruptedException e) {
-				this.bisinterrupted = true; // only when we use the interface Runnable to use this.isInterrupted()
+				this.bisinterrupted = true;
 			} catch (NullPointerException npe) {
 //				debugoutput("npe - nothing to download?");
 //				npe.printStackTrace();
@@ -390,5 +399,5 @@ public class DownloadThread extends Thread {
 		debugoutput("thread ended: ".concat(this.getMyName()));
 	} // run()
 
-} // class downloadthread
+} // class DownloadThread
 

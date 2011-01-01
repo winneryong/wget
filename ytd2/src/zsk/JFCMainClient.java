@@ -49,7 +49,7 @@ import javax.swing.event.DocumentListener;
  * Java HotSpot(TM) 64-Bit Server VM (build 17.1-b03, mixed mode)
  * 
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								in lovely memory of my grandpa, who used to fly around the clouds. 
- * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">
+ * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">																																																																																			http://www.youtube.com/watch?v=yxXBhKJnRR8
  * http://www.youtube.com/watch?v=RYXd60D_kgQ&feature=related	<meta name="title" content="Me 262 Flys Again!">
  * http://www.youtube.com/watch?v=6ejc9_yR5oQ&feature=related	<meta name="title" content="Focke Wulf 190 attacks Boeing B 17 in 2009 at Hahnweide">
  *
@@ -65,8 +65,8 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20101223_2355 by MrKnödelmann";
-
+	public static final String szVersion = "V20101229_2248 by MrKnödelmann";
+	
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
@@ -125,6 +125,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	public static void addURLToList( String sname ) {
 		String sn = sname;
+		// bring all URLs to the same form
 		if (sname.toLowerCase().startsWith("youtube")) sn = "http://www.".concat(sname);
 		if (sname.toLowerCase().startsWith("www")) sn = "http://".concat(sname);
 		synchronized (JFCMainClient.frame.dlm) {
@@ -226,6 +227,11 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			JFileChooser fc = new JFileChooser();
 			fc.setMultiSelectionEnabled(false);
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			synchronized (frame.directorytextfield) {
+				// we have to set current directory here because it gets lost if fc is lost
+				fc.setCurrentDirectory( new File( frame.directorytextfield.getText()) );
+			}
+			debugoutput("current dir: ".concat( fc.getCurrentDirectory().getAbsolutePath()) );
 			if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) {
 				return;
 			}
@@ -236,6 +242,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 					synchronized (frame.directorytextfield) {
 						frame.directorytextfield.setText( snewdirectory );
 					}
+					debugoutput("new current dir: ".concat( fc.getCurrentDirectory().getAbsolutePath()) );
 				} else {
 					output("not a directory: ".concat(snewdirectory));
 				}

@@ -82,9 +82,9 @@ CHANGES
     2010-12-01? development started
 				
 					
-  I decided to not provide a single version number but rather
-  a releasedate_time as version. A number does not provide any
-  extra information but the date does. (IMHO)
+  I decided not to provide a single version number but rather
+  a releasedate_time. A number does not provide any extra
+  information but the date does. (IMHO)
   YTD2 is named after ytd (https://sourceforge.net/projects/ytd/)
   but the author never changed any bug reports nor answered
   e-mails or forum posts.
