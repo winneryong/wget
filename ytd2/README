@@ -58,7 +58,8 @@ TODO
   correct handling of directories for download (esp. on M$-Windows)
   entire GUI as drop target for mouse events
 	
-  maybe: Java Web Start, translated GUI (or no text at all)
+  maybe: Java Web Start, translated GUI (or no text at all),
+         other video websites (imdb.com, video.web.de,..)
 
   Any hints, suggestions, features, questions .. are welcome!
   
@@ -68,7 +69,7 @@ CHANGES
   V20101223
     2010-12-27  better handling of URLs pasted in
                 bugfixes: proxy now works with/without protocol
-                application can be shut down while download runs                
+                application can be shut down while download runs
     2010-12-23  files being downloaded are shown with "downloading "
                 percentage is correct now ;)
                 

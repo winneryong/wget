@@ -26,6 +26,9 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.net.UnknownHostException;
 
+// used this one as external libraries
+// http://apache.copahost.com/httpcomponents/httpclient/binary/httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz
+// and the corresponding sources as Source Attachment within the Eclipse Projekt Properties
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -51,10 +54,10 @@ import org.apache.http.params.HttpProtocolParams;
  * works without cookies as well
  *
  */
-public class DownloadThread extends Thread {
+public class YTDownloadThread extends Thread {
 	
 	static int iThreadcount=0;
-	int iThreadNo = DownloadThread.iThreadcount++;
+	int iThreadNo = YTDownloadThread.iThreadcount++;
 	
 	boolean bDEBUG;
 	private String sTitle = null;
@@ -62,7 +65,7 @@ public class DownloadThread extends Thread {
 	private String sFileName = null;
 	private boolean bisinterrupted = false;
 	
-	public DownloadThread(boolean bD) {
+	public YTDownloadThread(boolean bD) {
 		super();
 		this.bDEBUG = bD;
 		String sv = "thread started: ".concat(this.getMyName()); 
@@ -154,10 +157,14 @@ public class DownloadThread extends Thread {
 			}
 			// TODO youtube sends a "HTTP/1.1 303 See Other" response if you try to open a webpage that does not exist
 
-			// abort if HTTP response code is != 200 - wrong URL?
-			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)"))) {
+			// abort if HTTP response code is != 200 and != 302 - wrong URL?
+			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)")) || 
+				 (rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)302(.*)"))) {
+				debugoutput(response.getStatusLine().toString().concat(" ").concat(sURL));
+				output(response.getStatusLine().toString().concat(" \"").concat(sTitle).concat("\""));
 				return rc;
 			}
+			debugoutput("location from HTTP Header: ".concat(response.getFirstHeader("Location").toString()));
 		} catch (NullPointerException npe) {
 			// if an IllegalStateException was catched while calling httpclient.execute(httpget) a NPE is caught here because
 			// response.getStatusLine() == null
@@ -377,7 +384,7 @@ public class DownloadThread extends Thread {
 				sURL = JFCMainClient.getfirstURLFromList();
 				output("try to download: ".concat(sURL));
 				JFCMainClient.removeURLFromList(sURL);
-				JFCMainClient.addURLToList(JFCMainClient.szDLSTATE.concat(sURL));
+				JFCMainClient.addYTURLToList(JFCMainClient.szDLSTATE.concat(sURL));
 				
 				// download one webresource and show result
 				bDOWNLOADOK = downloadone(sURL);
@@ -399,5 +406,5 @@ public class DownloadThread extends Thread {
 		debugoutput("thread ended: ".concat(this.getMyName()));
 	} // run()
 
-} // class DownloadThread
+} // class YTDownloadThread
 

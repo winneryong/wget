@@ -58,14 +58,15 @@ import javax.swing.event.DocumentListener;
  * using Eclipse 3.6.1 64Bit Helios
  * TODOs are for Eclipse IDE - Tasks View
  * 
- * tested on GNU/Linux JRE 1.6.0_22 64bit and M$-Windows XP 64bit JRE 1.6.0_22
+ * tested on GNU/Linux JRE 1.6.0_22 64bit, M$-Windows XP 64bit JRE 1.6.0_22 64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
+ * 
  * source code compliance level is 1.5
  * java files are UTF-8 encoded
  * javac shows no warning
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20101229_2248 by MrKnödelmann";
+	public static final String szVersion = "V20110102_1336 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -76,7 +77,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	public static final String szDLSTATE = "downloading ";
 	
-	// TODO downlaod via cli only?
+	// TODO downlaod via cli only? does this make sense if its all about videos?!
 			 
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
 	private static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
@@ -117,15 +118,15 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			JFCMainClient.frame.textarea.setCaretPosition( JFCMainClient.frame.textarea.getDocument().getLength() );
 			JFCMainClient.frame.textinputfield.requestFocusInWindow();
 		} catch (Exception e) {
-			@SuppressWarnings( "unused" ) // for debugger
+			@SuppressWarnings( "unused" ) // for debuging
 			String s = e.getMessage();
 		}
 	} // addTexttoconsole()
 	
 	
-	public static void addURLToList( String sname ) {
+	public static void addYTURLToList( String sname ) {
 		String sn = sname;
-		// bring all URLs to the same form
+		// bring all URLs into the same form
 		if (sname.toLowerCase().startsWith("youtube")) sn = "http://www.".concat(sname);
 		if (sname.toLowerCase().startsWith("www")) sn = "http://".concat(sname);
 		synchronized (JFCMainClient.frame.dlm) {
@@ -133,7 +134,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			debugoutput("notify() ");
 			frame.dlm.notify();
 		}
-	} // addURLToList
+	} // addYTURLToList
 
 	public static void removeURLFromList( String sname ) {
 		synchronized (JFCMainClient.frame.dlm) {
@@ -206,7 +207,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		if (e.getSource().equals( frame.textinputfield )) {
 			if (!e.getActionCommand().equals( "" )) { 
 				if (e.getActionCommand().matches(szYTREGEX))
-					addURLToList(e.getActionCommand());
+					addYTURLToList(e.getActionCommand());
 				else {
 					// TODO some kind of gui-cli :) .. could be used to start/stop/test threads or output some internals at command
 					addTextToConsole(e.getActionCommand());
@@ -228,7 +229,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			fc.setMultiSelectionEnabled(false);
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			synchronized (frame.directorytextfield) {
-				// we have to set current directory here because it gets lost if fc is lost
+				// we have to set current directory here because it gets lost when fc is lost
 				fc.setCurrentDirectory( new File( frame.directorytextfield.getText()) );
 			}
 			debugoutput("current dir: ".concat( fc.getCurrentDirectory().getAbsolutePath()) );
@@ -426,13 +427,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		// lets honor the upload limit of google (youtube)
 		// downloading is faster than viewing anyway so dont start more than four threads please!!!
-		t1 = new Thread( new DownloadThread(bDEBUG) );
+		t1 = new Thread( new YTDownloadThread(bDEBUG) );
 		t1.start();
-		t2 = new Thread( new DownloadThread(bDEBUG) );
+		t2 = new Thread( new YTDownloadThread(bDEBUG) );
 		t2.start();
-		t3 = new Thread( new DownloadThread(bDEBUG) );
+		t3 = new Thread( new YTDownloadThread(bDEBUG) );
 		t3.start();
-		t4 = new Thread( new DownloadThread(bDEBUG) );
+		t4 = new Thread( new YTDownloadThread(bDEBUG) );
 		t4.start();
 
 	} // createAndShowGUI()
@@ -587,7 +588,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		
 		// starting at index 0 because szYTREGEX should start with ^ // if szYTREGEX does not start with ^ then you have to find the index where the match is before you can cut out the URL 
 		surl = sinput.substring(0, sinput.length()-surl.length());
-		addURLToList(surl);
+		addYTURLToList(surl);
 		sinput = sinput.substring(surl.length());
 		debugoutput(String.format("sinput: %s surl: %s",sinput,surl));
 		//frame.textinputfield.setText(sinput); // generates a java.lang.IllegalStateException: Attempt to mutate in notification
@@ -614,7 +615,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	        return null;
 	    }
 	} // createImageIcon
-
 
 	public void stateChanged(ChangeEvent e) {
 	}
