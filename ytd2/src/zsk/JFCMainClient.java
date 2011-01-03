@@ -347,7 +347,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.directorytextfield.addActionListener( this );
 		this.panel.add( this.directorytextfield, gbc);
 		
-		JLabel dirhint = new JLabel( "download to directory: ");
+		JLabel dirhint = new JLabel( "download into folder:");
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		this.panel.add( dirhint, gbc);

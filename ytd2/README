@@ -20,7 +20,16 @@ along with ytd2.
 If not, see <http://www.gnu.org/licenses/>.
 
 
-				
+USAGE
+
+  YTD2 is for downloading videos as flv/mp4-files on your
+  computer.
+  The web-browser downloads webresources (binary data) to
+  a temporary folder bevor displaying it. YTD2 does the
+  same except you can choose where to save the files.
+  YTD2 is meant for private non-commercial use only. 
+
+
 FILES
 
   The source code is available via subversion at
@@ -67,8 +76,8 @@ TODO
 CHANGES
 
   V20110103
-    2011-01-03  URLs with a playlist work now  
-    			selected directory will be saved
+    2011-01-03  URLs with a playlist now work
+    			selected folder will be saved
                 entire GUI as drop target for mouse events
 
   V20101223
