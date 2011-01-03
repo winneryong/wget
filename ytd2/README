@@ -28,6 +28,8 @@ FILES
   The repository contains either the latest released sources or
   changes for the next upcoming release. There are no branches or
   tags for now.
+  The jar-files/sources of the http-components can be downloaded at
+  http://hc.apache.org/downloads.cgi
 
 
 INSTALL
@@ -56,15 +58,17 @@ TODO
   GUI option for proxy/resolution
   URls with playlists or other unusual things
   correct handling of directories for download (esp. on M$-Windows)
-  entire GUI as drop target for mouse events
 	
   maybe: Java Web Start, translated GUI (or no text at all),
-         other video websites (imdb.com, video.web.de,..)
+         video from other websites (imdb.com, video.web.de,..)
 
   Any hints, suggestions, features, questions .. are welcome!
   
 
 CHANGES
+
+  V20110103
+    2011-01-03  entire GUI as drop target for mouse events
 
   V20101223
     2010-12-27  better handling of URLs pasted in

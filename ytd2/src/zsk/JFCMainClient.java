@@ -17,12 +17,22 @@
 package zsk;
 
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 
@@ -48,7 +58,7 @@ import javax.swing.event.DocumentListener;
  * Java(TM) SE Runtime Environment (build 1.6.0_22-b04)
  * Java HotSpot(TM) 64-Bit Server VM (build 17.1-b03, mixed mode)
  * 
- * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								in lovely memory of my grandpa, who used to fly around the clouds. 
+ * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								In lovely memory of my grandpa, who used to fly around the clouds. 
  * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">																																																																																			http://www.youtube.com/watch?v=yxXBhKJnRR8
  * http://www.youtube.com/watch?v=RYXd60D_kgQ&feature=related	<meta name="title" content="Me 262 Flys Again!">
  * http://www.youtube.com/watch?v=6ejc9_yR5oQ&feature=related	<meta name="title" content="Focke Wulf 190 attacks Boeing B 17 in 2009 at Hahnweide">
@@ -58,15 +68,15 @@ import javax.swing.event.DocumentListener;
  * using Eclipse 3.6.1 64Bit Helios
  * TODOs are for Eclipse IDE - Tasks View
  * 
- * tested on GNU/Linux JRE 1.6.0_22 64bit, M$-Windows XP 64bit JRE 1.6.0_22 64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
+ * tested on GNU/Linux JRE 1.6.0_22 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
  * 
  * source code compliance level is 1.5
  * java files are UTF-8 encoded
  * javac shows no warning
  * java code could be easily converted to Java 1.4.2
  */
-public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener {
-	public static final String szVersion = "V20110102_1336 by MrKnödelmann";
+public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
+	public static final String szVersion = "V20110103_1800 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -84,7 +94,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/   the last / is for marking the end of host, it does not belong to the hostpart
 	public static final String szHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.)*\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
 
-	//private static final String szPLAYLISTREGEX = szHOSTREGEX.concat("view_play_list\\?p=(.)*&playnext=.{1,2}&v=");
+	//private static final String szPLAYLISTREGEX = szHOSTREGEX.concat("view_play_list\\?p=(.*)&playnext=.{1,2}&v=");
 	
 	static Thread t1;
 	static Thread t2;
@@ -279,8 +289,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 //		this.userlist.setSelectionMode( ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
 		this.urllist.setFocusable( false );
 		this.textarea = new JTextArea( 2, 2 );
-		this.textarea.setEditable( false );
-		this.textarea.setFocusable( true );
+		this.textarea.setEditable( true );
+		this.textarea.setFocusable( false );
 
 		JScrollPane leftscrollpane = new JScrollPane( this.urllist );
 		JScrollPane rightscrollpane = new JScrollPane( this.textarea );
@@ -392,6 +402,10 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		pane.add( this.panel );
 		addWindowListener( this );
+		
+		JFCMainClient.frame.setDropTarget(new DropTarget(this, this));
+		JFCMainClient.frame.textarea.setTransferHandler(null); // otherwise the droped text would be inserted
+
 	} // addComponentsToPane()
 
 	public JFCMainClient( String name ) {
@@ -619,4 +633,63 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	public void stateChanged(ChangeEvent e) {
 	}
 
+
+	public void dragEnter(DropTargetDragEvent dtde) {
+	}
+
+
+	public void dragOver(DropTargetDragEvent dtde) {
+	}
+
+
+	public void dropActionChanged(DropTargetDragEvent dtde) {
+	}
+
+
+	public void dragExit(DropTargetEvent dte) {
+	}
+
+
+	public void drop(DropTargetDropEvent dtde) {
+		try {
+			Transferable tr = dtde.getTransferable();
+			DataFlavor[] flavors = tr.getTransferDataFlavors();
+			DataFlavor fl = null;
+			String str = "";
+			for (int i = 0; i < flavors.length; i++) {
+				fl = flavors[i];
+				if (fl.isFlavorTextType() || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") ) {
+					dtde.acceptDrop (dtde.getDropAction());
+					if (tr.getTransferData(fl) instanceof InputStreamReader) {
+						BufferedReader textreader = new BufferedReader( (Reader) tr.getTransferData(fl) );
+						String sline = "";
+						try {
+							while (sline != null) {
+								sline = textreader.readLine();
+								if (sline != null) str += sline;
+							}
+						} catch (Exception e) {
+						} finally {
+							textreader.close();
+						}
+						str = str.replaceAll("<[A-Za-z/!\\-]*>", ""); // remove HTML tags - ignore HTML characters like &szlig; (which are no tags)
+					} else {
+						str = tr.getTransferData(fl).toString();
+					}
+					dtde.dropComplete(true);
+					debugoutput("drop event text: ".concat(str).concat(" (").concat(fl.getMimeType()).concat(") ")) ;
+					// append text to textfield - same as user drops text into this field
+					// except special characaters -> from http://de.wikipedia.org/wiki/GNU-Projekt („GNU is not Unix“)(&bdquo;GNU is not Unix&ldquo;)
+					// two drops from same source .. one time in textfield and elsewhere - maybe we change that later?!
+					synchronized (JFCMainClient.frame.textinputfield) {
+						JFCMainClient.frame.textinputfield.setText(JFCMainClient.frame.textinputfield.getText().concat(str));
+					}
+					return;
+				} else 
+					debugoutput("drop event unknown type: ".concat( fl.getHumanPresentableName()));
+			} // for
+		} catch (Throwable t) {
+		}
+	} // drop()
+	
 } // class JFCMainClient

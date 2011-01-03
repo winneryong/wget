@@ -26,9 +26,9 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.net.UnknownHostException;
 
-// used this one as external libraries
-// http://apache.copahost.com/httpcomponents/httpclient/binary/httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz
-// and the corresponding sources as Source Attachment within the Eclipse Projekt Properties
+// necessarily external libraries
+// http://hc.apache.org/downloads.cgi -> httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz
+// plus corresponding sources as Source Attachment within the Eclipse Project Properties
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -70,7 +70,7 @@ public class YTDownloadThread extends Thread {
 		this.bDEBUG = bD;
 		String sv = "thread started: ".concat(this.getMyName()); 
 		output(sv); debugoutput(sv);
-	} // DownloadThread()
+	} // YTDownloadThread()
 	
 	boolean downloadone(String sURL) {
 		boolean rc = false;
@@ -81,7 +81,7 @@ public class YTDownloadThread extends Thread {
 		} catch (NullPointerException npe) {
 			return(false);
 		}
-		synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
+		synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get information about application shutdown
 		
 		debugoutput("start.");
 		
@@ -158,8 +158,8 @@ public class YTDownloadThread extends Thread {
 			// TODO youtube sends a "HTTP/1.1 303 See Other" response if you try to open a webpage that does not exist
 
 			// abort if HTTP response code is != 200 and != 302 - wrong URL?
-			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)")) || 
-				 (rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)302(.*)"))) {
+			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)")) && 
+				!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)302(.*)"))) {
 				debugoutput(response.getStatusLine().toString().concat(" ").concat(sURL));
 				output(response.getStatusLine().toString().concat(" \"").concat(sTitle).concat("\""));
 				return rc;
@@ -201,11 +201,11 @@ public class YTDownloadThread extends Thread {
             			sline = textreader.readLine();
             			try {
             				if (sline.matches("(.*)generate_204(.*)")) {
-            					sline = sline.replaceFirst("generate_204", "videoplayback"); debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceFirst("img.src = '", "");debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceFirst("';", "");debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceAll("\\\\", "");debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceAll("\\s", "");debugoutput("URL: ".concat(sline));
+            					sline = sline.replaceFirst("generate_204", "videoplayback");	debugoutput("URL: ".concat(sline));
+            					sline = sline.replaceFirst("img.src = '", "");					debugoutput("URL: ".concat(sline));
+            					sline = sline.replaceFirst("';", "");							debugoutput("URL: ".concat(sline));
+            					sline = sline.replaceAll("\\\\", "");							debugoutput("URL: ".concat(sline));
+            					sline = sline.replaceAll("\\s", "");							debugoutput("URL: ".concat(sline));
             					this.sVideoURL = sline;
             				} else if (sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
             					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
@@ -378,9 +378,10 @@ public class YTDownloadThread extends Thread {
 			try {
 				synchronized (JFCMainClient.frame.dlm) {
 //					debugoutput("going to sleep.");
-					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads removing them) or application shutdown
+					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads are removing them)
 //					debugoutput("woke up ".concat(this.getClass().getName()));
 				}
+				// TODO check what kind of website the URL is from - this class can only handle YouTube-URLs ... we add other video sources later
 				sURL = JFCMainClient.getfirstURLFromList();
 				output("try to download: ".concat(sURL));
 				JFCMainClient.removeURLFromList(sURL);
@@ -407,4 +408,3 @@ public class YTDownloadThread extends Thread {
 	} // run()
 
 } // class YTDownloadThread
-
