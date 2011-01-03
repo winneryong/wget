@@ -56,7 +56,6 @@ RUNNING
 TODO
 
   GUI option for proxy/resolution
-  URls with playlists or other unusual things
   correct handling of directories for download (esp. on M$-Windows)
 	
   maybe: Java Web Start, translated GUI (or no text at all),
@@ -68,7 +67,9 @@ TODO
 CHANGES
 
   V20110103
-    2011-01-03  entire GUI as drop target for mouse events
+    2011-01-03  URLs with a playlist work now  
+    			selected directory will be saved
+                entire GUI as drop target for mouse events
 
   V20101223
     2010-12-27  better handling of URLs pasted in

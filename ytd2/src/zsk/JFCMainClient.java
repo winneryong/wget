@@ -35,6 +35,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -92,9 +93,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
 	private static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
 	// something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/   the last / is for marking the end of host, it does not belong to the hostpart
-	public static final String szHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.)*\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
+	public static final String szHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
 
-	//private static final String szPLAYLISTREGEX = szHOSTREGEX.concat("view_play_list\\?p=(.*)&playnext=.{1,2}&v=");
+	private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 	
 	static Thread t1;
 	static Thread t2;
@@ -208,6 +209,16 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		System.exit( 0 );
 	} // shutdownAppl()
 	
+    /**
+     * @param string
+     * @param regex
+     * @param replaceWith
+     * @return changed String
+     */
+    String replaceAll(String string, String regex, String replaceWith) {
+        Pattern myPattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        return (myPattern.matcher(string).replaceAll(replaceWith));
+    } // replaceAll 
 	
 	/**
 	 * process events of ActionListener
@@ -574,7 +585,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 */
 	void checkInputFieldforYTURLs() {
 		String sinput = frame.textinputfield.getText(); // dont call .toLowerCase() !
-		
+
 		// TODO this can probably be done better - replace input so URLs get extracted without user activity (works even if URLs are spread across multiple lines)
 		sinput = sinput.replaceAll("&feature=fvwp&", "&"); // after that text could be another yt-URL or more query_string options
 		sinput = sinput.replaceAll("&feature=fvwphttp", "http");
@@ -582,23 +593,19 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		sinput = sinput.replaceAll("&feature=relatedhttp", "http"); // if somebody writes a regex for notanytURL as replacement for fvwp|related ... ;)
 		sinput = sinput.replaceAll("&feature=related&", "&");
 		sinput = sinput.replaceAll("&feature=related", "");
-		sinput = sinput.replaceAll("&feature=mfu_in_order&list=UL", "");
-		sinput = sinput.replaceAll("&NR=[1-9]&", "&");
-		sinput = sinput.replaceAll("&NR=[1-9]http", "http");
-		sinput = sinput.replaceAll("&NR=[1-9]", "");
+		sinput = sinput.replaceAll("&feature=mfu_in_order&list=[A-Z]{1,2}", "");
+		sinput = sinput.replaceAll("&feature=[A-Z]{1,2}&list=([A-Za-z0-9]*)&index=[0-9]", "");
+		sinput = sinput.replaceAll("&NR=[0-9]&", "&");
+		sinput = sinput.replaceAll("&NR=[0-9]http", "http");
+		sinput = sinput.replaceAll("&NR=[0-9]", "");
 		sinput = sinput.replaceAll(" ", "");
-		String surl = sinput.replaceFirst(szYTREGEX, "");
+		sinput = sinput.replaceAll(szPLAYLISTREGEX, "/watch?v=");
 
-		// TODO there are URLs with a playlist-string before the video string .. and others with &Nr= or similar
-		// http://www.youtube.com/view_play_list?p=0C6EB166A0BEAF85&playnext=1&v=3jz9-WDtrjk
-//		if (sinput.toLowerCase().matches(szPLAYLISTREGEX)) {
-//			debugoutput("host: ".concat( this.getHost(sinput)) );
-//			sinput = this.getHost(sinput).concat( sinput.replaceFirst(szPLAYLISTREGEX, "/watch?v=") );
-//		}
+		String surl = sinput.replaceFirst(szYTREGEX, "");
 		
 		if (sinput.equals(surl)) return;
 
-		debugoutput("sinput: ".concat(sinput));
+		debugoutput("sinput: ".concat(sinput).concat(" surl: ".concat(surl)));
 		
 		// starting at index 0 because szYTREGEX should start with ^ // if szYTREGEX does not start with ^ then you have to find the index where the match is before you can cut out the URL 
 		surl = sinput.substring(0, sinput.length()-surl.length());
