@@ -24,8 +24,8 @@ USAGE
 
   YTD2 is for downloading videos as flv/mp4-files on your
   computer.
-  The web-browser downloads webresources (binary data) to
-  a temporary folder bevor displaying it. YTD2 does the
+  The web-browser downloads webresources (e.g. binary data) to
+  a temporary folder before displaying it. YTD2 does the
   same except you can choose where to save the files.
   YTD2 is meant for private non-commercial use only. 
 
