@@ -679,7 +679,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 						} finally {
 							textreader.close();
 						}
-						str = str.replaceAll("<[A-Za-z/!\\-]*>", ""); // remove HTML tags - ignore HTML characters like &szlig; (which are no tags)
+						str = str.replaceAll("<[^>]*>", ""); // remove HTML tags, esp. a hrefs - ignore HTML characters like &szlig; (which are no tags)
 					} else {
 						str = tr.getTransferData(fl).toString();
 					}
