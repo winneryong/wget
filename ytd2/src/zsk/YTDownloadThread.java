@@ -99,7 +99,7 @@ public class YTDownloadThread extends Thread {
 		
 		// http://www.youtube.com/watch?v=86OfBExGSE0&feature=related	URZ 720p
 		// http://www.youtube.com/watch?v=cNOP2t9FObw 					Blade 360 - 480
-		// http://www.youtube.com/watch?v=HvQBrM_i8bU					MZ 1000 Street FighterS
+		// http://www.youtube.com/watch?v=HvQBrM_i8bU					MZ 1000 Street Fighter
 		
 		// lately found: http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
 		// using local squid to save download time for tests
@@ -222,6 +222,7 @@ public class YTDownloadThread extends Thread {
             					sline = sline.replaceAll("\\\\", "");							debugoutput("URL: ".concat(sline));
             					sline = sline.replaceAll("\\s", "");							debugoutput("URL: ".concat(sline));
             					this.sVideoURL = sline;
+            				// this is what we should do (taking the host which is provided in the web page source)
             				/*
             				String svURL0; String svURL1; String svURL2; String svURL3;
             				if (sline.matches("( *)var swfHTML =(.*)")) {
