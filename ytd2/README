@@ -75,9 +75,12 @@ TODO
 
 CHANGES
 
+  V20110111
+    2011-01-11  bug fixes (better handling of drop events)
+
   V20110103
     2011-01-03  URLs with a playlist now work
-    			selected folder will be saved
+                selected folder will be saved
                 entire GUI as drop target for mouse events
 
   V20101223
