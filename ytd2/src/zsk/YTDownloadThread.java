@@ -56,10 +56,15 @@ import org.apache.http.params.HttpProtocolParams;
  */
 public class YTDownloadThread extends Thread {
 	
+	final String ssourcecodeurl = "http%3A%2F%2F";
+	final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
+	
 	static int iThreadcount=0;
 	int iThreadNo = YTDownloadThread.iThreadcount++;
 	
-	boolean bDEBUG;
+	public boolean bDEBUG;
+
+	private String sURL = null; // main URL (youtube start web page)
 	private String sTitle = null;
 	private String sVideoURL = null;
 	private String sFileName = null;
@@ -74,6 +79,8 @@ public class YTDownloadThread extends Thread {
 	
 	boolean downloadone(String sURL) {
 		boolean rc = false;
+		boolean rc204 = false;
+		boolean rc302 = false;
 	
 		// stop recursion
 		try {
@@ -90,7 +97,9 @@ public class YTDownloadThread extends Thread {
 		
 		// http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !! "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java stay open and free
 		
-		// http://www.youtube.com/watch?v=86OfBExGSE0&feature=related URZ 720p
+		// http://www.youtube.com/watch?v=86OfBExGSE0&feature=related	URZ 720p
+		// http://www.youtube.com/watch?v=cNOP2t9FObw 					Blade 360 - 480
+		// http://www.youtube.com/watch?v=HvQBrM_i8bU					MZ 1000 Street FighterS
 		
 		// lately found: http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
 		// using local squid to save download time for tests
@@ -104,7 +113,7 @@ public class YTDownloadThread extends Thread {
 			// determine http_proxy environment variable
 			if (!this.getProxy().equals("")) {
 
-				String sproxy = System.getenv("http_proxy").toLowerCase().replaceFirst("http://", "") ;
+				String sproxy = JFCMainClient.sproxy.toLowerCase().replaceFirst("http://", "") ;
 				proxy = new HttpHost( sproxy.replaceFirst(":(.*)", ""), Integer.parseInt( sproxy.replaceFirst("(.*):", "")), "http");
 
 				SchemeRegistry supportedSchemes = new SchemeRegistry();
@@ -157,14 +166,19 @@ public class YTDownloadThread extends Thread {
 			}
 			// TODO youtube sends a "HTTP/1.1 303 See Other" response if you try to open a webpage that does not exist
 
-			// abort if HTTP response code is != 200 and != 302 - wrong URL?
-			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)")) && 
-				!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)302(.*)"))) {
+			// the first query of a browser is with an URL containing generate_204 which leads to an HTTP response code of (guess) 204! the next query is the same URL with videoplayback instead of generate_204 which leads to an HTTP response code of (guess again) .. no not 200! but 302 and in that response header there is a field Location with a different (host) which we can now request via HTTP GET and then we get a response of (guess :) yes .. 200 and the video resource in the body - whatever the girlsnboys at google had in mind developing this ping pong - we'll never now.
+			// but because all nessesary URLs are provided in the source code we dont have to do the same requests as web-browsers do
+			// abort if HTTP response code is != 200, != 302 and !=204 - wrong URL?
+			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)")) & 
+					!(rc204 = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)204(.*)")) &
+					!(rc302 = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)302(.*)"))) {
 				debugoutput(response.getStatusLine().toString().concat(" ").concat(sURL));
-				output(response.getStatusLine().toString().concat(" \"").concat(sTitle).concat("\""));
-				return rc;
+				output(response.getStatusLine().toString().concat(" \"").concat(this.sTitle).concat("\""));
+				return rc = rc & rc204 & rc302;
 			}
-			debugoutput("location from HTTP Header: ".concat(response.getFirstHeader("Location").toString()));
+			if (rc302) debugoutput("location from HTTP Header: ".concat(response.getFirstHeader("Location").toString()));
+			if (rc204) {}
+			
 		} catch (NullPointerException npe) {
 			// if an IllegalStateException was catched while calling httpclient.execute(httpget) a NPE is caught here because
 			// response.getStatusLine() == null
@@ -200,6 +214,7 @@ public class YTDownloadThread extends Thread {
             		while (sline != null) {
             			sline = textreader.readLine();
             			try {
+            				// this is what my wget command does:
             				if (sline.matches("(.*)generate_204(.*)")) {
             					sline = sline.replaceFirst("generate_204", "videoplayback");	debugoutput("URL: ".concat(sline));
             					sline = sline.replaceFirst("img.src = '", "");					debugoutput("URL: ".concat(sline));
@@ -207,6 +222,23 @@ public class YTDownloadThread extends Thread {
             					sline = sline.replaceAll("\\\\", "");							debugoutput("URL: ".concat(sline));
             					sline = sline.replaceAll("\\s", "");							debugoutput("URL: ".concat(sline));
             					this.sVideoURL = sline;
+            				/*
+            				String svURL0; String svURL1; String svURL2; String svURL3;
+            				if (sline.matches("( *)var swfHTML =(.*)")) {
+            					sline = sline.toLowerCase();
+            					sline = sline.replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
+            					sline = sline.replaceFirst(".*\" : \"","\""); // just in case the ?: operator is used as ()?"":"" not ()?"" : ""
+            					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
+            					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
+            					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
+            					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
+            					svURL0 = sline.replaceFirst(ssourcecodeurl.concat(ssourcecodeuri).concat(ssourcecodeurl),"");
+            					svURL0 = sline.substring(0, svURL0.length());
+            					svURL0 = ssourcecodeurl.concat( svURL0.replaceAll(ssourcecodeurl, "") );
+            					debugoutput("svURL0: ".concat(svURL0));
+            					
+            					debugoutput("sline: ".concat(sline));
+            	*/
             				} else if (sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
             					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
             				}
@@ -238,27 +270,33 @@ public class YTDownloadThread extends Thread {
             			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.getFileName()));
             			output("file size of \"".concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
             		    
-//            			debugoutput("Endianness: ".concat(ByteOrder.nativeOrder().toString()));
-
             			byte[] bytes = new byte[4096];
             			Integer iBytesRead = 1;
+            			String sOldURL = JFCMainClient.szDLSTATE.concat(this.sURL);
+            			String sNewURL = "";
+            			// adjust blocks of percentage that got print out - larger are shown with smaller pieces
+            			Integer iblocks = 10; if (iBytesMax>20*1024*1024) iblocks=4; if (iBytesMax>40*1024*1024) iblocks=2;
             			while (!this.bisinterrupted & iBytesRead>0) {
             				iBytesRead = binaryreader.read(bytes);
             				iBytesReadSum += iBytesRead;
-//            				if (this.bDEBUG) System.out.println("running ".concat(this.getMyName())); try { Thread.sleep(100);	} catch (InterruptedException e) {}
             				// every 10% of the download we drop a line for the user 
-            				if ( (((iBytesReadSum*100/iBytesMax) / 10) * 10) > iPercentage ) {
-            					iPercentage = (((iBytesReadSum*100/iBytesMax) / 10) * 10);
-            					output(Long.toString(iPercentage).concat("% of  \"").concat(this.getTitle()).concat("\"") );
-            					debugoutput( Long.toString(iPercentage).concat("% ") );
+            				if ( (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks) > iPercentage ) {
+            					iPercentage = (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks);
+            					sNewURL = JFCMainClient.szDLSTATE.concat("(").concat(Long.toString(iPercentage).concat(" %) ").concat(this.sURL));
+            					JFCMainClient.exchangeYTURLInList(sOldURL, sNewURL);
+            					sOldURL = sNewURL ; 
+            					
+//            					output(Long.toString(iPercentage).concat("% of  \"").concat(this.getTitle()).concat("\"") );
+//            					debugoutput( Long.toString(iPercentage).concat("% ") );
             				}
             				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-            				// TODO if a downloading thread gets terminated we should consider deleting the unfinished file OR continuing download at offset next time? :)
+            				// TODO if a downloading thread gets terminated we should consider deleting the unfinished file, renaming it OR continuing download at offset next time if the user downloads it again!? :)
             				synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // try to get informatation about application shutdown
             			} 
+            			JFCMainClient.exchangeYTURLInList(sNewURL, JFCMainClient.szDLSTATE.concat(this.sURL));
             			if (JFCMainClient.bQuitrequested & iBytesReadSum<iBytesMax) {
             				httpclient.getConnectionManager().shutdown(); // otherwise binaryreader.close() would cause the entire datastream to be transmitted 
-            				debugoutput(String.format("dowloading canceled. (%d)",(iBytesRead)));
+            				debugoutput(String.format("download canceled. (%d)",(iBytesRead)));
             			}
             			debugoutput("done writing.");
             		} catch (FileNotFoundException fnfe) {
@@ -371,8 +409,11 @@ public class YTDownloadThread extends Thread {
 		return this.getClass().getName().concat(Integer.toString(this.iThreadNo));
 	} // getMyName()
 	
+	public void setbDEBUG(boolean bDEBUG) {
+		this.bDEBUG = bDEBUG;
+	} // setbDEBUG
+	
 	public void run() {
-		String sURL = null;
 		boolean bDOWNLOADOK = false;
 		while (!this.bisinterrupted) {
 			try {
@@ -382,24 +423,23 @@ public class YTDownloadThread extends Thread {
 //					debugoutput("woke up ".concat(this.getClass().getName()));
 				}
 				// TODO check what kind of website the URL is from - this class can only handle YouTube-URLs ... we add other video sources later
-				sURL = JFCMainClient.getfirstURLFromList();
-				output("try to download: ".concat(sURL));
-				JFCMainClient.removeURLFromList(sURL);
-				JFCMainClient.addYTURLToList(JFCMainClient.szDLSTATE.concat(sURL));
+				this.sURL = JFCMainClient.getfirstURLFromList();
+				output("try to download: ".concat(this.sURL));
+				JFCMainClient.removeURLFromList(this.sURL);
+				JFCMainClient.addYTURLToList(JFCMainClient.szDLSTATE.concat(this.sURL));
 				
 				// download one webresource and show result
-				bDOWNLOADOK = downloadone(sURL);
+				bDOWNLOADOK = downloadone(this.sURL);
 				if (bDOWNLOADOK) 
 					output("download complete: ".concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 				else
-					output("error downloading: ".concat(sURL));
+					output("error downloading: ".concat(this.sURL));
 				
-				JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(sURL));
+				JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(this.sURL));
 			} catch (InterruptedException e) {
 				this.bisinterrupted = true;
 			} catch (NullPointerException npe) {
 //				debugoutput("npe - nothing to download?");
-//				npe.printStackTrace();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

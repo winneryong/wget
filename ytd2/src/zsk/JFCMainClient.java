@@ -45,12 +45,12 @@ import javax.swing.event.DocumentListener;
 
 /**
  * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
- * 700 java code lines
- * 307 empty/comment lines 
- * 
+ * 847 java code lines
+ * 358 empty/comment lines 
+ *
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Mon Dec 27 23:45:38 CET 2010
- * Linux section60 2.6.35-23-generic #41-Ubuntu SMP Wed Nov 24 11:55:36 UTC 2010 x86_64 GNU/Linux
+ * Tue Jan 11 08:50:06 CET 2011
+ * Linux section60 2.6.35-24-generic #42-Ubuntu SMP Thu Dec 2 02:41:37 UTC 2010 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=10.10
  * DISTRIB_CODENAME=maverick
@@ -64,12 +64,13 @@ import javax.swing.event.DocumentListener;
  * http://www.youtube.com/watch?v=RYXd60D_kgQ&feature=related	<meta name="title" content="Me 262 Flys Again!">
  * http://www.youtube.com/watch?v=6ejc9_yR5oQ&feature=related	<meta name="title" content="Focke Wulf 190 attacks Boeing B 17 in 2009 at Hahnweide">
  *
- * technobase.fm / We Are One!
+ * technobase.fm / We Are One! 
  * 
  * using Eclipse 3.6.1 64Bit Helios
  * TODOs are for Eclipse IDE - Tasks View
  * 
  * tested on GNU/Linux JRE 1.6.0_22 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
+ * using Mozilla Firefox 3.6 and M$-IE (8)
  * 
  * source code compliance level is 1.5
  * java files are UTF-8 encoded
@@ -77,7 +78,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110107_0847 by MrKnödelmann";
+	public static final String szVersion = "V20110111_0846 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -85,6 +86,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	// more or less output
 	static boolean bDEBUG = true;
+	
+	public static String sproxy = null;
 	
 	public static final String szDLSTATE = "downloading ";
 	
@@ -97,10 +100,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 	private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 	
-	static Thread t1;
-	static Thread t2;
-	static Thread t3;
-	static Thread t4;
+	// all chars that do not belong to an HTTP URL - could be written shorter??
+	final String snotsourcecodeurl = "[^a-z^A-Z^0-9^%^&^=^\\.^:^/^\\?]";
+	
+	static YTDownloadThread t1;
+	static YTDownloadThread t2;
+	static YTDownloadThread t3;
+	static YTDownloadThread t4;
 	
 	static JFCMainClient frame = null;
 
@@ -146,19 +152,27 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			frame.dlm.notify();
 		}
 	} // addYTURLToList
+	
+	public static void exchangeYTURLInList( String sfromname, String stoname) {
+		synchronized (JFCMainClient.frame.dlm) {
+			try {
+				int i = JFCMainClient.frame.dlm.indexOf( sfromname );
+				JFCMainClient.frame.dlm.setElementAt(stoname, i);
+			} catch (IndexOutOfBoundsException ioobe) {}
+		}
+	} // exchangeYTURLInList
 
 	public static void removeURLFromList( String sname ) {
 		synchronized (JFCMainClient.frame.dlm) {
 			try {
 				int i = JFCMainClient.frame.dlm.indexOf( sname );
 				JFCMainClient.frame.dlm.remove( i );
-			} catch (IndexOutOfBoundsException n) {}
+			} catch (IndexOutOfBoundsException ioobe) {}
 		}
 	} // removeURLFromList
 	
 	public static String getfirstURLFromList( ) {
 		String src = null;
-//		debugoutput("getfirstURLFromList()");
 		synchronized (JFCMainClient.frame.dlm) {
 			try {
 				int i;
@@ -167,9 +181,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 					if (!((String)JFCMainClient.frame.dlm.get(i)).startsWith( JFCMainClient.szDLSTATE )) break;
 				}
 				src = ((String) JFCMainClient.frame.dlm.get(i)).replaceFirst( JFCMainClient.szDLSTATE, "" );
-			} catch (IndexOutOfBoundsException n) {}
+			} catch (IndexOutOfBoundsException ioobe) {}
 		}
-//		debugoutput("getfirstURLFromList() src: ".concat(src.toString()));
 		return src;
 	} // getfirstURLFromList
 
@@ -178,7 +191,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			synchronized (JFCMainClient.frame.dlm) {
 				JFCMainClient.frame.dlm.clear();
 			}
-		} catch (NullPointerException n) {}
+		} catch (NullPointerException npe) {}
 	} // clearURLList
 
 	public void setfocustotextfield() {
@@ -230,11 +243,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 				if (e.getActionCommand().matches(szYTREGEX))
 					addYTURLToList(e.getActionCommand());
 				else {
-					// TODO some kind of gui-cli :) .. could be used to start/stop/test threads or output some internals at command
 					addTextToConsole(e.getActionCommand());
-					if (e.getActionCommand().toLowerCase().matches("^(help|-h|/\\?|\\?)")) addTextToConsole("need help? comes later!");
-					else if (e.getActionCommand().toLowerCase().matches("^(version|-v)")) addTextToConsole(szVersion);
-					else addTextToConsole("?");
+					cli(e.getActionCommand().toLowerCase());
 				}
 			}
 			synchronized (frame.textinputfield) {
@@ -280,6 +290,37 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		}
 		debugoutput("action? ".concat(e.getSource().toString()));
 	} // actionPerformed()
+
+	private void cli(String scmd) {
+		if (scmd.matches("^(help|[-/][h|\\?])")) {
+			addTextToConsole("version|-v|/?		: print version");
+			addTextToConsole("debug[ on| off]	: more or less (internal) output");
+			addTextToConsole("quit|exit			: shutdown application");
+			addTextToConsole("proxy[ URL]		: get or set proxy variable");
+		} 
+		else if (scmd.matches("^(-?v(ersion)?)"))
+			addTextToConsole(szVersion);
+		else if (scmd.matches("^(debug)( on| off)?")) {
+			if (scmd.matches(".*on$")) 
+				JFCMainClient.bDEBUG = true;
+			else if (scmd.matches(".*off$")) 
+				JFCMainClient.bDEBUG = false;
+			 
+			addTextToConsole("debug: ".concat(Boolean.toString( JFCMainClient.bDEBUG )));
+
+			// Exception in thread "AWT-EventQueue-0" java.lang.ClassCastException: java.lang.Thread cannot be cast to zsk.YTDownloadThread
+			try {JFCMainClient.t1.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
+			try {JFCMainClient.t2.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
+			try {JFCMainClient.t3.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
+			try {JFCMainClient.t4.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
+		} else if (scmd.matches("^(quit|exit)"))
+			this.shutdownAppl();
+		else if (scmd.matches("^(proxy)( .*)?")) {// TODO proxy server url should match host:port regex
+			if (!scmd.matches("^(proxy)$"))
+				JFCMainClient.sproxy = scmd.replaceFirst("proxy ", "");
+			addTextToConsole("proxy: ".concat(JFCMainClient.sproxy));
+		} else addTextToConsole("? (try help|-?|-h)");
+	} // cli()
 
 	/**
 	 * @param pane
@@ -415,7 +456,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		addWindowListener( this );
 		
 		JFCMainClient.frame.setDropTarget(new DropTarget(this, this));
-		JFCMainClient.frame.textarea.setTransferHandler(null); // otherwise the droped text would be inserted
+		JFCMainClient.frame.textarea.setTransferHandler(null); // otherwise the dropped text would be inserted
 
 	} // addComponentsToPane()
 
@@ -445,24 +486,23 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		// TODO ensure threads are running even if one ends with an Exception
 
-		String sproxy = System.getenv("http_proxy");
-		if (sproxy==null) sproxy="";
+		JFCMainClient.sproxy = System.getenv("http_proxy");
+		if (JFCMainClient.sproxy==null) sproxy="";
 		sv = "env var http_proxy: ".concat(sproxy);
 		output(sv); debugoutput(sv);
 
 		// lets honor the upload limit of google (youtube)
-		// downloading is faster than viewing anyway so dont start more than four threads please!!!
-		t1 = new Thread( new YTDownloadThread(bDEBUG) );
+		// downloading is faster than viewing anyway so don't start more than four threads and don't play with the URL-strings please!!!
+		t1 = new YTDownloadThread(bDEBUG);
 		t1.start();
-		t2 = new Thread( new YTDownloadThread(bDEBUG) );
+		t2 = new YTDownloadThread(bDEBUG);
 		t2.start();
-		t3 = new Thread( new YTDownloadThread(bDEBUG) );
+		t3 = new YTDownloadThread(bDEBUG);
 		t3.start();
-		t4 = new Thread( new YTDownloadThread(bDEBUG) );
+		t4 = new YTDownloadThread(bDEBUG);
 		t4.start();
-
 	} // createAndShowGUI()
-
+	
 	
 	public void windowActivated( WindowEvent e ) {
 			setfocustotextfield();
@@ -657,6 +697,11 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	}
 
 
+	/**
+	 * processing event of droping a HTTP URL, YT-Video Image or plain text (URL) onto the frame
+	 * 
+	 * seems not to work with M$-IE (8) - what a pity!
+	 */
 	public void drop(DropTargetDropEvent dtde) {
 		try {
 			Transferable tr = dtde.getTransferable();
@@ -665,7 +710,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			String str = "";
 			for (int i = 0; i < flavors.length; i++) {
 				fl = flavors[i];
-				if (fl.isFlavorTextType() || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") ) {
+				if (fl.isFlavorTextType() || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") )  {
 					dtde.acceptDrop (dtde.getDropAction());
 					if (tr.getTransferData(fl) instanceof InputStreamReader) {
 						BufferedReader textreader = new BufferedReader( (Reader) tr.getTransferData(fl) );
@@ -680,20 +725,28 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 							textreader.close();
 						}
 						str = str.replaceAll("<[^>]*>", ""); // remove HTML tags, esp. a hrefs - ignore HTML characters like &szlig; (which are no tags)
+//					} else if (tr.getTransferData(fl) instanceof InputStream) {
+						// TODO dropped object something is different with Fx on GNU/Linux .. 
 					} else {
 						str = tr.getTransferData(fl).toString();
 					}
 					dtde.dropComplete(true);
+					
+					// this has to done on GNU/Linux because the URLs contain null(?) characters and therefore get not cut out of the textfield automaticlly 
+					str = str.replaceAll(this.snotsourcecodeurl.concat("*"), "");
+					
 					debugoutput("drop event text: ".concat(str).concat(" (").concat(fl.getMimeType()).concat(") ")) ;
-					// append text to textfield - same as user drops text into this field
+					// append text to textfield - same as user drops text/url into this field
 					// except special characaters -> from http://de.wikipedia.org/wiki/GNU-Projekt („GNU is not Unix“)(&bdquo;GNU is not Unix&ldquo;)
 					// two drops from same source .. one time in textfield and elsewhere - maybe we change that later?!
 					synchronized (JFCMainClient.frame.textinputfield) {
 						JFCMainClient.frame.textinputfield.setText(JFCMainClient.frame.textinputfield.getText().concat(str));
 					}
 					return;
-				} else 
-					debugoutput("drop event unknown type: ".concat( fl.getHumanPresentableName()));
+				} else {
+					String sv = "drop event unknown type: ".concat( fl.getHumanPresentableName());
+					output(sv); debugoutput(sv);
+				}
 			} // for
 		} catch (Throwable t) {
 		}
