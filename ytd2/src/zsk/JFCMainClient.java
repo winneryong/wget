@@ -78,14 +78,14 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110111_1032 by MrKnödelmann";
+	public static final String szVersion = "V20110111_1034 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
 	// more or less output
-	static boolean bDEBUG = true;
+	static boolean bDEBUG = false;
 	
 	public static String sproxy = null;
 	
@@ -101,7 +101,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 	
 	// all chars that do not belong to an HTTP URL - could be written shorter??
-	final String snotsourcecodeurl = "[^(a-z)^(A-Z)^(0-9)^%^&^=^\\.^:^/^\\?^_]";
+	final String snotsourcecodeurl = "[^(a-z)^(A-Z)^(0-9)^%^&^=^\\.^:^/^\\?^_^-]";
 	
 	static YTDownloadThread t1;
 	static YTDownloadThread t2;

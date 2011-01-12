@@ -63,7 +63,8 @@ RUNNING
 	
 
 TODO
-
+  
+  remove remaining text from input field after URL was cut out
   GUI option for proxy/resolution
   correct handling of directories for download (esp. on M$-Windows)
 	
@@ -77,6 +78,8 @@ CHANGES
 
   V20110111
     2011-01-11  bug fixes (better handling of drop events)
+                proxy can be with input
+                german in GUI text if JRE environment is german
 
   V20110103
     2011-01-03  URLs with a playlist now work

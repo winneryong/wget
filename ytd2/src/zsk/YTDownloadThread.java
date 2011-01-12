@@ -354,7 +354,7 @@ public class YTDownloadThread extends Thread {
 	} // downloadone()
 
 	private String getProxy() {
-		String sproxy = System.getenv("http_proxy");
+		String sproxy = JFCMainClient.sproxy;
 		if (sproxy==null) return(""); else return(sproxy);
 	} // getProxy() 
 
