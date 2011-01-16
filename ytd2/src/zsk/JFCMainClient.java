@@ -19,6 +19,7 @@ package zsk;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
@@ -29,14 +30,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 import java.util.regex.Pattern;
-
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -78,14 +81,14 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110111_1034 by MrKnödelmann";
+	public static final String szVersion = "V20110111_2109 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
 	// more or less output
-	static boolean bDEBUG = false;
+	static boolean bDEBUG = true;
 	
 	public static String sproxy = null;
 	
@@ -193,6 +196,10 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			}
 		} catch (NullPointerException npe) {}
 	} // clearURLList
+	
+	public static boolean isgerman() {
+		return Locale.getDefault().toString().startsWith("de_") || (bDEBUG && System.getProperty("user.home").equals("/home/knoedel"));
+	} // isgerman
 
 	public void setfocustotextfield() {
 		this.textinputfield.requestFocusInWindow();
@@ -291,19 +298,20 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		debugoutput("action? ".concat(e.getSource().toString()));
 	} // actionPerformed()
 
-	private void cli(String scmd) {
+	void cli(String scmd) {
 		if (scmd.matches("^(help|[-/][h|\\?])")) {
-			addTextToConsole("version|-v|/?		: print version");
-			addTextToConsole("debug[ on| off]	: more or less (internal) output");
-			addTextToConsole("quit|exit			: shutdown application");
-			addTextToConsole("proxy[ URL]		: get or set proxy variable");
+			addTextToConsole("debug[ on| off]\t: more or less (internal) output");
+			addTextToConsole("help|-h|/?]\t\t: show this text");
+			addTextToConsole("quit|exit\t\t: shutdown application");
+			addTextToConsole("proxy[ URL]\t\t: get or set proxy variable");
+			addTextToConsole("version|-v|\t\t: show version");
 		} 
 		else if (scmd.matches("^(-?v(ersion)?)"))
 			addTextToConsole(szVersion);
-		else if (scmd.matches("^(debug)( on| off)?")) {
-			if (scmd.matches(".*on$")) 
+		else if (scmd.matches("^(debug)( on| off| true| false)?")) {
+			if (scmd.matches(".*(on|true)$")) 
 				JFCMainClient.bDEBUG = true;
-			else if (scmd.matches(".*off$")) 
+			else if (scmd.matches(".*(off|false)$")) 
 				JFCMainClient.bDEBUG = false;
 			 
 			addTextToConsole("debug: ".concat(Boolean.toString( JFCMainClient.bDEBUG )));
@@ -319,7 +327,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			if (!scmd.matches("^(proxy)$"))
 				JFCMainClient.sproxy = scmd.replaceFirst("proxy ", "");
 			addTextToConsole("proxy: ".concat(JFCMainClient.sproxy));
-		} else addTextToConsole("? (try help|-?|-h)");
+		} else addTextToConsole("? (try help|-h|/?)");
 	} // cli()
 
 	/**
@@ -388,7 +396,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.directorytextfield.addActionListener( this );
 		this.panel.add( this.directorytextfield, gbc);
 		
-		JLabel dirhint = new JLabel( "download into folder:");
+		JLabel dirhint = new JLabel( isgerman()?"Speichern im Ordner:":"download into folder:");
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		this.panel.add( dirhint, gbc);
@@ -424,7 +432,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		
 		//this.panel.add( this.slResolution, gbc );
 
-		JLabel hint = new JLabel( "(type in, paste in, drop in -> yt-webaddresses or yt-videoimages) URLs:");
+		JLabel hint = new JLabel( isgerman()?"(eingeben, reinkopieren, reinziehen von YT-Webadressen oder YT-Videobilder) URLs:":"(type in, paste in, drop in -> yt-webaddresses or yt-videoimages) URLs:");
 		gbc.fill = 0;
 		gbc.gridwidth = 0;
 		gbc.weightx = 0;
@@ -474,13 +482,16 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 */
 	static void createAndShowGUI() {
 		setDefaultLookAndFeelDecorated(false);
-		frame = new JFCMainClient( "YTD2 ".concat(szVersion).concat(" ").concat("https://sourceforge.net/projects/ytd2/") );
+		String sv = "YTD2 ".concat(szVersion).concat(" ").concat("https://sourceforge.net/projects/ytd2/");
+		sv = isgerman()?sv.replaceFirst("by", "von"):sv;
+		frame = new JFCMainClient( sv );
 		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
 		frame.addComponentsToPane( frame.getContentPane() );
 		frame.pack();
 		frame.setVisible( true );
 		
-		String sv = "version: ".concat( szVersion ).concat(bDEBUG?" DEBUG ":""); 
+		sv = "version: ".concat( szVersion ).concat(bDEBUG?" DEBUG ":"");
+		sv = isgerman()?sv.replaceFirst("by", "von"):sv;
 		output(sv); debugoutput(sv);
 		output(""); // \n
 
@@ -703,34 +714,45 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 * seems not to work with M$-IE (8) - what a pity!
 	 */
 	public void drop(DropTargetDropEvent dtde) {
-		try {
 			Transferable tr = dtde.getTransferable();
 			DataFlavor[] flavors = tr.getTransferDataFlavors();
 			DataFlavor fl = null;
 			String str = "";
+			debugoutput("DataFlavors found: ".concat(Integer.toString( flavors.length )));
 			for (int i = 0; i < flavors.length; i++) {
 				fl = flavors[i];
-				if (fl.isFlavorTextType() || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") )  {
-					dtde.acceptDrop (dtde.getDropAction());
-					if (tr.getTransferData(fl) instanceof InputStreamReader) {
-						BufferedReader textreader = new BufferedReader( (Reader) tr.getTransferData(fl) );
-						String sline = "";
-						try {
-							while (sline != null) {
-								sline = textreader.readLine();
-								if (sline != null) str += sline;
+				if (fl.isFlavorTextType() || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") ||	fl.isMimeTypeEqual("text/uri-list"))  {
+					try {dtde.acceptDrop (dtde.getDropAction());} catch (Throwable t) {}
+					try {
+						if (tr.getTransferData(fl) instanceof InputStreamReader) {
+//							debugoutput("Text-InputStream");
+							BufferedReader textreader = new BufferedReader( (Reader) tr.getTransferData(fl) );
+							String sline = "";
+							try {
+								while (sline != null) {
+									sline = textreader.readLine();
+									if (sline != null) str += sline;
+								}
+							} catch (Exception e) {
+							} finally {
+								textreader.close();
 							}
-						} catch (Exception e) {
-						} finally {
-							textreader.close();
-						}
-						str = str.replaceAll("<[^>]*>", ""); // remove HTML tags, esp. a hrefs - ignore HTML characters like &szlig; (which are no tags)
-//					} else if (tr.getTransferData(fl) instanceof InputStream) {
-						// TODO dropped object something is different with Fx on GNU/Linux .. 
-					} else {
-						str = tr.getTransferData(fl).toString();
-					}
-					dtde.dropComplete(true);
+							str = str.replaceAll("<[^>]*>", ""); // remove HTML tags, esp. a hrefs - ignore HTML characters like &szlig; (which are no tags)
+						} else if (tr.getTransferData(fl) instanceof InputStream) {
+//							debugoutput("Byte-InputStream");
+							InputStream input = new BufferedInputStream((InputStream) tr.getTransferData(fl));
+							int idata = input.read();
+							String sresult = "";
+							while (idata != -1) {
+								if (idata!=0)
+									sresult += new Character((char) idata).toString();
+								idata = input.read();
+							} // while
+							debugoutput(sresult);
+						} else {
+							str = tr.getTransferData(fl).toString();
+						}} catch (IOException ioe) {}
+						catch (UnsupportedFlavorException ufe) {}
 					
 					// this has to done on GNU/Linux because the URLs contain null(?) characters and therefore get not cut out of the textfield automaticlly 
 					str = str.replaceAll(this.snotsourcecodeurl.concat("*"), "");
@@ -742,14 +764,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 					synchronized (JFCMainClient.frame.textinputfield) {
 						JFCMainClient.frame.textinputfield.setText(JFCMainClient.frame.textinputfield.getText().concat(str));
 					}
-					return;
 				} else {
 					String sv = "drop event unknown type: ".concat( fl.getHumanPresentableName());
 					output(sv); debugoutput(sv);
 				}
 			} // for
-		} catch (Throwable t) {
-		}
+
+		dtde.dropComplete(true);
 	} // drop()
 	
 } // class JFCMainClient

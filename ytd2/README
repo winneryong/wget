@@ -78,7 +78,7 @@ CHANGES
 
   V20110111
     2011-01-11  bug fixes (better handling of drop events)
-                proxy can be with input
+                proxy can be set with input
                 german in GUI text if JRE environment is german
 
   V20110103
