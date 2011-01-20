@@ -81,7 +81,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110111_2109 by MrKnödelmann";
+	public static final String szVersion = "V20110120_2345 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -124,7 +124,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	JTextField directorytextfield = null;
 	JTextField textinputfield = null;
 	DefaultListModel dlm = null;
-	JSlider slResolution = null;
+	JRadioButton hdbutton = null;
+	JRadioButton stdbutton = null;
+	JRadioButton ldbutton = null;
 	
 	/**
 	 * append text to textarea
@@ -291,6 +293,11 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			return;
 		}
 		
+		if (e.getActionCommand().equals(this.hdbutton.getActionCommand()) || e.getActionCommand().equals(this.stdbutton.getActionCommand()) || e.getActionCommand().equals(this.ldbutton.getActionCommand()) ) {
+			debugoutput("trying: ".concat(e.getActionCommand()));
+			return;
+		} 
+		
 		if (e.getActionCommand().equals( "quit" )) {
 			this.shutdownAppl();
 			return;
@@ -336,7 +343,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	public void addComponentsToPane( final Container pane ) {
 		this.panel = new JPanel();
 
-		this.quitbutton = new JButton( "" ,createImageIcon("images/exit.png",""));
 		this.panel.setLayout( new GridBagLayout() );
 
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -375,7 +381,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		String shomedir = System.getProperty("user.home").concat(sfilesep)/*.concat("YouTube Downloads")*/.concat(sfilesep);
 		if (System.getProperty("user.home").equals("/home/knoedel")) shomedir = "/home/knoedel/YouTube Downloads/";
 		if (sfilesep.equals("\\")) sfilesep += sfilesep; // on m$-windows we need to escape the \
-		// TODO on m$-windows we need to surround the directory with " " othewise the user cannot create a directory within the dialog if the last directoryname contains a <space>
 		shomedir = shomedir.replaceAll(sfilesep.concat(sfilesep), sfilesep) ;
 //		debugoutput("file.separator: ".concat(System.getProperty("file.separator")).concat("  sfilesep: ".concat(sfilesep)));
 //		debugoutput("user.home: ".concat(System.getProperty("user.home")).concat("  shomedir: ".concat(shomedir)));
@@ -390,7 +395,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		gbc.gridwidth = 2;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		this.directorytextfield = new JTextField( shomedir, 80 );
-		// TODO if the user enters a directory rather than choosing one, the directory may not be exist -> ask user what to do 
+		// TODO if the user enters a directory rather than choosing one, the directory may not exist -> ask user what to do 
 		this.directorytextfield.setEnabled( false ); // dont let the user enter something for now -> changing that later - see this.textinputfield.getDocument().addDocumentListener(this);
 		this.directorytextfield.setFocusable( true );
 		this.directorytextfield.addActionListener( this );
@@ -410,37 +415,40 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		gbc.gridwidth = 2;
 		this.panel.add( this.middlepane, gbc );
 
-		final int RES_MIN = 240;
-		final int RES_MAX = 720;
-		final int RES_INIT = 480; 
-		this.slResolution = new JSlider(SwingConstants.HORIZONTAL, RES_MIN, RES_MAX, RES_INIT);
-		this.slResolution.addChangeListener(this);
-
-		this.slResolution.setMajorTickSpacing(120);
-		this.slResolution.setMinorTickSpacing(120);
-		this.slResolution.setPaintTicks(false);
-		this.slResolution.setPaintLabels(true);
-		this.slResolution.setSnapToTicks(true);
-		this.slResolution.setPaintTrack(false);
-		this.slResolution.setPreferredSize(new Dimension(40, 40));
+		this.hdbutton = new JRadioButton("HD"); this.hdbutton.setActionCommand("hd"); this.hdbutton.addActionListener(this); this.hdbutton.setToolTipText("1080p/720p");
+		this.stdbutton = new JRadioButton("Std"); this.stdbutton.setActionCommand("std"); this.stdbutton.addActionListener(this); this.stdbutton.setToolTipText("Standard");
+		this.ldbutton = new JRadioButton("LD"); this.ldbutton.setActionCommand("ld"); this.ldbutton.addActionListener(this); this.ldbutton.setToolTipText("240p");
+		
+		this.stdbutton.setSelected(true);
+		
+		ButtonGroup bgroup = new ButtonGroup();
+		bgroup.add(this.hdbutton);
+		bgroup.add(this.stdbutton);
+		bgroup.add(this.ldbutton);
+		
+		JPanel radiopanel = new JPanel(new GridLayout(1,0));
+		radiopanel.add(this.hdbutton);
+		radiopanel.add(this.stdbutton);
+		radiopanel.add(this.ldbutton);
 		gbc.gridx = 1;
 		gbc.gridy = 0;
-		gbc.gridheight = 1;
-		gbc.gridwidth = 1;
+		gbc.gridheight = 0;
+		gbc.gridwidth = 0;
 		gbc.fill = GridBagConstraints.NONE;
-		gbc.anchor = GridBagConstraints.WEST;
-		
-		//this.panel.add( this.slResolution, gbc );
+		gbc.anchor = GridBagConstraints.NORTHEAST;
+		this.panel.add( radiopanel, gbc );
 
 		JLabel hint = new JLabel( isgerman()?"(eingeben, reinkopieren, reinziehen von YT-Webadressen oder YT-Videobilder) URLs:":"(type in, paste in, drop in -> yt-webaddresses or yt-videoimages) URLs:");
 		gbc.fill = 0;
 		gbc.gridwidth = 0;
+		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
 		gbc.gridx = 0;
 		gbc.gridy = 4;
 		gbc.anchor = GridBagConstraints.WEST;
 		this.panel.add( hint, gbc );
+		
 		this.textinputfield = new JTextField( 30 );
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.gridx = 0;
@@ -451,6 +459,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.textinputfield.addActionListener( this );
 		this.textinputfield.getDocument().addDocumentListener(this);
 		this.panel.add( this.textinputfield, gbc );
+		
+		this.quitbutton = new JButton( "" ,createImageIcon("images/exit.png",""));		
 		gbc.gridx = 2;
 		gbc.gridy = 5;
 		gbc.gridwidth = 0;
@@ -495,14 +505,14 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		output(sv); debugoutput(sv);
 		output(""); // \n
 
-		// TODO ensure threads are running even if one ends with an Exception
+		// TODO ensure threads are running even if one ends with an (unhandled) Exception
 
 		JFCMainClient.sproxy = System.getenv("http_proxy");
 		if (JFCMainClient.sproxy==null) sproxy="";
 		sv = "env var http_proxy: ".concat(sproxy);
 		output(sv); debugoutput(sv);
 
-		// lets honor the upload limit of google (youtube)
+		// lets respect the upload limit of google (youtube)
 		// downloading is faster than viewing anyway so don't start more than four threads and don't play with the URL-strings please!!!
 		t1 = new YTDownloadThread(bDEBUG);
 		t1.start();
@@ -585,12 +595,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			e.printStackTrace();
 		}
 
-//		javax.swing.SwingUtilities.invokeLater( new Runnable() {
-//			public void run() {
-//				checkClientSocketStatus();
-//			}
-//		} );
-		
 	} // main()
 	
 	static void debugoutput (String s) {

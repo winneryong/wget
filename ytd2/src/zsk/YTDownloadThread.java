@@ -26,7 +26,7 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.net.UnknownHostException;
 
-// necessarily external libraries
+// necessary external libraries
 // http://hc.apache.org/downloads.cgi -> httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz
 // plus corresponding sources as Source Attachment within the Eclipse Project Properties
 import org.apache.http.HttpEntity;
@@ -34,19 +34,25 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.cookie.CookieOrigin;
+import org.apache.http.cookie.CookieSpec;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 
 /**
  * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g'` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
@@ -97,6 +103,7 @@ public class YTDownloadThread extends Thread {
 		
 		// http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !! "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java stay open and free
 		
+		// http://www.youtube.com/watch?v=WowZLe95WDY&feature=related	Tom Petty - country restricted (maybe torify?)
 		// http://www.youtube.com/watch?v=86OfBExGSE0&feature=related	URZ 720p
 		// http://www.youtube.com/watch?v=cNOP2t9FObw 					Blade 360 - 480
 		// http://www.youtube.com/watch?v=HvQBrM_i8bU					MZ 1000 Street Fighter
@@ -108,8 +115,22 @@ public class YTDownloadThread extends Thread {
 		HttpClient httpclient = null;
 		HttpHost proxy = null;
 		HttpHost target = null;
+		
+		HttpContext localContext = null;
 
 		try {
+			/*
+			HttpClient httpclient = new DefaultHttpClient();
+			
+			HttpGet httpget = new HttpGet("http://localhost:8080/"); 
+			HttpResponse response = httpclient.execute(httpget, localContext);
+			
+			CookieOrigin cookieOrigin = (CookieOrigin) localContext.getAttribute( ClientContext.COOKIE_ORIGIN);
+			System.out.println("Cookie origin: " + cookieOrigin);
+			CookieSpec cookieSpec = (CookieSpec) localContext.getAttribute( ClientContext.COOKIE_SPEC);
+			System.out.println("Cookie spec used: " + cookieSpec);
+			 */
+			
 			// determine http_proxy environment variable
 			if (!this.getProxy().equals("")) {
 
@@ -147,8 +168,10 @@ public class YTDownloadThread extends Thread {
 
         HttpResponse response = null;
         
+        localContext = new BasicHttpContext();
+        
 		try {
-			response = httpclient.execute(target,httpget);
+			response = httpclient.execute(target,httpget,localContext);
 		} catch (ClientProtocolException cpe) {
 			debugoutput(cpe.getMessage());
 		} catch (UnknownHostException uhe) {
@@ -159,6 +182,18 @@ public class YTDownloadThread extends Thread {
 		} catch (IllegalStateException ise) {
 			debugoutput(ise.getMessage());
 		}
+		//http://www.youtube.com/watch?v=86OfBExGSE0&feature=related
+		try {
+			CookieOrigin cookieOrigin = (CookieOrigin) localContext.getAttribute( ClientContext.COOKIE_ORIGIN);
+			CookieSpec cookieSpec = (CookieSpec) localContext.getAttribute( ClientContext.COOKIE_SPEC);
+			CookieStore cookieStore = (CookieStore) localContext.getAttribute( ClientContext.COOKIE_STORE) ;
+			debugoutput("HTTP Cookie origin: ".concat( cookieOrigin.toString()) );
+			debugoutput("HTTP Cookie spec used: ".concat( cookieSpec.toString() ));
+			debugoutput("HTTP Cookie store: ".concat( cookieStore.getCookies().toString( )));
+		} catch (NullPointerException npe) {
+			
+		}
+
 		try {
 			debugoutput("HTTP response status line:".concat( response.getStatusLine().toString()) );
 			for (int i = 0; i < response.getAllHeaders().length; i++) {
@@ -215,6 +250,7 @@ public class YTDownloadThread extends Thread {
             			sline = textreader.readLine();
             			try {
             				// this is what my wget command does:
+            				/*
             				if (sline.matches("(.*)generate_204(.*)")) {
             					sline = sline.replaceFirst("generate_204", "videoplayback");	debugoutput("URL: ".concat(sline));
             					sline = sline.replaceFirst("img.src = '", "");					debugoutput("URL: ".concat(sline));
@@ -223,23 +259,23 @@ public class YTDownloadThread extends Thread {
             					sline = sline.replaceAll("\\s", "");							debugoutput("URL: ".concat(sline));
             					this.sVideoURL = sline;
             				// this is what we should do (taking the host which is provided in the web page source)
-            				/*
+            				*/
             				String svURL0; String svURL1; String svURL2; String svURL3;
             				if (sline.matches("( *)var swfHTML =(.*)")) {
             					sline = sline.toLowerCase();
             					sline = sline.replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
-            					sline = sline.replaceFirst(".*\" : \"","\""); // just in case the ?: operator is used as ()?"":"" not ()?"" : ""
+            					sline = sline.replaceFirst(".*\":\"","\""); // just in case the ?: operator is used as ()?"":"" not ()?"" : ""
             					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
             					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
             					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
             					sline = sline.replaceFirst(".*url=http%3A%2F%2F", "url=http%3A%2F%2F");
-            					svURL0 = sline.replaceFirst(ssourcecodeurl.concat(ssourcecodeuri).concat(ssourcecodeurl),"");
+            					svURL0 = sline.replaceFirst(this.ssourcecodeurl.concat(this.ssourcecodeuri).concat(this.ssourcecodeurl),"");
             					svURL0 = sline.substring(0, svURL0.length());
-            					svURL0 = ssourcecodeurl.concat( svURL0.replaceAll(ssourcecodeurl, "") );
+            					svURL0 = this.ssourcecodeurl.concat( svURL0.replaceAll(this.ssourcecodeurl, "") );
             					debugoutput("svURL0: ".concat(svURL0));
             					
             					debugoutput("sline: ".concat(sline));
-            	*/
+            					//*/
             				} else if (sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
             					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
             				}
@@ -420,8 +456,9 @@ public class YTDownloadThread extends Thread {
 			try {
 				synchronized (JFCMainClient.frame.dlm) {
 //					debugoutput("going to sleep.");
-					JFCMainClient.frame.dlm.wait(2000); // check for new URLs (if they got pasted faster than threads are removing them)
+					JFCMainClient.frame.dlm.wait(1000); // check for new URLs (if they got pasted faster than threads removing them)
 //					debugoutput("woke up ".concat(this.getClass().getName()));
+					synchronized (JFCMainClient.bQuitrequested) { this.bisinterrupted = JFCMainClient.bQuitrequested; } // if quit was pressed while this threads works it would not get the InterruptedException and therefore prevent application shutdown 
 				}
 				// TODO check what kind of website the URL is from - this class can only handle YouTube-URLs ... we add other video sources later
 				this.sURL = JFCMainClient.getfirstURLFromList();
