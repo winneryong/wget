@@ -99,11 +99,9 @@ public class YTDownloadThread extends Thread {
 		debugoutput("start.");
 		
 		// TODO GUI option for proxy?
-		// TODO GUI option for 1080/720/480/360/240 p
-		
 		// http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !! "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java stay open and free
 		
-		// http://www.youtube.com/watch?v=WowZLe95WDY&feature=related	Tom Petty - country restricted (maybe torify?)
+		// http://www.youtube.com/watch?v=WowZLe95WDY&feature=related	Tom Petty And the Heartbreakers - Learning to Fly (wih lyrics)
 		// http://www.youtube.com/watch?v=86OfBExGSE0&feature=related	URZ 720p
 		// http://www.youtube.com/watch?v=cNOP2t9FObw 					Blade 360 - 480
 		// http://www.youtube.com/watch?v=HvQBrM_i8bU					MZ 1000 Street Fighter
@@ -182,7 +180,6 @@ public class YTDownloadThread extends Thread {
 		} catch (IllegalStateException ise) {
 			debugoutput(ise.getMessage());
 		}
-		//http://www.youtube.com/watch?v=86OfBExGSE0&feature=related
 		try {
 			CookieOrigin cookieOrigin = (CookieOrigin) localContext.getAttribute( ClientContext.COOKIE_ORIGIN);
 			CookieSpec cookieSpec = (CookieSpec) localContext.getAttribute( ClientContext.COOKIE_SPEC);
@@ -201,12 +198,12 @@ public class YTDownloadThread extends Thread {
 			}
 			// TODO youtube sends a "HTTP/1.1 303 See Other" response if you try to open a webpage that does not exist
 
-			// the first query of a browser is with an URL containing generate_204 which leads to an HTTP response code of (guess) 204! the next query is the same URL with videoplayback instead of generate_204 which leads to an HTTP response code of (guess again) .. no not 200! but 302 and in that response header there is a field Location with a different (host) which we can now request via HTTP GET and then we get a response of (guess :) yes .. 200 and the video resource in the body - whatever the girlsnboys at google had in mind developing this ping pong - we'll never now.
+			// the first request of a browser is with an URL containing generate_204 which leads to an HTTP response code of (guess) 204! the next query is the same URL with videoplayback instead of generate_204 which leads to an HTTP response code of (guess again) .. no not 200! but 302 and in that response header there is a field Location with a different (host) which we can now request via HTTP GET and then we get a response of (guess :) yes .. 200 and the video resource in the body - whatever the girlsnboys at google had in mind developing this ping pong - we'll never now.
 			// but because all nessesary URLs are provided in the source code we dont have to do the same requests as web-browsers do
 			// abort if HTTP response code is != 200, != 302 and !=204 - wrong URL?
-			if (!(rc = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)200(.*)")) & 
-					!(rc204 = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)204(.*)")) &
-					!(rc302 = response.getStatusLine().toString().matches("^(H|h)(T|t)(T|t)(P|p)(.*)302(.*)"))) {
+			if (!(rc = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)200(.*)")) & 
+					!(rc204 = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)204(.*)")) &
+					!(rc302 = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)302(.*)"))) {
 				debugoutput(response.getStatusLine().toString().concat(" ").concat(sURL));
 				output(response.getStatusLine().toString().concat(" \"").concat(this.sTitle).concat("\""));
 				return rc = rc & rc204 & rc302;
@@ -250,16 +247,16 @@ public class YTDownloadThread extends Thread {
             			sline = textreader.readLine();
             			try {
             				// this is what my wget command does:
-            				/*
+            				//*
             				if (sline.matches("(.*)generate_204(.*)")) {
             					sline = sline.replaceFirst("generate_204", "videoplayback");	debugoutput("URL: ".concat(sline));
             					sline = sline.replaceFirst("img.src = '", "");					debugoutput("URL: ".concat(sline));
             					sline = sline.replaceFirst("';", "");							debugoutput("URL: ".concat(sline));
             					sline = sline.replaceAll("\\\\", "");							debugoutput("URL: ".concat(sline));
             					sline = sline.replaceAll("\\s", "");							debugoutput("URL: ".concat(sline));
-            					this.sVideoURL = sline;
-            				// this is what we should do (taking the host which is provided in the web page source)
-            				*/
+            					this.sVideoURL = /*this.bDEBUG?null:*/sline;
+            				// this is what we should do (taking the URL from the webpage source)
+            				/*
             				String svURL0; String svURL1; String svURL2; String svURL3;
             				if (sline.matches("( *)var swfHTML =(.*)")) {
             					sline = sline.toLowerCase();
@@ -275,7 +272,7 @@ public class YTDownloadThread extends Thread {
             					debugoutput("svURL0: ".concat(svURL0));
             					
             					debugoutput("sline: ".concat(sline));
-            					//*/
+            					*/
             				} else if (sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
             					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
             				}

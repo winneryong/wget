@@ -48,11 +48,11 @@ import javax.swing.event.DocumentListener;
 
 /**
  * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
- * 847 java code lines
- * 358 empty/comment lines 
+ * 918 java code lines
+ * 366 empty/comment lines 
  *
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Tue Jan 11 08:50:06 CET 2011
+ * Sun Jan 23 12:29:39 CET 2011
  * Linux section60 2.6.35-24-generic #42-Ubuntu SMP Thu Dec 2 02:41:37 UTC 2010 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=10.10
@@ -81,7 +81,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110120_2345 by MrKnödelmann";
+	public static final String szVersion = "V20110121_1225 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -92,7 +92,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	public static String sproxy = null;
 	
-	public static final String szDLSTATE = "downloading ";
+	public static String szDLSTATE = "downloading ";
 	
 	// TODO downlaod via cli only? does this make sense if its all about videos?!
 			 
@@ -426,6 +426,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		bgroup.add(this.stdbutton);
 		bgroup.add(this.ldbutton);
 		
+		this.hdbutton.setEnabled(false); // deactivated until implemented correctly
+		this.ldbutton.setEnabled(false);
+		
 		JPanel radiopanel = new JPanel(new GridLayout(1,0));
 		radiopanel.add(this.hdbutton);
 		radiopanel.add(this.stdbutton);
@@ -499,6 +502,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		frame.addComponentsToPane( frame.getContentPane() );
 		frame.pack();
 		frame.setVisible( true );
+		
+		JFCMainClient.szDLSTATE = isgerman()?"herunterladen ":JFCMainClient.szDLSTATE;
 		
 		sv = "version: ".concat( szVersion ).concat(bDEBUG?" DEBUG ":"");
 		sv = isgerman()?sv.replaceFirst("by", "von"):sv;
@@ -722,57 +727,71 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			DataFlavor[] flavors = tr.getTransferDataFlavors();
 			DataFlavor fl = null;
 			String str = "";
+			// DEBUG http://www.youtube.com/watch?v=SNx0Yw7xFq8&feature=related
+			// there is something different with Firefox on GNU/Linux (64Bit)
+			
 			debugoutput("DataFlavors found: ".concat(Integer.toString( flavors.length )));
-			for (int i = 0; i < flavors.length; i++) {
-				fl = flavors[i];
-				if (fl.isFlavorTextType() || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") ||	fl.isMimeTypeEqual("text/uri-list"))  {
-					try {dtde.acceptDrop (dtde.getDropAction());} catch (Throwable t) {}
-					try {
-						if (tr.getTransferData(fl) instanceof InputStreamReader) {
-//							debugoutput("Text-InputStream");
-							BufferedReader textreader = new BufferedReader( (Reader) tr.getTransferData(fl) );
-							String sline = "";
-							try {
-								while (sline != null) {
-									sline = textreader.readLine();
-									if (sline != null) str += sline;
-								}
-							} catch (Exception e) {
-							} finally {
-								textreader.close();
-							}
-							str = str.replaceAll("<[^>]*>", ""); // remove HTML tags, esp. a hrefs - ignore HTML characters like &szlig; (which are no tags)
-						} else if (tr.getTransferData(fl) instanceof InputStream) {
-//							debugoutput("Byte-InputStream");
-							InputStream input = new BufferedInputStream((InputStream) tr.getTransferData(fl));
-							int idata = input.read();
-							String sresult = "";
-							while (idata != -1) {
-								if (idata!=0)
-									sresult += new Character((char) idata).toString();
-								idata = input.read();
-							} // while
-							debugoutput(sresult);
-						} else {
-							str = tr.getTransferData(fl).toString();
-						}} catch (IOException ioe) {}
-						catch (UnsupportedFlavorException ufe) {}
-					
-					// this has to done on GNU/Linux because the URLs contain null(?) characters and therefore get not cut out of the textfield automaticlly 
-					str = str.replaceAll(this.snotsourcecodeurl.concat("*"), "");
-					
-					debugoutput("drop event text: ".concat(str).concat(" (").concat(fl.getMimeType()).concat(") ")) ;
-					// append text to textfield - same as user drops text/url into this field
-					// except special characaters -> from http://de.wikipedia.org/wiki/GNU-Projekt („GNU is not Unix“)(&bdquo;GNU is not Unix&ldquo;)
-					// two drops from same source .. one time in textfield and elsewhere - maybe we change that later?!
-					synchronized (JFCMainClient.frame.textinputfield) {
-						JFCMainClient.frame.textinputfield.setText(JFCMainClient.frame.textinputfield.getText().concat(str));
-					}
-				} else {
-					String sv = "drop event unknown type: ".concat( fl.getHumanPresentableName());
-					output(sv); debugoutput(sv);
+		for (int i = 0; i < flavors.length; i++) {
+			fl = flavors[i];
+			if (fl.isFlavorTextType() /* || fl.isMimeTypeEqual("text/html") || fl.isMimeTypeEqual("application/x-java-url") || fl.isMimeTypeEqual("text/uri-list")*/) {
+				try {
+					dtde.acceptDrop(dtde.getDropAction());
+				} catch (Throwable t) {
 				}
-			} // for
+				try {
+					if (tr.getTransferData(fl) instanceof InputStreamReader) {
+						debugoutput("Text-InputStream");
+						BufferedReader textreader = new BufferedReader(
+								(Reader) tr.getTransferData(fl));
+						String sline = "";
+						try {
+							while (sline != null) {
+								sline = textreader.readLine();
+								if (sline != null)
+									str += sline;
+							}
+						} catch (Exception e) {
+						} finally {
+							textreader.close();
+						}
+						str = str.replaceAll("<[^>]*>", ""); // remove HTML tags, especially a hrefs - ignore HTML characters like &szlig; (which are no tags)
+					} else if (tr.getTransferData(fl) instanceof InputStream) {
+						debugoutput("Byte-InputStream");
+						InputStream input = new BufferedInputStream(
+								(InputStream) tr.getTransferData(fl));
+						int idata = input.read();
+						String sresult = "";
+						while (idata != -1) {
+							if (idata != 0)
+								sresult += new Character((char) idata)
+										.toString();
+							idata = input.read();
+						} // while
+						debugoutput("sresult: ".concat(sresult));
+					} else {
+						str = tr.getTransferData(fl).toString();
+					}
+				} catch (IOException ioe) {
+				} catch (UnsupportedFlavorException ufe) {
+				}
+
+				debugoutput("drop event text: ".concat(str).concat(" (").concat(fl.getMimeType()).concat(") "));
+				// insert text into textfield - almost the same as user drops text/url into this field
+				// except special characaters -> from http://de.wikipedia.org/wiki/GNU-Projekt („GNU is not Unix“)(&bdquo;GNU is not Unix&ldquo;)
+				// two drops from same source .. one time in textfield and elsewhere - maybe we change that later?!
+				if (str.matches(szYTREGEX.concat("(.*)"))) {
+					synchronized (JFCMainClient.frame.textinputfield) {
+						JFCMainClient.frame.textinputfield.setText(str.concat(JFCMainClient.frame.textinputfield.getText()));
+					}
+					debugoutput("breaking for-loop with str: ".concat(str));
+					break;
+				}
+			} else {
+				String sv = "drop event unknown type: ".concat(fl.getHumanPresentableName());
+				output(sv);
+				debugoutput(sv);
+			}
+		} // for
 
 		dtde.dropComplete(true);
 	} // drop()

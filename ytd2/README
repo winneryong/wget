@@ -76,10 +76,14 @@ TODO
 
 CHANGES
 
+  V20110121
+    2011-01-21  bug fix (drop events from Firefox on GNU/Linux)
+                minor changes in GUI
+    2011-01-12  proxy can be set with input
+                german in GUI text if JRE environment is german
+  	
   V20110111
     2011-01-11  bug fixes (better handling of drop events)
-                proxy can be set with input
-                german in GUI text if JRE environment is german
 
   V20110103
     2011-01-03  URLs with a playlist now work
