@@ -80,7 +80,7 @@ CHANGES
     2011-01-21  bug fix (drop events from Firefox on GNU/Linux)
                 minor changes in GUI
     2011-01-12  proxy can be set with input
-                german in GUI text if JRE environment is german
+                german text in GUI if JRE environment is german
   	
   V20110111
     2011-01-11  bug fixes (better handling of drop events)

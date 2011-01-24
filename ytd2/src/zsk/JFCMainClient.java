@@ -88,13 +88,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	private static final String newline = "\n";
 	
 	// more or less output
-	static boolean bDEBUG = true;
+	static boolean bDEBUG = false;
 	
 	public static String sproxy = null;
 	
 	public static String szDLSTATE = "downloading ";
 	
-	// TODO downlaod via cli only? does this make sense if its all about videos?!
+	// TODO download via cli only? does this make sense if its all about videos?!
 			 
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
 	private static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
@@ -307,7 +307,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 	void cli(String scmd) {
 		if (scmd.matches("^(help|[-/][h|\\?])")) {
-			addTextToConsole("debug[ on| off]\t: more or less (internal) output");
+			addTextToConsole("debug[ on| off]\t\t: more or less (internal) output");
 			addTextToConsole("help|-h|/?]\t\t: show this text");
 			addTextToConsole("quit|exit\t\t: shutdown application");
 			addTextToConsole("proxy[ URL]\t\t: get or set proxy variable");
@@ -788,7 +788,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 				}
 			} else {
 				String sv = "drop event unknown type: ".concat(fl.getHumanPresentableName());
-				output(sv);
+				//output(sv);
 				debugoutput(sv);
 			}
 		} // for
