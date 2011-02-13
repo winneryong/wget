@@ -48,12 +48,12 @@ import javax.swing.event.DocumentListener;
 
 /**
  * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
- * 918 java code lines
- * 366 empty/comment lines 
+ * 999 java code lines
+ * 392 empty/comment lines 
  *
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Sun Jan 23 12:29:39 CET 2011
- * Linux section60 2.6.35-24-generic #42-Ubuntu SMP Thu Dec 2 02:41:37 UTC 2010 x86_64 GNU/Linux
+ * Sun Feb 13 01:08:18 CET 2011
+ * Linux section60 2.6.35-25-generic #44-Ubuntu SMP Fri Jan 21 17:40:44 UTC 2011 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=10.10
  * DISTRIB_CODENAME=maverick
@@ -81,29 +81,31 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110121_1225 by MrKnödelmann";
+	public static final String szVersion = "V20110213_0017 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
-	// more or less output
-	static boolean bDEBUG = false;
+	// more or less (internal) output
+	static boolean bDEBUG = true;
 	
 	public static String sproxy = null;
 	
 	public static String szDLSTATE = "downloading ";
 	
-	// TODO download via cli only? does this make sense if its all about videos?!
+	// TODO download with cli only? does this make sense if its all about videos?!
 			 
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
-	private static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
+	public static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
 	// something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/   the last / is for marking the end of host, it does not belong to the hostpart
-	public static final String szHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
-
+	public static final String szYTHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
+	
+	public static final String szPROXYREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$";
+	// RFC-1123 hostname [with protocol]
 	private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 	
-	// all chars that do not belong to an HTTP URL - could be written shorter??
+	// all characters that do not belong to an HTTP URL - could be written shorter??
 	final String snotsourcecodeurl = "[^(a-z)^(A-Z)^(0-9)^%^&^=^\\.^:^/^\\?^_^-]";
 	
 	static YTDownloadThread t1;
@@ -113,8 +115,22 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	
 	static JFCMainClient frame = null;
 
-	public static Boolean bQuitrequested = false;
+	private static Boolean bQuitrequested = false;
 	
+	public static synchronized Boolean getbQuitrequested() {
+		return bQuitrequested;
+	}
+
+
+	public static synchronized void setbQuitrequested(Boolean bQuitrequested) {
+		JFCMainClient.bQuitrequested = bQuitrequested;
+	}
+	
+	public static synchronized int getIdlbuttonstate() {
+		return (JFCMainClient.frame.hdbutton.isSelected()?4:0) + (JFCMainClient.frame.stdbutton.isSelected()?2:0) + (JFCMainClient.frame.ldbutton.isSelected()?1:0);
+	}
+
+
 	JPanel panel = null;
 	JSplitPane middlepane = null;
 	JTextArea textarea = null;
@@ -293,6 +309,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			return;
 		}
 		
+		// let the user choose another download resolution
 		if (e.getActionCommand().equals(this.hdbutton.getActionCommand()) || e.getActionCommand().equals(this.stdbutton.getActionCommand()) || e.getActionCommand().equals(this.ldbutton.getActionCommand()) ) {
 			debugoutput("trying: ".concat(e.getActionCommand()));
 			return;
@@ -307,7 +324,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 	void cli(String scmd) {
 		if (scmd.matches("^(help|[-/][h|\\?])")) {
-			addTextToConsole("debug[ on| off]\t\t: more or less (internal) output");
+			addTextToConsole("debug[ on| off]\t: more or less (internal) output");
 			addTextToConsole("help|-h|/?]\t\t: show this text");
 			addTextToConsole("quit|exit\t\t: shutdown application");
 			addTextToConsole("proxy[ URL]\t\t: get or set proxy variable");
@@ -323,7 +340,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			 
 			addTextToConsole("debug: ".concat(Boolean.toString( JFCMainClient.bDEBUG )));
 
-			// Exception in thread "AWT-EventQueue-0" java.lang.ClassCastException: java.lang.Thread cannot be cast to zsk.YTDownloadThread
 			try {JFCMainClient.t1.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t2.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t3.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
@@ -331,10 +347,17 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		} else if (scmd.matches("^(quit|exit)"))
 			this.shutdownAppl();
 		else if (scmd.matches("^(proxy)( .*)?")) {// TODO proxy server url should match host:port regex
-			if (!scmd.matches("^(proxy)$"))
-				JFCMainClient.sproxy = scmd.replaceFirst("proxy ", "");
+			if (!scmd.matches("^(proxy)$")) {
+				//if (scmd.replaceFirst("proxy ", "").matches(JFCMainClient.szPROXYREGEX))
+					JFCMainClient.sproxy = scmd.replaceFirst("proxy ", "");
+				//else
+				//	addTextToConsole("proxy string does not match hostname specification");
+			}
 			addTextToConsole("proxy: ".concat(JFCMainClient.sproxy));
-		} else addTextToConsole("? (try help|-h|/?)");
+		} else 
+			addTextToConsole("? (try help|-h|/?)");
+		
+		// TODO an an option to prevent downloading of files but rather show head information like content-type and size
 	} // cli()
 
 	/**
@@ -416,7 +439,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.panel.add( this.middlepane, gbc );
 
 		this.hdbutton = new JRadioButton("HD"); this.hdbutton.setActionCommand("hd"); this.hdbutton.addActionListener(this); this.hdbutton.setToolTipText("1080p/720p");
-		this.stdbutton = new JRadioButton("Std"); this.stdbutton.setActionCommand("std"); this.stdbutton.addActionListener(this); this.stdbutton.setToolTipText("Standard");
+		this.stdbutton = new JRadioButton("Std"); this.stdbutton.setActionCommand("std"); this.stdbutton.addActionListener(this); this.stdbutton.setToolTipText("480p/360p");
 		this.ldbutton = new JRadioButton("LD"); this.ldbutton.setActionCommand("ld"); this.ldbutton.addActionListener(this); this.ldbutton.setToolTipText("240p");
 		
 		this.stdbutton.setSelected(true);
@@ -426,8 +449,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		bgroup.add(this.stdbutton);
 		bgroup.add(this.ldbutton);
 		
-		this.hdbutton.setEnabled(false); // deactivated until implemented correctly
-		this.ldbutton.setEnabled(false);
+		this.hdbutton.setEnabled(true);
+		this.ldbutton.setEnabled(true);
 		
 		JPanel radiopanel = new JPanel(new GridLayout(1,0));
 		radiopanel.add(this.hdbutton);
@@ -495,7 +518,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 */
 	static void createAndShowGUI() {
 		setDefaultLookAndFeelDecorated(false);
-		String sv = "YTD2 ".concat(szVersion).concat(" ").concat("https://sourceforge.net/projects/ytd2/");
+		String sv = "YTD2 ".concat(szVersion).concat(" ").concat("http://sourceforge.net/projects/ytd2/");
 		sv = isgerman()?sv.replaceFirst("by", "von"):sv;
 		frame = new JFCMainClient( sv );
 		frame.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
@@ -518,7 +541,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		output(sv); debugoutput(sv);
 
 		// lets respect the upload limit of google (youtube)
-		// downloading is faster than viewing anyway so don't start more than four threads and don't play with the URL-strings please!!!
+		// downloading is faster than viewing anyway so don't start more than four threads and don't play around with the URL-strings please!!!
 		t1 = new YTDownloadThread(bDEBUG);
 		t1.start();
 		t2 = new YTDownloadThread(bDEBUG);
@@ -527,6 +550,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		t3.start();
 		t4 = new YTDownloadThread(bDEBUG);
 		t4.start();
+		
+		output(""); // \n
+		output(isgerman()?"besuche sf.net/projects/ytd2/forums für irgendwelche Tipps, Vorschläge, Neuerungen, Fragen!":"visit sf.net/projects/ytd2/forums for any hints, suggestions, features, questions!");
 	} // createAndShowGUI()
 	
 	
@@ -569,7 +595,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		case ComponentEvent.COMPONENT_SHOWN:
 			break;
 		}
-	}
+	} // processComponentEvent
 	
 	/**
 	 * main entry point
@@ -647,14 +673,14 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		String sinput = frame.textinputfield.getText(); // dont call .toLowerCase() !
 
 		// TODO this can probably be done better - replace input so URLs get extracted without user activity (works even if URLs are spread across multiple lines)
-		sinput = sinput.replaceAll("&feature=fvwp&", "&"); // after that text could be another yt-URL or more query_string options
+		sinput = sinput.replaceAll("&feature=fvwp&", "&"); // after that text there could be another yt-URL or more query_string options
 		sinput = sinput.replaceAll("&feature=fvwphttp", "http");
 		sinput = sinput.replaceAll("&feature=fvwp", "");
-		sinput = sinput.replaceAll("&feature=relatedhttp", "http"); // if somebody writes a regex for notanytURL as replacement for fvwp|related ... ;)
 		sinput = sinput.replaceAll("&feature=related&", "&");
+		sinput = sinput.replaceAll("&feature=relatedhttp", "http");
 		sinput = sinput.replaceAll("&feature=related", "");
 		sinput = sinput.replaceAll("&feature=mfu_in_order&list=[A-Z]{1,2}", "");
-		sinput = sinput.replaceAll("&feature=[A-Z]{1,2}&list=([A-Za-z0-9]*)&index=[0-9]", "");
+		sinput = sinput.replaceAll("&feature=[a-zA-Z]{1,2}&list=([a-zA-Z0-9]*)&index=[0-9]", "");
 		sinput = sinput.replaceAll("&NR=[0-9]&", "&");
 		sinput = sinput.replaceAll("&NR=[0-9]http", "http");
 		sinput = sinput.replaceAll("&NR=[0-9]", "");
@@ -727,8 +753,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			DataFlavor[] flavors = tr.getTransferDataFlavors();
 			DataFlavor fl = null;
 			String str = "";
-			// DEBUG http://www.youtube.com/watch?v=SNx0Yw7xFq8&feature=related
-			// there is something different with Firefox on GNU/Linux (64Bit)
 			
 			debugoutput("DataFlavors found: ".concat(Integer.toString( flavors.length )));
 		for (int i = 0; i < flavors.length; i++) {

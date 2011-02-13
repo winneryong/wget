@@ -64,8 +64,7 @@ RUNNING
 
 TODO
   
-  remove remaining text from input field after URL was cut out
-  GUI option for proxy/resolution
+  GUI option for proxy
   correct handling of directories for download (esp. on M$-Windows)
 	
   maybe: Java Web Start, translated GUI (or no text at all),
@@ -76,6 +75,10 @@ TODO
 
 CHANGES
 
+  V201102
+    2011-02-13  video resolution can be selected
+    2011-02-05  files get renamed if download was canceled
+                
   V20110121
     2011-01-21  bug fix (drop events from Firefox on GNU/Linux)
                 minor changes in GUI
