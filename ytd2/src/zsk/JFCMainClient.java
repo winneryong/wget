@@ -81,7 +81,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110213_0017 by MrKnödelmann";
+	public static final String szVersion = "V20110213_1656 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -405,8 +405,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		if (System.getProperty("user.home").equals("/home/knoedel")) shomedir = "/home/knoedel/YouTube Downloads/";
 		if (sfilesep.equals("\\")) sfilesep += sfilesep; // on m$-windows we need to escape the \
 		shomedir = shomedir.replaceAll(sfilesep.concat(sfilesep), sfilesep) ;
-//		debugoutput("file.separator: ".concat(System.getProperty("file.separator")).concat("  sfilesep: ".concat(sfilesep)));
-//		debugoutput("user.home: ".concat(System.getProperty("user.home")).concat("  shomedir: ".concat(shomedir)));
+		debugoutput("file.separator: ".concat(System.getProperty("file.separator")).concat("  sfilesep: ".concat(sfilesep)));
+		debugoutput("user.home: ".concat(System.getProperty("user.home")).concat("  shomedir: ".concat(shomedir)));
 
 		debugoutput("os.name: ".concat(System.getProperty("os.name")));
 		debugoutput("os.arch: ".concat(System.getProperty("os.arch")));

@@ -380,7 +380,7 @@ public class YTDownloadThread extends Thread {
             			while (!this.bisinterrupted && iBytesRead>0) {
             				iBytesRead = binaryreader.read(bytes);
             				iBytesReadSum += iBytesRead;
-            				// every x% of the download drop a line 
+            				// drop a line every x% of the download 
             				if ( (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks) > iPercentage ) {
             					iPercentage = (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks);
             					sNewURL = JFCMainClient.szDLSTATE.concat("(").concat(Long.toString(iPercentage).concat(" %) ").concat(this.sURL));
@@ -395,12 +395,30 @@ public class YTDownloadThread extends Thread {
             			
             			// rename files if download was interrupted before completion of download
             			if (this.bisinterrupted && iBytesReadSum<iBytesMax) {
+            				try {
+            					// this part is especially for our M$-Windows users because of the different behavior of File.renameTo() in contrast to non-windows
+            					// see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298  and others
+            					// even with Java 1.6.0_22 the renameTo() does not work on M$-Windows! 
+            					fos.close();
+            				} catch (Exception e) {
+            				}
+//            				System.gc(); // we don't have to do this but to be sure the file handle gets released we do a thread sleep 
+            				try {
+            					Thread.sleep(50);
+            				} catch (InterruptedException e) {
+            				}
+    				         
+            				// this part runs on *ix platforms without closing the FileOutputStream explicitly
             				httpclient.getConnectionManager().shutdown(); // otherwise binaryreader.close() would cause the entire datastream to be transmitted 
             				debugoutput(String.format("download canceled. (%d)",(iBytesRead)));
             				changeFileNamewith("CANCELED.");
             				String smsg = "renaming unfinished file to: ".concat( this.getFileName() );
             				output(smsg); debugoutput(smsg);
-            				f.renameTo(new File( this.getFileName()));
+            				
+            				if (!f.renameTo(new File( this.getFileName()))) {
+            					smsg = "error renaming unfinished file to: ".concat( this.getFileName() );
+                				output(smsg); debugoutput(smsg);
+            				}
             			}
             			debugoutput("done writing.");
             		} catch (FileNotFoundException fnfe) {
@@ -457,16 +475,31 @@ public class YTDownloadThread extends Thread {
 	} // downloadone()
 
 	private void changeFileNamewith(String string) {
-		String src = "";
-		String[] srenfilename = this.getFileName().split(System.getProperty("file.separator"));
+		File f = null;
+		Integer idupcount = 0;
+		String sfilesep = System.getProperty("file.separator");
+		if (sfilesep.equals("\\")) sfilesep += sfilesep; // on m$-windows we need to escape the \
+
+		String sdirectorychoosed="";
+		String[] srenfilename = this.getFileName().split(sfilesep);
 		
-		srenfilename[srenfilename.length-1] = string.concat(srenfilename[srenfilename.length-1]); // filename will be prepended with parameter string
+		try {
+			for (int i = 0; i < srenfilename.length-1; i++) {
+				sdirectorychoosed += srenfilename[i].concat((i<srenfilename.length-1)?sfilesep:""); // constructing folder where file is saved now (could be changed in GUI already)
+			}
+		} catch (ArrayIndexOutOfBoundsException aioobe) {}
 		
-		for (String s : srenfilename) {
-			src += s.concat(System.getProperty("file.separator")); 
-		}
-		src = src.substring(0, src.length()-1); // cut off last file.separator
-		this.setFileName(src);
+		String sfilename = srenfilename[srenfilename.length-1];
+		debugoutput("changeFileNamewith() sfilename: ".concat(sfilename));
+		do {
+			 // filename will be prepended with a parameter string and possibly a duplicate counter
+			f = new File(sdirectorychoosed, string.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(sfilename));
+			idupcount += 1;
+		} while (f.exists());
+		
+		debugoutput("changeFileNamewith() new filename: ".concat(f.getAbsolutePath()));
+		this.setFileName(f.getAbsolutePath());
+		
 	} // changeFileNamewith
 
 	private String getProxy() {
