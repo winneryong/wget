@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.Vector;
 // necessary external libraries
 // http://hc.apache.org/downloads.cgi -> httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz (or any later version?!)
 // plus corresponding sources as Source Attachment within the Eclipse Project Properties
@@ -54,7 +55,7 @@ import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.BasicHttpContext;
+//import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 
 /**
@@ -73,16 +74,26 @@ public class YTDownloadThread extends Thread {
 	final String ssourcecodeurl = "http://";
 	final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
 
-	private String sURL = null;				// main URL (youtube start web page)
-	private String sTitle = null;			// will be used as filename
-	private String sFilenameResPart = null;	// can contain a string that prepends the filename
-	private String sVideoURL = null;		// one video web resource
-	private String s403VideoURL = null;		// the video URL which we can use as fallback to my wget call
-	private String sNextVideoURL = null;	// will be downloaed after 204
-	private String sFileName = null;		// contains the absolute filename
-	//private CookieStore bcs = null;			// contains cookies after first HTTP GET
-	private boolean bisinterrupted = false; // basically the same as Thread.isInterrupted()
-	private int iRecursionCount = -1;		// counted in downloadone() for the 3 webrequest to one video
+	String sURL = null;				// main URL (youtube start web page)
+	String sTitle = null;			// will be used as filename
+	String sFilenameResPart = null;	// can contain a string that prepends the filename
+	String sVideoURL = null;		// one video web resource
+	String s403VideoURL = null;		// the video URL which we can use as fallback to my wget call
+	Vector<String> sNextVideoURL = new Vector<String>();	// list of URLs from webpage source
+	String sFileName = null;		// contains the absolute filename
+	//CookieStore bcs = null;			// contains cookies after first HTTP GET
+	boolean bisinterrupted = false; // basically the same as Thread.isInterrupted()
+	int iRecursionCount = -1;		// counted in downloadone() for the 3 webrequest to one video
+
+	String 				sContentType = null;
+	BufferedReader		textreader = null;
+	BufferedInputStream binaryreader = null;
+	HttpGet				httpget = null;
+	HttpClient			httpclient = null;
+	HttpHost			proxy = null;
+	HttpHost			target = null;
+	HttpContext			localContext = null;
+    HttpResponse		response = null;
 	
 	public YTDownloadThread(boolean bD) {
 		super();
@@ -120,20 +131,13 @@ public class YTDownloadThread extends Thread {
 		
 		// lately found: http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
 		// using local squid to save download time for tests
-		
-		HttpGet			httpget = null;
-		HttpClient		httpclient = null;
-		HttpHost		proxy = null;
-		HttpHost		target = null;
-		HttpContext		localContext = null;
-        HttpResponse	response = null;
 
 		try {
 			// determine http_proxy environment variable
 			if (!this.getProxy().equals("")) {
 
 				String sproxy = JFCMainClient.sproxy.toLowerCase().replaceFirst("http://", "") ;
-				proxy = new HttpHost( sproxy.replaceFirst(":(.*)", ""), Integer.parseInt( sproxy.replaceFirst("(.*):", "")), "http");
+				this.proxy = new HttpHost( sproxy.replaceFirst(":(.*)", ""), Integer.parseInt( sproxy.replaceFirst("(.*):", "")), "http");
 
 				SchemeRegistry supportedSchemes = new SchemeRegistry();
 				supportedSchemes.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
@@ -147,33 +151,36 @@ public class YTDownloadThread extends Thread {
 				ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, supportedSchemes);
 
 				// with proxy
-				httpclient = new DefaultHttpClient(ccm, params);
-				httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-				httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
+				this.httpclient = new DefaultHttpClient(ccm, params);
+				this.httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, this.proxy);
+				this.httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
 			} else {
 				// without proxy
-				httpclient = new DefaultHttpClient();
-				httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
+				this.httpclient = new DefaultHttpClient();
+				this.httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
 			}
-			httpget = new HttpGet( getURI(sURL) );			
-			target = new HttpHost( getHost(sURL), 80, "http" );
+			this.httpget = new HttpGet( getURI(sURL) );			
+			this.target = new HttpHost( getHost(sURL), 80, "http" );
 		} catch (Exception e) {
 			debugoutput(e.getMessage());
 		}
 		
-        debugoutput("executing request: ".concat( httpget.getRequestLine().toString()) );
-        debugoutput("uri: ".concat( httpget.getURI().toString()) );
-        debugoutput("host: ".concat( target.getHostName() ));
+        debugoutput("executing request: ".concat( this.httpget.getRequestLine().toString()) );
+        debugoutput("uri: ".concat( this.httpget.getURI().toString()) );
+        debugoutput("host: ".concat( this.target.getHostName() ));
         debugoutput("using proxy: ".concat( this.getProxy() ));
         
-        localContext = new BasicHttpContext();
-        //if (this.bcs == null) this.bcs = new BasicCookieStore(); // make cookies persistent, otherwise they would be stored in a HttpContext but get lost after calling org.apache.http.impl.client.AbstractHttpClient.execute(HttpHost target, HttpRequest request, HttpContext context)
-		//((DefaultHttpClient) httpclient).setCookieStore(this.bcs); // cast to AbstractHttpclient would be best match because DefaultHttpClass is a subclass of AbstractHttpClient
-        // we dont need cookies at all because the download runs even without it (like my wget does) - in fact its blocks downloading of videos from different webpages, because we do not handle the bcs for every URL (downloading of one video with different resolutions does work)
+        // we dont need cookies at all because the download runs even without it (like my wget does) - in fact it blocks downloading videos from different webpages, because we do not handle the bcs for every URL (downloading of one video with different resolutions does work)
+        /*
+        this.localContext = new BasicHttpContext();
+        if (this.bcs == null) this.bcs = new BasicCookieStore(); // make cookies persistent, otherwise they would be stored in a HttpContext but get lost after calling org.apache.http.impl.client.AbstractHttpClient.execute(HttpHost target, HttpRequest request, HttpContext context)
+		((DefaultHttpClient) httpclient).setCookieStore(this.bcs); // cast to AbstractHttpclient would be best match because DefaultHttpClass is a subclass of AbstractHttpClient
+		*/
+        
         // TODO maybe we save the video IDs that were downloaded to avoid downloading the same video again? (or we dont to let the user download different resolutions of the same video)
        
 		try {
-			response = httpclient.execute(target,httpget,localContext);
+			this.response = this.httpclient.execute(this.target,this.httpget,this.localContext);
 		} catch (ClientProtocolException cpe) {
 			debugoutput(cpe.getMessage());
 		} catch (UnknownHostException uhe) {
@@ -200,7 +207,7 @@ public class YTDownloadThread extends Thread {
 		*/
 
 		try {
-			debugoutput("HTTP response status line:".concat( response.getStatusLine().toString()) );
+			debugoutput("HTTP response status line:".concat( this.response.getStatusLine().toString()) );
 			//for (int i = 0; i < response.getAllHeaders().length; i++) {
 			//	debugoutput(response.getAllHeaders()[i].getName().concat("=").concat(response.getAllHeaders()[i].getValue()));
 			//}
@@ -210,21 +217,21 @@ public class YTDownloadThread extends Thread {
 			// but because all nessesary URLs are provided in the source code we dont have to do the same requests as web-browsers do
 			// abort if HTTP response code is != 200, != 302 and !=204 - wrong URL?
 			// make one exception for 403 - switch to old method of videplayback instead of generate_204
-			if (!(rc = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)200(.*)")) & 
-					!(rc204 = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)204(.*)")) &
-					!(rc302 = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)302(.*)")) &
-					!(rc403 = response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)403(.*)"))) {
-				debugoutput(response.getStatusLine().toString().concat(" ").concat(sURL));
-				output(response.getStatusLine().toString().concat(" \"").concat(this.sTitle).concat("\""));
+			if (!(rc = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)200(.*)")) & 
+					!(rc204 = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)204(.*)")) &
+					!(rc302 = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)302(.*)")) &
+					!(rc403 = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)403(.*)"))) {
+				debugoutput(this.response.getStatusLine().toString().concat(" ").concat(sURL));
+				output(this.response.getStatusLine().toString().concat(" \"").concat(this.sTitle).concat("\""));
 				return(rc & rc204 & rc302);
 			}
 			if (rc204) {
-				debugoutput("last response code==204 - download: ".concat(this.sNextVideoURL));
-				rc = downloadone(this.sNextVideoURL);
+				debugoutput("last response code==204 - download: ".concat(this.sNextVideoURL.get(0)));
+				rc = downloadone(this.sNextVideoURL.get(0));
 				return(rc);
 			}
 			if (rc302) 
-				debugoutput("location from HTTP Header: ".concat(response.getFirstHeader("Location").toString()));
+				debugoutput("location from HTTP Header: ".concat(this.response.getFirstHeader("Location").toString()));
 			if (rc403) {
 				String smsg = "falling back to former download method."; 
 				debugoutput(smsg); output(smsg);
@@ -239,19 +246,17 @@ public class YTDownloadThread extends Thread {
 		
 		HttpEntity entity = null;
         try {
-            entity = response.getEntity();
+            entity = this.response.getEntity();
         } catch (NullPointerException npe) {
         }
         
         // try to read HTTP response body
         if (entity != null) {
-        	BufferedReader textreader = null;
-        	BufferedInputStream binaryreader = null;
 			try {
-				if (response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("^text/html(.*)"))
-					textreader = new BufferedReader(new InputStreamReader(entity.getContent()));
+				if (this.response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("^text/html(.*)"))
+					this.textreader = new BufferedReader(new InputStreamReader(entity.getContent()));
 				else
-					binaryreader = new BufferedInputStream( entity.getContent());
+					this.binaryreader = new BufferedInputStream( entity.getContent());
 			} catch (IllegalStateException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
@@ -259,188 +264,15 @@ public class YTDownloadThread extends Thread {
 			}
             try {
             	// test if we got a webpage
-            	String sContentType = response.getFirstHeader("Content-Type").getValue().toLowerCase();
-            	if (sContentType.matches("^text/html(.*)")) {
-            		// read lines one by one and search for video URL
-            		String sline = "";
-            		while (sline != null) {
-            			sline = textreader.readLine();
-            			try {
-            				if (this.iRecursionCount==0 && sline.matches("(.*)generate_204(.*)")) {
-            					sline = sline.replaceFirst("img.src = '", "");					//debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceFirst("';", "");							//debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceAll("\\\\", "");							//debugoutput("URL: ".concat(sline));
-            					sline = sline.replaceAll("\\s", "");							debugoutput("img.src URL: ".concat(sline));
-            					this.s403VideoURL = sline.replaceFirst("generate_204", "videoplayback");	//debugoutput("URL: ".concat(sline)); // this is what my wget command does
-            					this.sVideoURL = sline;
-            				}
-            				if (this.iRecursionCount==0 && sline.matches("( *)var swfHTML =(.*)")) {
-                				HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
-                				String shmkey = null; // key for hashmap containg video URLs from webpage source code
-                				Integer iidx = null;
-
-            					sline = sline.toLowerCase().replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
-            					sline = sline.replace("%25", "%").replace("%2c",",").replace("%7c", "|").replace("%3f", "?").replace("%3d", "=").replace("%26", "&").replace("%2f", "/").replace("%3a", ":");
-            					
-            					String[] ssourcecodeyturls = sline.split(this.ssourcecodeurl); // that block of javascript contains all videoURLs twice - we take the first ones without "||".. 
-            					debugoutput("ssourcecodeuturls.length: ".concat(Integer.toString(ssourcecodeyturls.length)));
-            					final String szITAG = "itag=";
-            					for (int i = ssourcecodeyturls.length-1; i >= 0; i--) {
-           							if (ssourcecodeyturls[i].toLowerCase().matches("(.*)youtube.com/videoplayback(.*)")) {
-           								ssourcecodeyturls[i] = "http://".concat( ssourcecodeyturls[i].replaceFirst("\\|\\|(.*)", "") );
-           								shmkey = ssourcecodeyturls[i].substring( iidx=ssourcecodeyturls[i].indexOf(szITAG), iidx+szITAG.length()+2) ; // e.g. itag=5 or itag=22 (one or two digits) - unimportant for hasmap but looks better
-           								shmkey = shmkey.matches("(.*)[^(0-9)]$")?shmkey.substring(0,shmkey.length()-1):shmkey; // delete last non-digit if any
-           								if (!ssourcecodevideourls.containsKey(shmkey)) {
-           									ssourcecodevideourls.put(shmkey, ssourcecodeyturls[i]); // save that URL
-           									debugoutput(String.format( "video url #%d saved with key %s: %s",i,shmkey,ssourcecodevideourls.get(shmkey) ));
-           									output("found video URL: ".concat(shmkey));
-           								}
-           							};
-								} // for
-
-            					debugoutput("ssourcecodevideourls.length: ".concat(Integer.toString(ssourcecodevideourls.size())));
-            					
-            					String sno = "";
-         					
-            					// figure out what resolution-button is pressed now
-            					switch (JFCMainClient.getIdlbuttonstate()) {
-            					case 4:
-            						sno = "22"; // 22|35
-            						this.sNextVideoURL = ssourcecodevideourls.get(szITAG.concat(sno));
-            						if (this.sNextVideoURL==null) {
-            							sno = "35";
-            							this.sNextVideoURL = ssourcecodevideourls.get(szITAG.concat(sno));
-            						}
-            						break;
-            					case 2:
-            						sno = "18"; // 18|34
-            						this.sNextVideoURL = ssourcecodevideourls.get(szITAG.concat(sno));
-            						if (this.sNextVideoURL==null) {
-            							sno = "34";
-            							this.sNextVideoURL = ssourcecodevideourls.get(szITAG.concat(sno));
-            						}
-            						break;
-            					case 1:
-            						sno = "5"; // 5|?
-        							this.sNextVideoURL = ssourcecodevideourls.get(szITAG.concat(sno));
-            						break;
-            					default:
-            						this.sNextVideoURL = null;
-            						this.sVideoURL = null;
-            						this.sFilenameResPart = null;
-            						break;
-            					}
-            					
-        						try { debugoutput("choosed resolution ".concat(sno).concat(": ").concat(this.sNextVideoURL)); this.sFilenameResPart = "(itag".concat(sno).concat(")");} catch (NullPointerException npe) {}
-        						
-            					if (this.sNextVideoURL==null) {
-            						String smsg = "could not find video url for selected resolution!";
-            						output(smsg); debugoutput(smsg);
-            						// TODO implement some kind of fallback - when HD is selected that download at ne next lower res video if HD is not available 
-            					}
-            				}
-            				if (this.iRecursionCount==0 && sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
-            					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
-            				}
-            			} catch (NullPointerException npe) {
-            			}
-            		} // while
+            	this.sContentType = this.response.getFirstHeader("Content-Type").getValue().toLowerCase();
+            	if (this.sContentType.matches("^text/html(.*)")) {
+            		savetextdata();
             	// test if we got the binary content
-            	} else if (sContentType.matches("video/(.)*")) {
-            		FileOutputStream fos = null;
-            		try {
-            			File f; Integer idupcount = 0;
-            			String sdirectorychoosed;
-            			synchronized (JFCMainClient.frame.directorytextfield) {
-            				sdirectorychoosed = JFCMainClient.frame.directorytextfield.getText();
-            			}
-            			String sfilename = this.getTitle()/*.replaceAll(" ", "_")*/.concat( this.sFilenameResPart==null?"":this.sFilenameResPart );
-	            		debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
-            			do {
-            				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".").concat(sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
-            				idupcount += 1;
-            			} while (f.exists());
-            			this.setFileName(f.getAbsolutePath());
-            			
-            			Long iBytesReadSum = (long) 0;
-            			Long iPercentage = (long) -1;
-            			Long iBytesMax = Long.parseLong(response.getFirstHeader("Content-Length").getValue());
-            			fos = new FileOutputStream(f);
-            			
-            			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.getFileName()));
-            			output("file size of \"".concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
-            		    
-            			byte[] bytes = new byte[4096];
-            			Integer iBytesRead = 1;
-            			String sOldURL = JFCMainClient.szDLSTATE.concat(this.sURL);
-            			String sNewURL = "";
-            			
-            			// adjust blocks of percentage to output - larger files are shown with smaller pieces
-            			Integer iblocks = 10; if (iBytesMax>20*1024*1024) iblocks=4; if (iBytesMax>40*1024*1024) iblocks=2;
-            			while (!this.bisinterrupted && iBytesRead>0) {
-            				iBytesRead = binaryreader.read(bytes);
-            				iBytesReadSum += iBytesRead;
-            				// drop a line every x% of the download 
-            				if ( (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks) > iPercentage ) {
-            					iPercentage = (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks);
-            					sNewURL = JFCMainClient.szDLSTATE.concat("(").concat(Long.toString(iPercentage).concat(" %) ").concat(this.sURL));
-            					JFCMainClient.exchangeYTURLInList(sOldURL, sNewURL);
-            					sOldURL = sNewURL ; 
-            				}
-            				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-            				this.bisinterrupted = JFCMainClient.getbQuitrequested(); // try to get informatation about application shutdown
-            			} // while
-            			
-            			JFCMainClient.exchangeYTURLInList(sNewURL, JFCMainClient.szDLSTATE.concat(this.sURL));
-            			
-            			// rename files if download was interrupted before completion of download
-            			if (this.bisinterrupted && iBytesReadSum<iBytesMax) {
-            				try {
-            					// this part is especially for our M$-Windows users because of the different behavior of File.renameTo() in contrast to non-windows
-            					// see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298  and others
-            					// even with Java 1.6.0_22 the renameTo() does not work on M$-Windows! 
-            					fos.close();
-            				} catch (Exception e) {
-            				}
-//            				System.gc(); // we don't have to do this but to be sure the file handle gets released we do a thread sleep 
-            				try {
-            					Thread.sleep(50);
-            				} catch (InterruptedException e) {
-            				}
-    				         
-            				// this part runs on *ix platforms without closing the FileOutputStream explicitly
-            				httpclient.getConnectionManager().shutdown(); // otherwise binaryreader.close() would cause the entire datastream to be transmitted 
-            				debugoutput(String.format("download canceled. (%d)",(iBytesRead)));
-            				changeFileNamewith("CANCELED.");
-            				String smsg = "renaming unfinished file to: ".concat( this.getFileName() );
-            				output(smsg); debugoutput(smsg);
-            				
-            				if (!f.renameTo(new File( this.getFileName()))) {
-            					smsg = "error renaming unfinished file to: ".concat( this.getFileName() );
-                				output(smsg); debugoutput(smsg);
-            				}
-            			}
-            			debugoutput("done writing.");
-            		} catch (FileNotFoundException fnfe) {
-            			throw(fnfe)		;
-            		} catch (IOException ioe) {
-            			debugoutput("IOException");
-            			throw(ioe);
-            		} finally {
-            			this.sVideoURL = null;
-            			try {
-							fos.close();
-						} catch (Exception e) {
-						}
-                        try {
-        					textreader.close();
-        				} catch (Exception e) {
-        				}
-                        try {
-        					binaryreader.close();
-        				} catch (Exception e) {
-        				}
-            		} // try
+            	} else if (this.sContentType.matches("video/(.)*")) {
+            		//if (JFCMainClient.bNODOWNLOAD)
+            		//	reportheaderinfo();
+            		//else
+            			savebinarydata();
             	} else { // content-type is not video/
             		rc = false;
             		this.sVideoURL = null;
@@ -460,7 +292,7 @@ public class YTDownloadThread extends Thread {
             }
         } //if (entity != null)
         
-       	httpclient.getConnectionManager().shutdown();
+       	this.httpclient.getConnectionManager().shutdown();
 
         debugoutput("done: ".concat(sURL));
 		try { 
@@ -473,6 +305,208 @@ public class YTDownloadThread extends Thread {
 		return(rc);
 		
 	} // downloadone()
+
+	@SuppressWarnings("unused")
+	private void reportheaderinfo() {
+		if (this.bDEBUG) {
+			for (int i = 0; i < this.response.getAllHeaders().length; i++) {
+				debugoutput(this.response.getAllHeaders()[i].getName().concat("=").concat(this.response.getAllHeaders()[i].getValue()));
+			}
+		} else {
+			output(this.response.getFirstHeader("Content-Length").getValue());
+			output(this.response.getFirstHeader("Content-Type").getValue());
+		}
+	} // reportheaderinfo()
+
+	private void savetextdata() throws IOException {
+		// read lines one by one and search for video URL
+		String sline = "";
+		while (sline != null) {
+			sline = this.textreader.readLine();
+			try {
+				if (this.iRecursionCount==0 && sline.matches("(.*)generate_204(.*)")) {
+					sline = sline.replaceFirst("img.src = '", "");					//debugoutput("URL: ".concat(sline));
+					sline = sline.replaceFirst("';", "");							//debugoutput("URL: ".concat(sline));
+					sline = sline.replaceAll("\\\\", "");							//debugoutput("URL: ".concat(sline));
+					sline = sline.replaceAll("\\s", "");							debugoutput("img.src URL: ".concat(sline));
+					this.s403VideoURL = sline.replaceFirst("generate_204", "videoplayback");	//debugoutput("URL: ".concat(sline)); // this is what my wget command does
+					this.sVideoURL = sline;
+				}
+				if (this.iRecursionCount==0 && sline.matches("( *)var swfHTML =(.*)")) {
+    				HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
+    				String shmkey = null; // key for hashmap containg video URLs from webpage source code
+    				Integer iidx = null;
+
+					sline = sline.toLowerCase().replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
+					sline = sline.replace("%25", "%").replace("%2c",",").replace("%7c", "|").replace("%3f", "?").replace("%3d", "=").replace("%26", "&").replace("%2f", "/").replace("%3a", ":");
+					
+					String[] ssourcecodeyturls = sline.split(this.ssourcecodeurl); // that block of javascript contains all videoURLs twice - we take the first ones without "||".. 
+					debugoutput("ssourcecodeuturls.length: ".concat(Integer.toString(ssourcecodeyturls.length)));
+					final String szITAG = "itag=";
+					for (int i = ssourcecodeyturls.length-1; i >= 0; i--) {
+							if (ssourcecodeyturls[i].toLowerCase().matches("(.*)youtube.com/videoplayback(.*)")) {
+								ssourcecodeyturls[i] = "http://".concat( ssourcecodeyturls[i].replaceFirst("\\|\\|(.*)", "") );
+								shmkey = ssourcecodeyturls[i].substring( iidx=ssourcecodeyturls[i].indexOf(szITAG), iidx+szITAG.length()+2) ; // e.g. itag=5 or itag=22 (one or two digits) - unimportant for hasmap but looks better
+								shmkey = shmkey.matches("(.*)[^(0-9)]$")?shmkey.substring(0,shmkey.length()-1):shmkey; // delete last non-digit if any
+								if (!ssourcecodevideourls.containsKey(shmkey)) {
+									ssourcecodevideourls.put(shmkey, ssourcecodeyturls[i]); // save that URL
+									debugoutput(String.format( "video url #%d saved with key %s: %s",i,shmkey,ssourcecodevideourls.get(shmkey) ));
+									// TODO there is a itag 37 which leads to 1080p (as well)? check this!
+									output("found video URL for resolution: ".concat(shmkey.equals("itag=22")?"1080p":shmkey.equals("itag=35")?"720p":shmkey.equals("itag=18")?"360p":shmkey.equals("itag=34")?"480p":shmkey.equals("itag=5")?"240p":"unknown res?"));
+								}
+							};
+					} // for
+
+					debugoutput("ssourcecodevideourls.length: ".concat(Integer.toString(ssourcecodevideourls.size())));
+					String sno="";
+					// figure out what resolution-button is pressed now and fill list with possible URLs
+					switch (JFCMainClient.getIdlbuttonstate()) {
+					case 4:
+						// 22|35
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="22")));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("35")));
+						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("18")));
+						this.sNextVideoURL.add(3, ssourcecodevideourls.get(szITAG.concat("34")));
+						this.sNextVideoURL.add(4, ssourcecodevideourls.get(szITAG.concat("5")));
+						break;
+					case 2:
+						// 18|34 - looks like audio quality is better at ittag==18
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="18")));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("34")));
+						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("5")));
+						break;
+					case 1:
+						// 5|?
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="5")));
+						break;
+					default:
+						this.sNextVideoURL = null;
+						this.sVideoURL = null;
+						this.sFilenameResPart = null;
+						break;
+					}
+					
+					if (this.sNextVideoURL.get(0)==null && this.sNextVideoURL.get(1)==null) {
+						String smsg = "could not find video url for selected resolution! trying lower res..";
+						output(smsg); debugoutput(smsg);
+					}
+					
+					// remove null entries in list - we later try to download the first (index 0) and if it fails the next (index 1) and so on
+					for (int x=this.sNextVideoURL.size()-1;x>=0;x--) {
+						if (this.sNextVideoURL.get(x)==null) this.sNextVideoURL.remove(x);
+					}
+					
+					try { 
+						debugoutput("choosed resolution ".concat(sno).concat(": ").concat(this.sNextVideoURL.get(0))); 
+						this.sFilenameResPart = sno.equals("5")?"(LD)":""; // Standard is 360p/480p and HD is either 720p or 1080p but it's a mp4-file so adding text the the filename provides no extra information
+					} catch (NullPointerException npe) {
+					}
+					
+				}
+				if (this.iRecursionCount==0 && sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
+					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
+				}
+			} catch (NullPointerException npe) {
+			}
+		} // while
+	} // savetextdata()
+
+	private void savebinarydata() throws IOException {
+		FileOutputStream fos = null;
+		try {
+			File f; Integer idupcount = 0;
+			String sdirectorychoosed;
+			synchronized (JFCMainClient.frame.directorytextfield) {
+				sdirectorychoosed = JFCMainClient.frame.directorytextfield.getText();
+			}
+			String sfilename = this.getTitle()/*.replaceAll(" ", "_")*/.concat( this.sFilenameResPart==null?"":this.sFilenameResPart );
+    		debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
+			do {
+				f = new File(sdirectorychoosed, sfilename.concat((idupcount>0?"(".concat(idupcount.toString()).concat(")"):"")).concat(".").concat(this.sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
+				idupcount += 1;
+			} while (f.exists());
+			this.setFileName(f.getAbsolutePath());
+			
+			Long iBytesReadSum = (long) 0;
+			Long iPercentage = (long) -1;
+			Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
+			fos = new FileOutputStream(f);
+			
+			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.getFileName()));
+			output("file size of \"".concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
+		    
+			byte[] bytes = new byte[4096];
+			Integer iBytesRead = 1;
+			String sOldURL = JFCMainClient.szDLSTATE.concat(this.sURL);
+			String sNewURL = "";
+			
+			// adjust blocks of percentage to output - larger files are shown with smaller pieces
+			Integer iblocks = 10; if (iBytesMax>20*1024*1024) iblocks=4; if (iBytesMax>40*1024*1024) iblocks=2;
+			while (!this.bisinterrupted && iBytesRead>0) {
+				iBytesRead = this.binaryreader.read(bytes);
+				iBytesReadSum += iBytesRead;
+				// drop a line every x% of the download 
+				if ( (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks) > iPercentage ) {
+					iPercentage = (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks);
+					sNewURL = JFCMainClient.szDLSTATE.concat("(").concat(Long.toString(iPercentage).concat(" %) ").concat(this.sURL));
+					JFCMainClient.exchangeYTURLInList(sOldURL, sNewURL);
+					sOldURL = sNewURL ; 
+				}
+				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
+				this.bisinterrupted = JFCMainClient.getbQuitrequested(); // try to get informatation about application shutdown
+			} // while
+			
+			JFCMainClient.exchangeYTURLInList(sNewURL, JFCMainClient.szDLSTATE.concat(this.sURL));
+			
+			// rename files if download was interrupted before completion of download
+			if (this.bisinterrupted && iBytesReadSum<iBytesMax) {
+				try {
+					// this part is especially for our M$-Windows users because of the different behavior of File.renameTo() in contrast to non-windows
+					// see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298  and others
+					// even with Java 1.6.0_22 the renameTo() does not work on M$-Windows! 
+					fos.close();
+				} catch (Exception e) {
+				}
+//				System.gc(); // we don't have to do this but to be sure the file handle gets released we do a thread sleep 
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+				}
+		         
+				// this part runs on *ix platforms without closing the FileOutputStream explicitly
+				this.httpclient.getConnectionManager().shutdown(); // otherwise binaryreader.close() would cause the entire datastream to be transmitted 
+				debugoutput(String.format("download canceled. (%d)",(iBytesRead)));
+				changeFileNamewith("CANCELED.");
+				String smsg = "renaming unfinished file to: ".concat( this.getFileName() );
+				output(smsg); debugoutput(smsg);
+				
+				if (!f.renameTo(new File( this.getFileName()))) {
+					smsg = "error renaming unfinished file to: ".concat( this.getFileName() );
+    				output(smsg); debugoutput(smsg);
+				}
+			}
+			debugoutput("done writing.");
+		} catch (FileNotFoundException fnfe) {
+			throw(fnfe)		;
+		} catch (IOException ioe) {
+			debugoutput("IOException");
+			throw(ioe);
+		} finally {
+			this.sVideoURL = null;
+			try {
+				fos.close();
+			} catch (Exception e) {
+			}
+            try {
+				this.textreader.close();
+			} catch (Exception e) {
+			}
+            try {
+				this.binaryreader.close();
+			} catch (Exception e) {
+			}
+		} // try
+	} // savebinarydata()
 
 	private void changeFileNamewith(String string) {
 		File f = null;
