@@ -26,7 +26,7 @@ USAGE
   computer.
   The web-browser downloads webresources (e.g. binary data) to
   a temporary folder before displaying it. YTD2 does the
-  same except you can choose where to save the files.
+  same except You can choose where to save the files.
   YTD2 is meant for private non-commercial use only. 
 
 
@@ -60,7 +60,24 @@ RUNNING
   just click on the jar-file  (works if the file has execute file
   permissions (on *ix platform) and JRE is a registered application
   for jar-files)
-	
+  
+  
+PROXY
+
+  You can set the proxy either befor running ytd2 or after start via
+  input "proxy [http://]proxyhost:proxyport" or without http://
+  
+  example (on GNU/Linux) before start:
+      knoedel@section60:~/workspace$ http_proxy=http://localhost:3128
+      /*next command is not needed on windows*/
+      knoedel@section60:~/workspace$ export http_proxy
+      knoedel@section60:~/workspace$ java -jar runytd2.jar
+  
+  example after start - type in as URL:
+      proxy http://localhost:3128
+  
+  localhost:3128 is just an example (of a local squid-cache proxy)
+
 
 TODO
   

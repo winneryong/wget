@@ -81,7 +81,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110213_1656 by MrKnödelmann";
+	public static final String szVersion = "V20110216_2359 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -90,6 +90,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// more or less (internal) output
 	static boolean bDEBUG = true;
 	
+	// just report file sizes of HTTP headers - dont download binary data
+	static boolean bNODOWNLOAD = false;
+	
 	public static String sproxy = null;
 	
 	public static String szDLSTATE = "downloading ";
@@ -97,7 +100,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// TODO download with cli only? does this make sense if its all about videos?!
 			 
 	// something like [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A 
-	public static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=.{11}"; // http://de.wikipedia.org/wiki/CcTLD
+	public static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=[^&]{11}"; // http://de.wikipedia.org/wiki/CcTLD
 	// something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/   the last / is for marking the end of host, it does not belong to the hostpart
 	public static final String szYTHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
 	
@@ -105,17 +108,30 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// RFC-1123 hostname [with protocol]
 	private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 	
-	// all characters that do not belong to an HTTP URL - could be written shorter??
+	// all characters that do not belong to an HTTP URL - could be written shorter?? (where did I used this?? dont now anymore)
 	final String snotsourcecodeurl = "[^(a-z)^(A-Z)^(0-9)^%^&^=^\\.^:^/^\\?^_^-]";
+	
+	static JFCMainClient frame = null;
+
+	private static Boolean bQuitrequested = false;
 	
 	static YTDownloadThread t1;
 	static YTDownloadThread t2;
 	static YTDownloadThread t3;
 	static YTDownloadThread t4;
 	
-	static JFCMainClient frame = null;
-
-	private static Boolean bQuitrequested = false;
+	JPanel panel = null;
+	JSplitPane middlepane = null;
+	JTextArea textarea = null;
+	JList urllist = null;
+	JButton quitbutton = null;
+	JButton directorybutton = null;
+	JTextField directorytextfield = null;
+	JTextField textinputfield = null;
+	DefaultListModel dlm = null;
+	JRadioButton hdbutton = null;
+	JRadioButton stdbutton = null;
+	JRadioButton ldbutton = null;
 	
 	public static synchronized Boolean getbQuitrequested() {
 		return bQuitrequested;
@@ -130,19 +146,6 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		return (JFCMainClient.frame.hdbutton.isSelected()?4:0) + (JFCMainClient.frame.stdbutton.isSelected()?2:0) + (JFCMainClient.frame.ldbutton.isSelected()?1:0);
 	}
 
-
-	JPanel panel = null;
-	JSplitPane middlepane = null;
-	JTextArea textarea = null;
-	JList urllist = null;
-	JButton quitbutton = null;
-	JButton directorybutton = null;
-	JTextField directorytextfield = null;
-	JTextField textinputfield = null;
-	DefaultListModel dlm = null;
-	JRadioButton hdbutton = null;
-	JRadioButton stdbutton = null;
-	JRadioButton ldbutton = null;
 	
 	/**
 	 * append text to textarea
@@ -326,6 +329,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		if (scmd.matches("^(help|[-/][h|\\?])")) {
 			addTextToConsole("debug[ on| off]\t: more or less (internal) output");
 			addTextToConsole("help|-h|/?]\t\t: show this text");
+			/*addTextToConsole("ndl[ on| off]\t\t: no downloads, just report sizes");*/
 			addTextToConsole("quit|exit\t\t: shutdown application");
 			addTextToConsole("proxy[ URL]\t\t: get or set proxy variable");
 			addTextToConsole("version|-v|\t\t: show version");
@@ -344,6 +348,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			try {JFCMainClient.t2.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t3.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t4.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
+		/*} else if (scmd.matches("^(ndl)( on| off| true| false)?")) {
+			if (scmd.matches(".*(on|true)$")) 
+				setbNODOWNLOAD(true);
+			else if (scmd.matches(".*(off|false)$")) 
+				setbNODOWNLOAD(false);
+
+			addTextToConsole("nodownload: ".concat(Boolean.toString( JFCMainClient.isbNODOWNLOAD() )))*/
 		} else if (scmd.matches("^(quit|exit)"))
 			this.shutdownAppl();
 		else if (scmd.matches("^(proxy)( .*)?")) {// TODO proxy server url should match host:port regex
@@ -359,6 +370,16 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		
 		// TODO an an option to prevent downloading of files but rather show head information like content-type and size
 	} // cli()
+
+	public static synchronized boolean isbNODOWNLOAD() {
+		return bNODOWNLOAD;
+	}
+
+
+	public static synchronized void setbNODOWNLOAD(boolean bNODOWNLOAD) {
+		JFCMainClient.bNODOWNLOAD = bNODOWNLOAD;
+	}
+
 
 	/**
 	 * @param pane
@@ -698,6 +719,10 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		addYTURLToList(surl);
 		sinput = sinput.substring(surl.length());
 		debugoutput(String.format("sinput: %s surl: %s",sinput,surl));
+		
+		// if remaining text is shorter than shortest possible yt-url we delete it
+		if (sinput.length()<"youtube.com/watch?v=0123456789a".length()) sinput = "";
+		
 		//frame.textinputfield.setText(sinput); // generates a java.lang.IllegalStateException: Attempt to mutate in notification
 		
 		final String fs = sinput;
