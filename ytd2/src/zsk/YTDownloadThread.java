@@ -269,9 +269,9 @@ public class YTDownloadThread extends Thread {
             		savetextdata();
             	// test if we got the binary content
             	} else if (this.sContentType.matches("video/(.)*")) {
-            		//if (JFCMainClient.bNODOWNLOAD)
-            		//	reportheaderinfo();
-            		//else
+            		if (JFCMainClient.bNODOWNLOAD)
+            			reportheaderinfo();
+            		else
             			savebinarydata();
             	} else { // content-type is not video/
             		rc = false;
@@ -306,19 +306,26 @@ public class YTDownloadThread extends Thread {
 		
 	} // downloadone()
 
-	@SuppressWarnings("unused")
-	private void reportheaderinfo() {
+	void reportheaderinfo() {
 		if (this.bDEBUG) {
+			debugoutput("");
+			debugoutput("no-download active (ndl on)");
+			debugoutput("all HTTP header fields:");
 			for (int i = 0; i < this.response.getAllHeaders().length; i++) {
 				debugoutput(this.response.getAllHeaders()[i].getName().concat("=").concat(this.response.getAllHeaders()[i].getValue()));
 			}
 		} else {
-			output(this.response.getFirstHeader("Content-Length").getValue());
-			output(this.response.getFirstHeader("Content-Type").getValue());
+			Long iFileSize = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
+			output("");
+			output("no-download active (ndl on)");
+			output("some HTTP header fields:");
+			output("content-type: ".concat( this.response.getFirstHeader("Content-Type").getValue()) );
+			output("content-length: ".concat(iFileSize.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iFileSize/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iFileSize/1024/1024)).concat(" MiB")) );
 		}
+		this.sVideoURL = null;
 	} // reportheaderinfo()
 
-	private void savetextdata() throws IOException {
+	void savetextdata() throws IOException {
 		// read lines one by one and search for video URL
 		String sline = "";
 		while (sline != null) {
@@ -351,8 +358,7 @@ public class YTDownloadThread extends Thread {
 								if (!ssourcecodevideourls.containsKey(shmkey)) {
 									ssourcecodevideourls.put(shmkey, ssourcecodeyturls[i]); // save that URL
 									debugoutput(String.format( "video url #%d saved with key %s: %s",i,shmkey,ssourcecodevideourls.get(shmkey) ));
-									// TODO there is a itag 37 which leads to 1080p (as well)? check this!
-									output("found video URL for resolution: ".concat(shmkey.equals("itag=22")?"1080p":shmkey.equals("itag=35")?"720p":shmkey.equals("itag=18")?"360p":shmkey.equals("itag=34")?"480p":shmkey.equals("itag=5")?"240p":"unknown res?"));
+									output("found video URL for resolution: ".concat(shmkey.equals("itag=22")?"720p":shmkey.equals("itag=35")?"480p?":shmkey.equals("itag=18")?"270p?":shmkey.equals("itag=34")?"360p?":shmkey.equals("itag=37")?"1080p":shmkey.equals("itag=5")?"240p?":"unknown resolution?"));
 								}
 							};
 					} // for
@@ -362,22 +368,25 @@ public class YTDownloadThread extends Thread {
 					// figure out what resolution-button is pressed now and fill list with possible URLs
 					switch (JFCMainClient.getIdlbuttonstate()) {
 					case 4:
-						// 22|35
-						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="22")));
-						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("35")));
-						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("18")));
+						// 37|22 - better quality first
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="37")));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("22")));
+						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("35")));
 						this.sNextVideoURL.add(3, ssourcecodevideourls.get(szITAG.concat("34")));
+						this.sNextVideoURL.add(4, ssourcecodevideourls.get(szITAG.concat("18")));
 						this.sNextVideoURL.add(4, ssourcecodevideourls.get(szITAG.concat("5")));
 						break;
 					case 2:
-						// 18|34 - looks like audio quality is better at ittag==18
-						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="18")));
+						// 35|34
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="35")));
 						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("34")));
+						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("18")));
 						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("5")));
 						break;
 					case 1:
-						// 5|?
-						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="5")));
+						// 18|5
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="18")));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("5")));
 						break;
 					default:
 						this.sNextVideoURL = null;
@@ -411,7 +420,7 @@ public class YTDownloadThread extends Thread {
 		} // while
 	} // savetextdata()
 
-	private void savebinarydata() throws IOException {
+	void savebinarydata() throws IOException {
 		FileOutputStream fos = null;
 		try {
 			File f; Integer idupcount = 0;
@@ -441,7 +450,7 @@ public class YTDownloadThread extends Thread {
 			String sNewURL = "";
 			
 			// adjust blocks of percentage to output - larger files are shown with smaller pieces
-			Integer iblocks = 10; if (iBytesMax>20*1024*1024) iblocks=4; if (iBytesMax>40*1024*1024) iblocks=2;
+			Integer iblocks = 10; if (iBytesMax>20*1024*1024) iblocks=4; if (iBytesMax>32*1024*1024) iblocks=2; if (iBytesMax>56*1024*1024) iblocks=1;
 			while (!this.bisinterrupted && iBytesRead>0) {
 				iBytesRead = this.binaryreader.read(bytes);
 				iBytesReadSum += iBytesRead;
@@ -453,7 +462,7 @@ public class YTDownloadThread extends Thread {
 					sOldURL = sNewURL ; 
 				}
 				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-				this.bisinterrupted = JFCMainClient.getbQuitrequested(); // try to get informatation about application shutdown
+				this.bisinterrupted = JFCMainClient.getbQuitrequested(); // try to get information about application shutdown
 			} // while
 			
 			JFCMainClient.exchangeYTURLInList(sNewURL, JFCMainClient.szDLSTATE.concat(this.sURL));
@@ -463,7 +472,7 @@ public class YTDownloadThread extends Thread {
 				try {
 					// this part is especially for our M$-Windows users because of the different behavior of File.renameTo() in contrast to non-windows
 					// see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298  and others
-					// even with Java 1.6.0_22 the renameTo() does not work on M$-Windows! 
+					// even with Java 1.6.0_22 the renameTo() does not work directly on M$-Windows! 
 					fos.close();
 				} catch (Exception e) {
 				}
@@ -508,7 +517,7 @@ public class YTDownloadThread extends Thread {
 		} // try
 	} // savebinarydata()
 
-	private void changeFileNamewith(String string) {
+	void changeFileNamewith(String string) {
 		File f = null;
 		Integer idupcount = 0;
 		String sfilesep = System.getProperty("file.separator");
@@ -536,36 +545,36 @@ public class YTDownloadThread extends Thread {
 		
 	} // changeFileNamewith
 
-	private String getProxy() {
+	String getProxy() {
 		String sproxy = JFCMainClient.sproxy;
 		if (sproxy==null) return(""); else return(sproxy);
 	} // getProxy() 
 
-	private String getURI(String sURL) {
+	String getURI(String sURL) {
 		String suri = "/".concat(sURL.replaceFirst(JFCMainClient.szYTHOSTREGEX, ""));
 		return(suri);
 	} // getURI
 
-	private String getHost(String sURL) {
+	String getHost(String sURL) {
 		String shost = sURL.replaceFirst(JFCMainClient.szYTHOSTREGEX, "");
 		shost = sURL.substring(0, sURL.length()-shost.length());
 		shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
 		return(shost);
 	} // gethost
 	
-	private String getTitle() {
+	String getTitle() {
 		if (this.sTitle != null) return this.sTitle; else return("");
 	}
 
-	private void setTitle(String sTitle) {
+	void setTitle(String sTitle) {
 		this.sTitle = sTitle;
 	}
 	
-	private String getFileName() {
+	String getFileName() {
 		if (this.sFileName != null) return this.sFileName; else return("");
 	}
 
-	private void setFileName(String sFileName) {
+	void setFileName(String sFileName) {
 		this.sFileName = sFileName;
 	}
 
@@ -615,7 +624,7 @@ public class YTDownloadThread extends Thread {
 				
 				// download one webresource and show result
 				bDOWNLOADOK = downloadone(this.sURL); this.iRecursionCount=-1;
-				if (bDOWNLOADOK) 
+				if (bDOWNLOADOK && !JFCMainClient.getbNODOWNLOAD()) 
 					output("download complete: ".concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 				else
 					output("error downloading: ".concat(this.sURL));

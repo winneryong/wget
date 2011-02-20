@@ -81,7 +81,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110216_2359 by MrKnödelmann";
+	public static final String szVersion = "V20110219_1501 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -90,7 +90,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// more or less (internal) output
 	static boolean bDEBUG = true;
 	
-	// just report file sizes of HTTP headers - dont download binary data
+	// just report file sizes of HTTP header - don't download binary data
 	static boolean bNODOWNLOAD = false;
 	
 	public static String sproxy = null;
@@ -348,13 +348,13 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			try {JFCMainClient.t2.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t3.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t4.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
-		/*} else if (scmd.matches("^(ndl)( on| off| true| false)?")) {
+		} else if (scmd.matches("^(ndl)( on| off| true| false)?")) {
 			if (scmd.matches(".*(on|true)$")) 
 				setbNODOWNLOAD(true);
 			else if (scmd.matches(".*(off|false)$")) 
 				setbNODOWNLOAD(false);
 
-			addTextToConsole("nodownload: ".concat(Boolean.toString( JFCMainClient.isbNODOWNLOAD() )))*/
+			addTextToConsole("nodownload: ".concat(Boolean.toString( JFCMainClient.isbNODOWNLOAD() )));
 		} else if (scmd.matches("^(quit|exit)"))
 			this.shutdownAppl();
 		else if (scmd.matches("^(proxy)( .*)?")) {// TODO proxy server url should match host:port regex
@@ -368,18 +368,19 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		} else 
 			addTextToConsole("? (try help|-h|/?)");
 		
-		// TODO an an option to prevent downloading of files but rather show head information like content-type and size
 	} // cli()
 
 	public static synchronized boolean isbNODOWNLOAD() {
 		return bNODOWNLOAD;
 	}
 
-
 	public static synchronized void setbNODOWNLOAD(boolean bNODOWNLOAD) {
 		JFCMainClient.bNODOWNLOAD = bNODOWNLOAD;
-	}
-
+	} // setbNODOWNLOAD
+	
+	static synchronized boolean getbNODOWNLOAD() {
+		return(JFCMainClient.bNODOWNLOAD);
+	} // getbNODOWNLOAD
 
 	/**
 	 * @param pane
