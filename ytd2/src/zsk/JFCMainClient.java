@@ -81,7 +81,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110219_1501 by MrKnödelmann";
+	public static final String szVersion = "V20110219_1511 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -90,7 +90,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// more or less (internal) output
 	static boolean bDEBUG = true;
 	
-	// just report file sizes of HTTP header - don't download binary data
+	// just report file size of HTTP header - don't download binary data (the video)
 	static boolean bNODOWNLOAD = false;
 	
 	public static String sproxy = null;
@@ -329,9 +329,9 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		if (scmd.matches("^(help|[-/][h|\\?])")) {
 			addTextToConsole("debug[ on| off]\t: more or less (internal) output");
 			addTextToConsole("help|-h|/?]\t\t: show this text");
-			/*addTextToConsole("ndl[ on| off]\t\t: no downloads, just report sizes");*/
+			addTextToConsole("ndl[ on| off]\t\t: no download, just report file size");
 			addTextToConsole("quit|exit\t\t: shutdown application");
-			addTextToConsole("proxy[ URL]\t\t: get or set proxy variable");
+			addTextToConsole("proxy[ URL]\t\t: get or set proxy variable - [http://]proxyhost:proxyport");
 			addTextToConsole("version|-v|\t\t: show version");
 		} 
 		else if (scmd.matches("^(-?v(ersion)?)"))
@@ -344,17 +344,18 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			 
 			addTextToConsole("debug: ".concat(Boolean.toString( JFCMainClient.bDEBUG )));
 
+			// TODO bDEBUG should not be static - it belongs to this object (GUI) not the threads
 			try {JFCMainClient.t1.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t2.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t3.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
 			try {JFCMainClient.t4.setbDEBUG(JFCMainClient.bDEBUG);} catch (NullPointerException npe) {}
-		} else if (scmd.matches("^(ndl)( on| off| true| false)?")) {
+		} else if (scmd.matches("^(ndl)( on| off| true| false)?")) { // or "dl" on|off ?
 			if (scmd.matches(".*(on|true)$")) 
 				setbNODOWNLOAD(true);
 			else if (scmd.matches(".*(off|false)$")) 
 				setbNODOWNLOAD(false);
 
-			addTextToConsole("nodownload: ".concat(Boolean.toString( JFCMainClient.isbNODOWNLOAD() )));
+			addTextToConsole("ndl: ".concat(Boolean.toString( JFCMainClient.getbNODOWNLOAD() )));
 		} else if (scmd.matches("^(quit|exit)"))
 			this.shutdownAppl();
 		else if (scmd.matches("^(proxy)( .*)?")) {// TODO proxy server url should match host:port regex
@@ -370,11 +371,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		
 	} // cli()
 
-	public static synchronized boolean isbNODOWNLOAD() {
-		return bNODOWNLOAD;
-	}
-
-	public static synchronized void setbNODOWNLOAD(boolean bNODOWNLOAD) {
+	static synchronized void setbNODOWNLOAD(boolean bNODOWNLOAD) {
 		JFCMainClient.bNODOWNLOAD = bNODOWNLOAD;
 	} // setbNODOWNLOAD
 	
@@ -711,6 +708,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 		String surl = sinput.replaceFirst(szYTREGEX, "");
 		
+		// if nothing could be replaced we have to yt-URL found
 		if (sinput.equals(surl)) return;
 
 		debugoutput("sinput: ".concat(sinput).concat(" surl: ".concat(surl)));
@@ -739,7 +737,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
         SwingUtilities.invokeLater (worker);
 	} // checkInputFieldforYTURLS
 	
-	protected ImageIcon createImageIcon(String path, String description) {
+	ImageIcon createImageIcon(String path, String description) {
 	    java.net.URL imgURL = getClass().getResource(path);
 	    if (imgURL != null) {
 	        return new ImageIcon(imgURL, description);

@@ -81,8 +81,8 @@ PROXY
 
 TODO
   
-  GUI option for proxy
-  correct handling of directories for download (esp. on M$-Windows)
+  - GUI option for proxy
+  - correct handling of directories for download (esp. on M$-Windows)
 	
   maybe: Java Web Start, translated GUI (or no text at all),
          video from other websites (imdb.com, video.web.de,..)
@@ -135,3 +135,7 @@ CHANGES
   but the author never changed any bug reports nor answered
   forum posts.
 
+  
+THANKS
+
+  My special thanks to "loki" and "odie" for testing and support! :)

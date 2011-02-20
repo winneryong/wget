@@ -67,6 +67,8 @@ import org.apache.http.protocol.HttpContext;
 public class YTDownloadThread extends Thread {
 	
 	public boolean bDEBUG;
+	
+	boolean bNODOWNLOAD;
 
 	static int iThreadcount=0;
 	int iThreadNo = YTDownloadThread.iThreadcount++; // every download thread get its own number
@@ -622,9 +624,11 @@ public class YTDownloadThread extends Thread {
 				JFCMainClient.removeURLFromList(this.sURL);
 				JFCMainClient.addYTURLToList(JFCMainClient.szDLSTATE.concat(this.sURL));
 				
+				this.bNODOWNLOAD = JFCMainClient.getbNODOWNLOAD(); // copy ndl-state because this thread should end with a complete file (and report so) even if someone switches to nodl before this thread is finished
+				
 				// download one webresource and show result
 				bDOWNLOADOK = downloadone(this.sURL); this.iRecursionCount=-1;
-				if (bDOWNLOADOK && !JFCMainClient.getbNODOWNLOAD()) 
+				if (bDOWNLOADOK && !this.bNODOWNLOAD)
 					output("download complete: ".concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 				else
 					output("error downloading: ".concat(this.sURL));
