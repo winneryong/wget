@@ -64,7 +64,7 @@ RUNNING
   
 PROXY
 
-  You can set the proxy either befor running ytd2 or after start via
+  You can set the proxy either before running ytd2 or after start via
   input "proxy [http://]proxyhost:proxyport" or without http://
   
   example (on GNU/Linux) before start:
@@ -92,8 +92,9 @@ TODO
 
 CHANGES
 
-  V201102
-    2011-02-13  video resolution can be selected
+  V20110219
+    2011-02-19  new option (ndl) to only show file sizes
+    2011-02-15  video resolution can be selected
     2011-02-05  files get renamed if download was canceled
                 
   V20110121
@@ -133,3 +134,4 @@ CHANGES
   YTD2 is named after ytd (https://sourceforge.net/projects/ytd/)
   but the author never changed any bug reports nor answered
   forum posts.
+
