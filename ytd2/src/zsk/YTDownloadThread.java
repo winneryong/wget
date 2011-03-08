@@ -59,7 +59,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HttpContext;
 
 /**
- * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g'` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
+ * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g' -e 's/"//g'` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
  * 
  * works without cookies as well
  *
