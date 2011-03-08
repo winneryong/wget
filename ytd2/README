@@ -92,6 +92,9 @@ TODO
 
 CHANGES
 
+  V20110308
+  	2011-03-08  changed to work with new webpage source code
+
   V20110219
     2011-02-19  new option (ndl) to only show file sizes
     2011-02-15  video resolution can be selected

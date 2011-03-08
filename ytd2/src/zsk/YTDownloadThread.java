@@ -334,20 +334,21 @@ public class YTDownloadThread extends Thread {
 			sline = this.textreader.readLine();
 			try {
 				if (this.iRecursionCount==0 && sline.matches("(.*)generate_204(.*)")) {
-					sline = sline.replaceFirst("img.src = '", "");					//debugoutput("URL: ".concat(sline));
+					sline = sline.replaceFirst("img.src = '?", "");					//debugoutput("URL: ".concat(sline));
 					sline = sline.replaceFirst("';", "");							//debugoutput("URL: ".concat(sline));
 					sline = sline.replaceAll("\\\\", "");							//debugoutput("URL: ".concat(sline));
 					sline = sline.replaceAll("\\s", "");							debugoutput("img.src URL: ".concat(sline));
 					this.s403VideoURL = sline.replaceFirst("generate_204", "videoplayback");	//debugoutput("URL: ".concat(sline)); // this is what my wget command does
 					this.sVideoURL = sline;
 				}
-				if (this.iRecursionCount==0 && sline.matches("( *)var swfHTML =(.*)")) {
+				if (this.iRecursionCount==0 && sline.matches("( *)var swfConfig =(.*)")) { // 2011-03-08 - source code changed from "var swfHTML" to "var swfConfig"
     				HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
     				String shmkey = null; // key for hashmap containg video URLs from webpage source code
     				Integer iidx = null;
 
-					sline = sline.toLowerCase().replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
-					sline = sline.replace("%25", "%").replace("%2c",",").replace("%7c", "|").replace("%3f", "?").replace("%3d", "=").replace("%26", "&").replace("%2f", "/").replace("%3a", ":");
+					// sline = sline.toLowerCase().replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
+					sline = sline.toLowerCase().replaceFirst(".*fmt_url_map\": \"", "\""); // 2011-03-08 yt source code changed
+					sline = sline.replace("\\/","/").replace("%25", "%").replace("%2c",",").replace("%7c", "|").replace("%3f", "?").replace("%3d", "=").replace("%26", "&").replace("%2f", "/").replace("%3a", ":");
 					
 					String[] ssourcecodeyturls = sline.split(this.ssourcecodeurl); // that block of javascript contains all videoURLs twice - we take the first ones without "||".. 
 					debugoutput("ssourcecodeuturls.length: ".concat(Integer.toString(ssourcecodeyturls.length)));
@@ -376,14 +377,14 @@ public class YTDownloadThread extends Thread {
 						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("35")));
 						this.sNextVideoURL.add(3, ssourcecodevideourls.get(szITAG.concat("34")));
 						this.sNextVideoURL.add(4, ssourcecodevideourls.get(szITAG.concat("18")));
-						this.sNextVideoURL.add(4, ssourcecodevideourls.get(szITAG.concat("5")));
+						this.sNextVideoURL.add(5, ssourcecodevideourls.get(szITAG.concat("5")));
 						break;
 					case 2:
 						// 35|34
 						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="35")));
 						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("34")));
 						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("18")));
-						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("5")));
+						this.sNextVideoURL.add(3, ssourcecodevideourls.get(szITAG.concat("5")));
 						break;
 					case 1:
 						// 18|5
@@ -413,6 +414,8 @@ public class YTDownloadThread extends Thread {
 					} catch (NullPointerException npe) {
 					}
 					
+					// 2011-03-08 new - skip generate_204
+					this.sVideoURL = this.sNextVideoURL.get(0);
 				}
 				if (this.iRecursionCount==0 && sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
 					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
