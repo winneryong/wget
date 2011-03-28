@@ -59,7 +59,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HttpContext;
 
 /**
- * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g' -e 's/"//g'` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
+ * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies savecookies.txt --keep-session-cookies --output-document=- http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e 's/img.src =//' -e 's/generate_204/videoplayback/'  -e 's/\\\u0026/\&/g' -e 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g' -e 's/"//g' ` && wget --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
  * 
  * works without cookies as well
  *
@@ -186,7 +186,7 @@ public class YTDownloadThread extends Thread {
 		} catch (ClientProtocolException cpe) {
 			debugoutput(cpe.getMessage());
 		} catch (UnknownHostException uhe) {
-			output("error connecting to: ".concat(uhe.getMessage()));
+			output((JFCMainClient.isgerman()?"Fehler bei der Verbindung zu: ":"error connecting to: ").concat(uhe.getMessage()));
 			debugoutput(uhe.getMessage());
 		} catch (IOException ioe) {
 			debugoutput(ioe.getMessage());
@@ -311,7 +311,7 @@ public class YTDownloadThread extends Thread {
 	void reportheaderinfo() {
 		if (this.bDEBUG) {
 			debugoutput("");
-			debugoutput("no-download active (ndl on)");
+			debugoutput("no-download mode active (ndl on)");
 			debugoutput("all HTTP header fields:");
 			for (int i = 0; i < this.response.getAllHeaders().length; i++) {
 				debugoutput(this.response.getAllHeaders()[i].getName().concat("=").concat(this.response.getAllHeaders()[i].getValue()));
@@ -336,6 +336,7 @@ public class YTDownloadThread extends Thread {
 				if (this.iRecursionCount==0 && sline.matches("(.*)generate_204(.*)")) {
 					sline = sline.replaceFirst("img.src = '?", "");					//debugoutput("URL: ".concat(sline));
 					sline = sline.replaceFirst("';", "");							//debugoutput("URL: ".concat(sline));
+					sline = sline.replaceFirst("\\u0026", "&");						//debugoutput("URL: ".concat(sline));
 					sline = sline.replaceAll("\\\\", "");							//debugoutput("URL: ".concat(sline));
 					sline = sline.replaceAll("\\s", "");							debugoutput("img.src URL: ".concat(sline));
 					this.s403VideoURL = sline.replaceFirst("generate_204", "videoplayback");	//debugoutput("URL: ".concat(sline)); // this is what my wget command does
@@ -346,9 +347,11 @@ public class YTDownloadThread extends Thread {
     				String shmkey = null; // key for hashmap containg video URLs from webpage source code
     				Integer iidx = null;
 
-					// sline = sline.toLowerCase().replaceFirst(".*\" : \"","\""); // we use the part for non-IE browsers
-					sline = sline.toLowerCase().replaceFirst(".*fmt_url_map\": \"", "\""); // 2011-03-08 yt source code changed
+    				 // 2011-03-08 yt source code changed
+					sline = sline.toLowerCase().replaceFirst(".*fmt_url_map\": \"", "\"");
 					sline = sline.replace("\\/","/").replace("%25", "%").replace("%2c",",").replace("%7c", "|").replace("%3f", "?").replace("%3d", "=").replace("%26", "&").replace("%2f", "/").replace("%3a", ":");
+					 // 2011-03-28 yt source code changed again - utf8 encoded characters instead of %hex encoded are being used ..
+					sline = sline.replace("\\u0025", "%").replace("\\u002c",",").replace("\\u007c", "|").replace("\\u003f", "?").replace("\\u003d", "=").replace("\\u0026", "&").replace("\\u002f", "/").replace("\\u003a", ":");
 					
 					String[] ssourcecodeyturls = sline.split(this.ssourcecodeurl); // that block of javascript contains all videoURLs twice - we take the first ones without "||".. 
 					debugoutput("ssourcecodeuturls.length: ".concat(Integer.toString(ssourcecodeyturls.length)));
@@ -361,7 +364,7 @@ public class YTDownloadThread extends Thread {
 								if (!ssourcecodevideourls.containsKey(shmkey)) {
 									ssourcecodevideourls.put(shmkey, ssourcecodeyturls[i]); // save that URL
 									debugoutput(String.format( "video url #%d saved with key %s: %s",i,shmkey,ssourcecodevideourls.get(shmkey) ));
-									output("found video URL for resolution: ".concat(shmkey.equals("itag=22")?"720p":shmkey.equals("itag=35")?"480p?":shmkey.equals("itag=18")?"270p?":shmkey.equals("itag=34")?"360p?":shmkey.equals("itag=37")?"1080p":shmkey.equals("itag=5")?"240p?":"unknown resolution?"));
+									output((JFCMainClient.isgerman()?"gefundene Video URLs für Auflösung: ":"found video URL for resolution: ").concat(shmkey.equals("itag=22")?"720p":shmkey.equals("itag=35")?"480p?":shmkey.equals("itag=18")?"270p?":shmkey.equals("itag=34")?"360p?":shmkey.equals("itag=37")?"1080p":shmkey.equals("itag=5")?"240p?":"unknown resolution?"));
 								}
 							};
 					} // for
@@ -399,7 +402,7 @@ public class YTDownloadThread extends Thread {
 					}
 					
 					if (this.sNextVideoURL.get(0)==null && this.sNextVideoURL.get(1)==null) {
-						String smsg = "could not find video url for selected resolution! trying lower res..";
+						String smsg = JFCMainClient.isgerman()?"Konne Video URL für ausgewählte Auflösung nicht finden. versuche geringere Auflösung!":"could not find video url for selected resolution! trying lower res..";
 						output(smsg); debugoutput(smsg);
 					}
 					
@@ -447,7 +450,7 @@ public class YTDownloadThread extends Thread {
 			fos = new FileOutputStream(f);
 			
 			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.getFileName()));
-			output("file size of \"".concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
+			output((JFCMainClient.isgerman()?"Dateigröße von \"":"file size of \"").concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
 		    
 			byte[] bytes = new byte[4096];
 			Integer iBytesRead = 1;
@@ -623,7 +626,7 @@ public class YTDownloadThread extends Thread {
 				}
 				// TODO check what kind of website the URL is from - this class can only handle YouTube-URLs ... we add other video sources later
 				this.sURL = JFCMainClient.getfirstURLFromList();
-				output("try to download: ".concat(this.sURL));
+				output((JFCMainClient.isgerman()?"versuche herunterzuladen: ":"try to download: ").concat(this.sURL));
 				JFCMainClient.removeURLFromList(this.sURL);
 				JFCMainClient.addYTURLToList(JFCMainClient.szDLSTATE.concat(this.sURL));
 				
@@ -632,9 +635,9 @@ public class YTDownloadThread extends Thread {
 				// download one webresource and show result
 				bDOWNLOADOK = downloadone(this.sURL); this.iRecursionCount=-1;
 				if (bDOWNLOADOK && !this.bNODOWNLOAD)
-					output("download complete: ".concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
+					output((JFCMainClient.isgerman()?"fertig heruntergeladen: ":"download complete: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 				else
-					output("error downloading: ".concat(this.sURL));
+					output((JFCMainClient.isgerman()?"Fehler beim herunterladen: ":"error downloading: ").concat(this.sURL));
 				
 				JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(this.sURL));
 			} catch (InterruptedException e) {

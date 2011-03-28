@@ -48,19 +48,20 @@ import javax.swing.event.DocumentListener;
 
 /**
  * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
- * 999 java code lines
- * 392 empty/comment lines 
+ * 1077 java code lines
+ * 423 empty/comment lines 
  *
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Sun Feb 13 01:08:18 CET 2011
- * Linux section60 2.6.35-25-generic #44-Ubuntu SMP Fri Jan 21 17:40:44 UTC 2011 x86_64 GNU/Linux
+ * Mon Mar 28 22:35:41 CEST 2011
+ * Linux section60 2.6.35-28-generic #49-Ubuntu SMP Tue Mar 1 14:39:03 UTC 2011 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=10.10
  * DISTRIB_CODENAME=maverick
  * DISTRIB_DESCRIPTION="Ubuntu 10.10"
- * java version "1.6.0_22"
- * Java(TM) SE Runtime Environment (build 1.6.0_22-b04)
- * Java HotSpot(TM) 64-Bit Server VM (build 17.1-b03, mixed mode)
+ * java version "1.6.0_24"
+ * Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
+ * Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)
+ *
  * 
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								In lovely memory of my grandpa, who used to fly around the clouds. 
  * http://www.youtube.com/watch?v=I3lq1yQo8OY&NR=1&feature=fvwp	<meta name="title" content="Showdown: Air Combat - Me-109">																																																																																			http://www.youtube.com/watch?v=yxXBhKJnRR8
@@ -69,10 +70,10 @@ import javax.swing.event.DocumentListener;
  *
  * technobase.fm / We Are One! 
  * 
- * using Eclipse 3.6.1 64Bit Helios
+ * using Eclipse 3.6.2 SR2 64Bit Helios
  * TODOs are for Eclipse IDE - Tasks View
  * 
- * tested on GNU/Linux JRE 1.6.0_22 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
+ * tested on GNU/Linux JRE 1.6.0_24 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
  * using Mozilla Firefox 3.6 and M$-IE (8)
  * 
  * source code compliance level is 1.5
@@ -81,7 +82,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110308_1526 by MrKnödelmann";
+	public static final String szVersion = "V20110328_1526 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -219,7 +220,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	} // clearURLList
 	
 	public static boolean isgerman() {
-		return Locale.getDefault().toString().startsWith("de_") || (bDEBUG && System.getProperty("user.home").equals("/home/knoedel"));
+		return Locale.getDefault().toString().startsWith("de_") || (JFCMainClient.bDEBUG && System.getProperty("user.home").equals("/home/knoedel"));
 	} // isgerman
 
 	public void setfocustotextfield() {
@@ -545,7 +546,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		frame.pack();
 		frame.setVisible( true );
 		
-		JFCMainClient.szDLSTATE = isgerman()?"herunterladen ":JFCMainClient.szDLSTATE;
+		JFCMainClient.szDLSTATE = isgerman()?"heruntergeladen ":JFCMainClient.szDLSTATE;
 		
 		sv = "version: ".concat( szVersion ).concat(bDEBUG?" DEBUG ":"");
 		sv = isgerman()?sv.replaceFirst("by", "von"):sv;

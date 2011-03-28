@@ -95,6 +95,10 @@ TODO
 
 CHANGES
 
+  V20110328
+    2011-03-28  bug fix (utf8 characters)
+                some translations    
+
   V20110308
     2011-03-08  changed to work with new webpage source code
 
