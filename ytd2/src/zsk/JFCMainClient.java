@@ -444,7 +444,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.directorytextfield.addActionListener( this );
 		this.panel.add( this.directorytextfield, gbc);
 		
-		JLabel dirhint = new JLabel( isgerman()?"Speichern im Ordner:":"download into folder:");
+		JLabel dirhint = new JLabel( isgerman()?"Speichern im Ordner:":"Download to folder:");
+
 		gbc.gridx = 0;
 		gbc.gridy = 1;
 		this.panel.add( dirhint, gbc);
@@ -484,7 +485,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		gbc.anchor = GridBagConstraints.NORTHEAST;
 		this.panel.add( radiopanel, gbc );
 
-		JLabel hint = new JLabel( isgerman()?"(eingeben, reinkopieren, reinziehen von YT-Webadressen oder YT-Videobilder) URLs:":"(type in, paste in, drop in -> yt-webaddresses or yt-videoimages) URLs:");
+		JLabel hint = new JLabel( isgerman()?"(eingeben, reinkopieren, reinziehen von YT-Webadressen oder YT-Videobilder) URLs:":"(Type, paste or drag'n drop a YouTube video address:");
+
 		gbc.fill = 0;
 		gbc.gridwidth = 0;
 		gbc.gridheight = 1;
@@ -572,7 +574,8 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		t4.start();
 		
 		output(""); // \n
-		output(isgerman()?"besuche sf.net/projects/ytd2/forums für irgendwelche Tipps, Vorschläge, Neuerungen, Fragen!":"visit sf.net/projects/ytd2/forums for any hints, suggestions, features, questions!");
+		output(isgerman()?"besuche sf.net/projects/ytd2/forums für irgendwelche Tipps, Vorschläge, Neuerungen, Fragen!":"Visit sf.net/projects/ytd2/forums for tips, questions and comments!");
+
 	} // createAndShowGUI()
 	
 	
@@ -769,7 +772,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 
 
 	/**
-	 * processing event of droping a HTTP URL, YT-Video Image or plain text (URL) onto the frame
+	 * processing event of dropping a HTTP URL, YT-Video Image or plain text (URL) onto the frame
 	 * 
 	 * seems not to work with M$-IE (8) - what a pity!
 	 */
