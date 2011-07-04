@@ -96,6 +96,8 @@ TODO
 CHANGES
 
   V20110328
+    2011-07-04  simplified source code for parsing javascript
+                bug fix (clearing proxy)
     2011-03-28  bug fix (utf8 characters)
                 some translations    
 
@@ -148,4 +150,4 @@ CHANGES
   
 THANKS
 
-  My special thanks to Dean, "loki" and "odie" for testing and support! :)
+  My special thanks to Dean, Anonyous, "Loki" and "Odie" for testing and support! :)

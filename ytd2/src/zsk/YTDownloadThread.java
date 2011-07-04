@@ -131,7 +131,7 @@ public class YTDownloadThread extends Thread {
 		// http://www.youtube.com/watch?v=cNOP2t9FObw 					Blade 360 - 480
 		// http://www.youtube.com/watch?v=HvQBrM_i8bU					MZ 1000 Street Fighter
 		
-		// lately found: http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
+		// http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
 		// using local squid to save download time for tests
 
 		try {
@@ -179,7 +179,7 @@ public class YTDownloadThread extends Thread {
 		((DefaultHttpClient) httpclient).setCookieStore(this.bcs); // cast to AbstractHttpclient would be best match because DefaultHttpClass is a subclass of AbstractHttpClient
 		*/
         
-        // TODO maybe we save the video IDs that were downloaded to avoid downloading the same video again? (or we dont to let the user download different resolutions of the same video)
+        // TODO maybe we save the video IDs+res that were downloaded to avoid downloading the same video again?
        
 		try {
 			this.response = this.httpclient.execute(this.target,this.httpget,this.localContext);
@@ -344,29 +344,19 @@ public class YTDownloadThread extends Thread {
 				}
 				if (this.iRecursionCount==0 && sline.matches("( *)var swfConfig =(.*)")) { // 2011-03-08 - source code changed from "var swfHTML" to "var swfConfig"
     				HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
-    				String shmkey = null; // key for hashmap containg video URLs from webpage source code
-    				Integer iidx = null;
 
-    				 // 2011-03-08 yt source code changed
-					sline = sline.toLowerCase().replaceFirst(".*fmt_url_map\": \"", "\"");
-					sline = sline.replace("\\/","/").replace("%25", "%").replace("%2c",",").replace("%7c", "|").replace("%3f", "?").replace("%3d", "=").replace("%26", "&").replace("%2f", "/").replace("%3a", ":");
-					 // 2011-03-28 yt source code changed again - utf8 encoded characters instead of %hex encoded are being used ..
-					sline = sline.replace("\\u0025", "%").replace("\\u002c",",").replace("\\u007c", "|").replace("\\u003f", "?").replace("\\u003d", "=").replace("\\u0026", "&").replace("\\u002f", "/").replace("\\u003a", ":");
-					
-					String[] ssourcecodeyturls = sline.split(this.ssourcecodeurl); // that block of javascript contains all videoURLs twice - we take the first ones without "||".. 
+					// by anonymous
+					sline = sline.replaceFirst(".*\"fmt_url_map\": \"", "").replaceFirst("\".*", "").replace("\\u0026", "&").replace("\\", "");
+					String[] ssourcecodeyturls = sline.split(",");
 					debugoutput("ssourcecodeuturls.length: ".concat(Integer.toString(ssourcecodeyturls.length)));
-					final String szITAG = "itag=";
-					for (int i = ssourcecodeyturls.length-1; i >= 0; i--) {
-							if (ssourcecodeyturls[i].toLowerCase().matches("(.*)youtube.com/videoplayback(.*)")) {
-								ssourcecodeyturls[i] = "http://".concat( ssourcecodeyturls[i].replaceFirst("\\|\\|(.*)", "") );
-								shmkey = ssourcecodeyturls[i].substring( iidx=ssourcecodeyturls[i].indexOf(szITAG), iidx+szITAG.length()+2) ; // e.g. itag=5 or itag=22 (one or two digits) - unimportant for hasmap but looks better
-								shmkey = shmkey.matches("(.*)[^(0-9)]$")?shmkey.substring(0,shmkey.length()-1):shmkey; // delete last non-digit if any
-								if (!ssourcecodevideourls.containsKey(shmkey)) {
-									ssourcecodevideourls.put(shmkey, ssourcecodeyturls[i]); // save that URL
-									debugoutput(String.format( "video url #%d saved with key %s: %s",i,shmkey,ssourcecodevideourls.get(shmkey) ));
-									output((JFCMainClient.isgerman()?"gefundene Video URLs für Auflösung: ":"found video URL for resolution: ").concat(shmkey.equals("itag=22")?"720p":shmkey.equals("itag=35")?"480p?":shmkey.equals("itag=18")?"270p?":shmkey.equals("itag=34")?"360p?":shmkey.equals("itag=37")?"1080p":shmkey.equals("itag=5")?"240p?":"unknown resolution?"));
-								}
-							};
+					String[] urlStrings = sline.split(",");
+					
+					for (String urlString : urlStrings) {
+						String[] fmtUrlPair = urlString.split("\\|");
+						// String fmt = fmtUrlPair[0], url = fmtUrlPair[1];
+						ssourcecodevideourls.put(fmtUrlPair[0], fmtUrlPair[1]); // save that URL
+						debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[0],ssourcecodevideourls.get(fmtUrlPair[0]) ));
+						output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[0].equals("22")?"720p":fmtUrlPair[0].equals("35")?"480p?":fmtUrlPair[0].equals("18")?"270p?":fmtUrlPair[0].equals("34")?"360p?":fmtUrlPair[0].equals("37")?"1080p":fmtUrlPair[0].equals("5")?"240p?":"unknown resolution?"));
 					} // for
 
 					debugoutput("ssourcecodevideourls.length: ".concat(Integer.toString(ssourcecodevideourls.size())));
@@ -375,24 +365,24 @@ public class YTDownloadThread extends Thread {
 					switch (JFCMainClient.getIdlbuttonstate()) {
 					case 4:
 						// 37|22 - better quality first
-						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="37")));
-						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("22")));
-						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("35")));
-						this.sNextVideoURL.add(3, ssourcecodevideourls.get(szITAG.concat("34")));
-						this.sNextVideoURL.add(4, ssourcecodevideourls.get(szITAG.concat("18")));
-						this.sNextVideoURL.add(5, ssourcecodevideourls.get(szITAG.concat("5")));
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno="37"));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get("22"));
+						this.sNextVideoURL.add(2, ssourcecodevideourls.get("35"));
+						this.sNextVideoURL.add(3, ssourcecodevideourls.get("34"));
+						this.sNextVideoURL.add(4, ssourcecodevideourls.get("18"));
+						this.sNextVideoURL.add(5, ssourcecodevideourls.get("5"));
 						break;
 					case 2:
 						// 35|34
-						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="35")));
-						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("34")));
-						this.sNextVideoURL.add(2, ssourcecodevideourls.get(szITAG.concat("18")));
-						this.sNextVideoURL.add(3, ssourcecodevideourls.get(szITAG.concat("5")));
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno="35"));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get("34"));
+						this.sNextVideoURL.add(2, ssourcecodevideourls.get("18"));
+						this.sNextVideoURL.add(3, ssourcecodevideourls.get("5"));
 						break;
 					case 1:
 						// 18|5
-						this.sNextVideoURL.add(0, ssourcecodevideourls.get(szITAG.concat(sno="18")));
-						this.sNextVideoURL.add(1, ssourcecodevideourls.get(szITAG.concat("5")));
+						this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno="18"));
+						this.sNextVideoURL.add(1, ssourcecodevideourls.get("5"));
 						break;
 					default:
 						this.sNextVideoURL = null;
@@ -402,11 +392,11 @@ public class YTDownloadThread extends Thread {
 					}
 					
 					if (this.sNextVideoURL.get(0)==null && this.sNextVideoURL.get(1)==null) {
-						String smsg = JFCMainClient.isgerman()?"Konne Video URL für ausgewählte Auflösung nicht finden. versuche geringere Auflösung!":"could not find video url for selected resolution! trying lower res..";
+						String smsg = JFCMainClient.isgerman()?"Konnte Video URL für ausgewählte Auflösung nicht finden. Versuche geringere Auflösung!":"could not find video url for selected resolution! trying lower res...";
 						output(smsg); debugoutput(smsg);
 					}
 					
-					// remove null entries in list - we later try to download the first (index 0) and if it fails the next (index 1) and so on
+					// remove null entries in list - we later try to download the first (index 0) and if it fails the next one (at index 1) and so on
 					for (int x=this.sNextVideoURL.size()-1;x>=0;x--) {
 						if (this.sNextVideoURL.get(x)==null) this.sNextVideoURL.remove(x);
 					}
@@ -420,8 +410,9 @@ public class YTDownloadThread extends Thread {
 					// 2011-03-08 new - skip generate_204
 					this.sVideoURL = this.sNextVideoURL.get(0);
 				}
+				// TODO exchange HTML characters to UTF-8 = http://sourceforge.net/projects/htmlparser/ 
 				if (this.iRecursionCount==0 && sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
-					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("[!\"#$%&'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
+					this.setTitle( sline.replaceFirst("<meta name=\"title\" content=", "").trim().replaceAll("&amp;", "&").replaceAll("[!\"#$%'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", "") );	
 				}
 			} catch (NullPointerException npe) {
 			}
