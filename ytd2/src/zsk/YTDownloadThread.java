@@ -342,7 +342,10 @@ public class YTDownloadThread extends Thread {
 					this.s403VideoURL = sline.replaceFirst("generate_204", "videoplayback");	//debugoutput("URL: ".concat(sline)); // this is what my wget command does
 					this.sVideoURL = sline;
 				}
-				if (this.iRecursionCount==0 && sline.matches("( *)var swfConfig =(.*)")) { // 2011-03-08 - source code changed from "var swfHTML" to "var swfConfig"
+				// 2011-03-08 - source code changed from "var swfHTML" to "var swfConfig"
+				// 2011-07-30 - source code changed from "var swfConfig" something else .. we now use fmt_url_map as there are the URLs to vidoes with formatstrings
+				if (this.iRecursionCount==0 && sline.matches("(.*)\"fmt_url_map\":(.*)")) {
+					
     				HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
 
 					// by anonymous

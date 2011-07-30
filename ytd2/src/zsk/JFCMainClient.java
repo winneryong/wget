@@ -82,14 +82,14 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110328_1526 by MrKnödelmann";
+	public static final String szVersion = "V20110730_1355 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
 	private static final String newline = "\n";
 	
 	// more or less (internal) output
-	static boolean bDEBUG = true;
+	static boolean bDEBUG = false;
 	
 	// just report file size of HTTP header - don't download binary data (the video)
 	static boolean bNODOWNLOAD = false;

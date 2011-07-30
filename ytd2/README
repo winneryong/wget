@@ -86,6 +86,7 @@ TODO
   
   - GUI option for proxy
   - correct handling of directories for download (esp. on M$-Windows)
+  - user-friendly behavior in case webpage source codes changes
 	
   maybe: Java Web Start, translated GUI (or no text at all),
          video from other websites (imdb.com, video.web.de,..)
@@ -95,6 +96,9 @@ TODO
 
 CHANGES
 
+  V20110730
+    2011-07-30  changed to work with new webpage source code
+    
   V20110328
     2011-07-04  simplified source code for parsing javascript
                 bug fix (clearing proxy)
