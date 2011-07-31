@@ -87,6 +87,7 @@ TODO
   - GUI option for proxy
   - correct handling of directories for download (esp. on M$-Windows)
   - user-friendly behavior in case webpage source codes changes
+  - submit login credentials
 	
   maybe: Java Web Start, translated GUI (or no text at all),
          video from other websites (imdb.com, video.web.de,..)
