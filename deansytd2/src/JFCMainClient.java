@@ -66,18 +66,18 @@ import javax.swing.event.DocumentListener;
 /**
  * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
  * 1077 java code lines
- * 423 empty/comment lines 
+ * 432 empty/comment lines 
  *
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Mon Mar 28 22:35:41 CEST 2011
- * Linux section60 2.6.35-28-generic #49-Ubuntu SMP Tue Mar 1 14:39:03 UTC 2011 x86_64 GNU/Linux
+ * Mon Aug 29 22:39:47 CEST 2011
+ * Linux section60 2.6.38-11-generic #48-Ubuntu SMP Fri Jul 29 19:02:55 UTC 2011 x86_64 x86_64 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
- * DISTRIB_RELEASE=10.10
- * DISTRIB_CODENAME=maverick
- * DISTRIB_DESCRIPTION="Ubuntu 10.10"
- * java version "1.6.0_24"
- * Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
- * Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)
+ * DISTRIB_RELEASE=11.04
+ * DISTRIB_CODENAME=natty
+ * DISTRIB_DESCRIPTION="Ubuntu 11.04"
+ * java version "1.6.0_26"
+ * Java(TM) SE Runtime Environment (build 1.6.0_26-b03)
+ * Java HotSpot(TM) 64-Bit Server VM (build 20.1-b02, mixed mode)
  *
  * 
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								In lovely memory of my grandpa, who used to fly around the clouds. 
@@ -87,19 +87,19 @@ import javax.swing.event.DocumentListener;
  *
  * technobase.fm / We Are One! 
  * 
- * using Eclipse 3.6.2 SR2 64Bit Helios
+ * using Eclipse 3.7.0 64Bit Indigo
  * TODOs are for Eclipse IDE - Tasks View
  * 
  * tested on GNU/Linux JRE 1.6.0_24 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
- * using Mozilla Firefox 3.6 and M$-IE (8)
+ * using Mozilla Firefox 3.6-6 and M$-IE (8)
  * 
  * source code compliance level is 1.5
  * java files are UTF-8 encoded
- * javac shows no warning
+ * javac shows no warning (of ytd2)
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110328_1526 by MrKnödelmann, GUI V20110505 by dean703";
+	public static final String szVersion = "V20110829_2239s by MrKnödelmann, GUI V20110505 by dean703";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -122,8 +122,10 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	// something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/   the last / is for marking the end of host, it does not belong to the hostpart
 	public static final String szYTHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
 	
-	public static final String szPROXYREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$";
-	// RFC-1123 hostname [with protocol]
+	// RFC-1123 ? hostname [with protocol]	
+	//public static final String szPROXYREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$";
+	public static final String szPROXYREGEX = "(^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]+:[a-zA-Z0-9]+@)?([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*(:[0-90-90-90-9]{1,4})?$)|()";
+	
 	private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 	
 	// all characters that do not belong to an HTTP URL - could be written shorter?? (where did I used this?? dont now anymore)
@@ -481,7 +483,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	} // actionPerformed()
 
 	void cli(String scmd) {
-		if (scmd.matches("^(help|[-/][h|\\?])")) {
+		if (scmd.matches("^(hilfe|help|[-/][h|\\?])")) {
 			addTextToConsole("debug[ on| off]\t: more or less (internal) output");
 			addTextToConsole("help|-h|/?]\t\t: show this text");
 			addTextToConsole("ndl[ on| off]\t\t: no download, just report file size");
@@ -513,16 +515,19 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 			addTextToConsole("ndl: ".concat(Boolean.toString( JFCMainClient.getbNODOWNLOAD() )));
 		} else if (scmd.matches("^(quit|exit)"))
 			this.shutdownAppl();
-		else if (scmd.matches("^(proxy)( .*)?")) {// TODO proxy server url should match host:port regex
+		else if (scmd.matches("^(proxy)( .*)?")) {
 			if (!scmd.matches("^(proxy)$")) {
-				//if (scmd.replaceFirst("proxy ", "").matches(JFCMainClient.szPROXYREGEX))
-					JFCMainClient.sproxy = scmd.replaceFirst("proxy ", "");
-				//else
-				//	addTextToConsole("proxy string does not match hostname specification");
+				// replace "" and '' with <nothing> otherwise it's interpreted as host - perhaps some users don't know how to input "proxy[ URL]" with an empty URL ;-)
+				String snewproxy = scmd.replaceAll("\"", "").replaceAll("'", "").replaceFirst("proxy ", "");
+				debugoutput("snewproxy: ".concat(snewproxy));
+				if (snewproxy.matches(JFCMainClient.szPROXYREGEX))
+					JFCMainClient.sproxy = snewproxy;
+				else
+					addTextToConsole(isgerman()?"Proxy Zeichenkette entspricht nicht der Spezifikation!":"proxy string does not match hostname specification!");
 			}
 			addTextToConsole("proxy: ".concat(JFCMainClient.sproxy));
 		} else 
-			addTextToConsole("? (try help|-h|/?)");
+			addTextToConsole(isgerman()?"? (versuche hilfe|help|-h|/?)":"? (try help|-h|/?)");
 		
 	} // cli()
 
@@ -934,15 +939,16 @@ protected ImageIcon createImageIcon(String path) {
 	void checkInputFieldforYTURLs() {
 		String sinput = frame.textinputfield.getText(); // dont call .toLowerCase() !
 
-		// TODO this can probably be done better - replace input so URLs get extracted without user activity (works even if URLs are spread across multiple lines)
+		// TODO this can probably be done better - replace input so URLs get extracted without user activity (works even if URLs are spread across multiple lines and pasted at once)
 		sinput = sinput.replaceAll("&feature=fvwp&", "&"); // after that text there could be another yt-URL or more query_string options
 		sinput = sinput.replaceAll("&feature=fvwphttp", "http");
 		sinput = sinput.replaceAll("&feature=fvwp", "");
 		sinput = sinput.replaceAll("&feature=related&", "&");
 		sinput = sinput.replaceAll("&feature=relatedhttp", "http");
 		sinput = sinput.replaceAll("&feature=related", "");
-		sinput = sinput.replaceAll("&feature=mfu_in_order&list=[A-Z]{1,2}", "");
-		sinput = sinput.replaceAll("&feature=[a-zA-Z]{1,2}&list=([a-zA-Z0-9]*)&index=[0-9]", "");
+		sinput = sinput.replaceAll("&feature=mfu_in_order&list=[0-9A-Z]{1,2}", "");
+		sinput = sinput.replaceAll("&feature=[a-zA-Z]{1,2}&list=([a-zA-Z0-9]*)&index=[0-9]{1,2}", "");
+		sinput = sinput.replaceAll("&playnext=[0-9A-Z]{1,2}&list=(PL[a-zA-Z0-9]{16})", "");
 		sinput = sinput.replaceAll("&NR=[0-9]&", "&");
 		sinput = sinput.replaceAll("&NR=[0-9]http", "http");
 		sinput = sinput.replaceAll("&NR=[0-9]", "");
