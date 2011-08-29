@@ -48,19 +48,19 @@ import javax.swing.event.DocumentListener;
 
 /**
  * knoedel@section60:~/workspace/ytd2$ echo " *" `egrep -v "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` java code lines && echo -e " *" `egrep "(^\s*(\/\*|\*|//)|^\s*$)" src/zsk/*java | wc -l` empty/comment lines "\n *"
- * 1074 java code lines
- * 428 empty/comment lines 
+ * 1077 java code lines
+ * 432 empty/comment lines 
  *
  * knoedel@section60:~/workspace/ytd2$ date && uname -a && cat /etc/*rele* && java -version
- * Mon Jul  4 12:08:31 CEST 2011
- * Linux section60 2.6.38-8-generic #42-Ubuntu SMP Mon Apr 11 03:31:24 UTC 2011 x86_64 x86_64 x86_64 GNU/Linux
+ * Mon Aug 29 22:39:47 CEST 2011
+ * Linux section60 2.6.38-11-generic #48-Ubuntu SMP Fri Jul 29 19:02:55 UTC 2011 x86_64 x86_64 x86_64 GNU/Linux
  * DISTRIB_ID=Ubuntu
  * DISTRIB_RELEASE=11.04
  * DISTRIB_CODENAME=natty
  * DISTRIB_DESCRIPTION="Ubuntu 11.04"
- * java version "1.6.0_24"
- * Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
- * Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)
+ * java version "1.6.0_26"
+ * Java(TM) SE Runtime Environment (build 1.6.0_26-b03)
+ * Java HotSpot(TM) 64-Bit Server VM (build 20.1-b02, mixed mode)
  *
  * 
  * http://www.youtube.com/watch?v=5nj77mJlzrc  					<meta name="title" content="BF109 G">																																																																																								In lovely memory of my grandpa, who used to fly around the clouds. 
@@ -74,7 +74,7 @@ import javax.swing.event.DocumentListener;
  * TODOs are for Eclipse IDE - Tasks View
  * 
  * tested on GNU/Linux JRE 1.6.0_24 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
- * using Mozilla Firefox 3.6-5 and M$-IE (8)
+ * using Mozilla Firefox 3.6-6 and M$-IE (8)
  * 
  * source code compliance level is 1.5
  * java files are UTF-8 encoded
@@ -82,7 +82,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110730_1355 by MrKnödelmann";
+	public static final String szVersion = "V20110829_2239 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 

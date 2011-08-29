@@ -344,22 +344,26 @@ public class YTDownloadThread extends Thread {
 				}
 				// 2011-03-08 - source code changed from "var swfHTML" to "var swfConfig"
 				// 2011-07-30 - source code changed from "var swfConfig" something else .. we now use fmt_url_map as there are the URLs to vidoes with formatstrings
-				if (this.iRecursionCount==0 && sline.matches("(.*)\"fmt_url_map\":(.*)")) {
+				// 2011-08-20 - source code changed from "fmt_url_map": to "url_encoded_fmt_stream_map":
+				if (this.iRecursionCount==0 && sline.matches("(.*)\"url_encoded_fmt_stream_map\":(.*)")) {
 					
     				HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
 
 					// by anonymous
-					sline = sline.replaceFirst(".*\"fmt_url_map\": \"", "").replaceFirst("\".*", "").replace("\\u0026", "&").replace("\\", "");
+					sline = sline.replaceFirst(".*\"url_encoded_fmt_stream_map\": \"", "").replaceFirst("\".*", "").replace("%25","%").replace("\\u0026", "&").replace("\\", "");
 					String[] ssourcecodeyturls = sline.split(",");
 					debugoutput("ssourcecodeuturls.length: ".concat(Integer.toString(ssourcecodeyturls.length)));
 					String[] urlStrings = sline.split(",");
 					
 					for (String urlString : urlStrings) {
-						String[] fmtUrlPair = urlString.split("\\|");
-						// String fmt = fmtUrlPair[0], url = fmtUrlPair[1];
-						ssourcecodevideourls.put(fmtUrlPair[0], fmtUrlPair[1]); // save that URL
-						debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[0],ssourcecodevideourls.get(fmtUrlPair[0]) ));
-						output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[0].equals("22")?"720p":fmtUrlPair[0].equals("35")?"480p?":fmtUrlPair[0].equals("18")?"270p?":fmtUrlPair[0].equals("34")?"360p?":fmtUrlPair[0].equals("37")?"1080p":fmtUrlPair[0].equals("5")?"240p?":"unknown resolution?"));
+						String[] fmtUrlPair = urlString.split("&itag="); // 2011-08-20 \\|
+						fmtUrlPair[0] = fmtUrlPair[0].replaceFirst("url=http%3A%2F%2F", "http://"); // 2011-08-20 key-value exchanged
+						fmtUrlPair[0] = fmtUrlPair[0].replaceAll("%3F","?").replaceAll("%2F", "/").replaceAll("%3D","=").replaceAll("%26", "&");
+						fmtUrlPair[0] = fmtUrlPair[0].replaceFirst("&quality=.*", "");
+						ssourcecodevideourls.put(fmtUrlPair[1], fmtUrlPair[0]); // save that URL
+						debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[1],ssourcecodevideourls.get(fmtUrlPair[1]) ));
+						// TODO add unknown resolutions (43-45)
+						output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[1].equals("22")?"720p":fmtUrlPair[1].equals("35")?"480p?":fmtUrlPair[1].equals("18")?"270p?":fmtUrlPair[1].equals("34")?"360p?":fmtUrlPair[1].equals("37")?"1080p":fmtUrlPair[1].equals("5")?"240p?":"unknown resolution? (".concat(fmtUrlPair[1]).concat(")")));
 					} // for
 
 					debugoutput("ssourcecodevideourls.length: ".concat(Integer.toString(ssourcecodevideourls.size())));
