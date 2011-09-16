@@ -109,7 +109,7 @@ public class YTDownloadThread extends Thread {
 		this.bDEBUG = bD;
 		String sv = "thread started: ".concat(this.getMyName()); 
 		
-		hallelujah = new Sound("sounds/hallelujah.wav");
+		this.hallelujah = new Sound("sounds/hallelujah.wav");
 				
 		//output(sv); 
 		debugoutput(sv);
@@ -625,7 +625,6 @@ public class YTDownloadThread extends Thread {
 		this.bDEBUG = bDEBUG;
 	} // setbDEBUG
 	
-	@SuppressWarnings("deprecation")
 	public void run() {
 		boolean bDOWNLOADOK = false;
 		while (!this.bisinterrupted) {
@@ -651,7 +650,7 @@ public class YTDownloadThread extends Thread {
 				if (bDOWNLOADOK && !this.bNODOWNLOAD){
 					output((JFCMainClient.isgerman()?"fertig heruntergeladen: ":"download complete: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 					//play sound when download finishes////////////////////////
-					hallelujah.playSoundOnce();	
+					this.hallelujah.playSoundOnce();	
 			}
 				else
 					output((JFCMainClient.isgerman()?"Fehler beim herunterladen: ":"error downloading: ").concat(this.sURL));

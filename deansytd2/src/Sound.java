@@ -8,22 +8,22 @@ public class Sound // Plays one audio file
 	{
   try
   {
- 	 songPath = getClass().getClassLoader().getResource(filename);
- 	 song = Applet.newAudioClip(songPath); // Load the Sound
+ 	 this.songPath = getClass().getClassLoader().getResource(filename);
+ 	 this.song = Applet.newAudioClip(this.songPath); // Load the Sound
   }
   catch(Exception e){} // Satisfy the catch
 	}
 	public void playSound()
 	{
-  song.loop(); // Play 
+  this.song.loop(); // Play 
 	}
 	public void stopSound()
 	{
-  song.stop(); // Stop
+  this.song.stop(); // Stop
 	}
 	public void playSoundOnce()
 	{
-  song.play(); // Play only once
+  this.song.play(); // Play only once
 	}
 }
 

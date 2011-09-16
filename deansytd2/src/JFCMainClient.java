@@ -54,6 +54,7 @@ import java.io.InputStreamReader;
 
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import javax.swing.*;
@@ -99,7 +100,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110829_2239s by MrKnödelmann, GUI V20110505 by dean703";
+	public static final String szVersion = "V20110829_2239 by MrKnödelmann, GUI V20110505 by dean703";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -329,28 +330,28 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	 */
 	public void actionPerformed( final ActionEvent e ) {
 
-		if (e.getSource().equals( frame.timer )) {
+		if (e.getSource().equals( JFCMainClient.timer )) {
 		//If still loading, can't animate.
-        if (!aniworker.isDone()) {
+        if (!this.aniworker.isDone()) {
             return;
         }
 
-        loopslot++;
+        this.loopslot++;
 
-        if (loopslot >= nimgs) {
-            loopslot = 0;
-            off += offset;
+        if (this.loopslot >= this.nimgs) {
+            this.loopslot = 0;
+            this.off += this.offset;
 
-            if (off < 0) {
-                off = width - maxWidth;
-            } else if (off + maxWidth > width) {
-                off = 0;
+            if (this.off < 0) {
+                this.off = this.width - this.maxWidth;
+            } else if (this.off + this.maxWidth > this.width) {
+                this.off = 0;
             }
         }
 
         animator.repaint();
 
-        if (loopslot == nimgs - 1) {
+        if (this.loopslot == this.nimgs - 1) {
             timer.restart();
         }
 			return;
@@ -409,7 +410,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		// display the info window
 		if (e.getSource().equals( frame.infobutton )) {
 			debugoutput("frame.infobutton");
-		Point lastLocation = this.frame.getLocation();
+		Point lastLocation = JFCMainClient.frame.getLocation();
 		debugoutput("frame location: " + lastLocation.toString());
 	    int maxX = 500;
     	int maxY = 500;
@@ -424,20 +425,20 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
                 lastLocation.setLocation(0, 0);
 
             }
-            infoframe.setLocation(lastLocation);
+            this.infoframe.setLocation(lastLocation);
         } else {
             lastLocation = frame.getLocation();
         }
-			if(!infoframe.isVisible())infoframe.setVisible(true);
-				else infoframe.setVisible(false); 
-			this.frame.requestFocusInWindow();
+			if(!this.infoframe.isVisible())this.infoframe.setVisible(true);
+				else this.infoframe.setVisible(false); 
+			JFCMainClient.frame.requestFocusInWindow();
 			return;
 		}
 
 		// display the about window
 		if (e.getSource().equals( frame.aboutbutton )) {
 			debugoutput("frame.aboutbutton");
-		Point lastLocation = this.frame.getLocation();
+		Point lastLocation = JFCMainClient.frame.getLocation();
 		debugoutput("frame location: " + lastLocation.toString());
 	    int maxX = 500;
     	int maxY = 500;
@@ -452,20 +453,20 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
                 lastLocation.setLocation(0, 0);
 
             }
-            aboutframe.setLocation(lastLocation);
+            this.aboutframe.setLocation(lastLocation);
         } else {
             lastLocation = frame.getLocation();
         }
 
-               	if(!aboutframe.isVisible()){
-				aboutframe.setVisible(true);
+               	if(!this.aboutframe.isVisible()){
+				this.aboutframe.setVisible(true);
 				//timer.start();
 				}
 				else {
-				aboutframe.setVisible(false);
+				this.aboutframe.setVisible(false);
 				//timer.stop();
 				}
-			this.frame.requestFocusInWindow();
+			JFCMainClient.frame.requestFocusInWindow();
 			return;
 		}
 		
@@ -545,22 +546,22 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 	public void addComponentsToPane( final Container pane ) {
 
         //Set up timer to drive animation events.
-        timer = new Timer(speed, this);
-        timer.setInitialDelay(pause);
+        timer = new Timer(this.speed, this);
+        timer.setInitialDelay(this.pause);
 
         //Start loading the images in the background.
-        aniworker.execute();
+        this.aniworker.execute();
 
         //Animate from right to left if offset is negative.
-        width = getSize().width;
-        if (offset < 0) {
-            off = width - maxWidth;
+        this.width = getSize().width;
+        if (this.offset < 0) {
+            this.off = this.width - this.maxWidth;
         }
 
 		this.panel = new JPanel();
 		this.panel.setLayout( new BorderLayout() );
 
- 	    JToolBar toolbar = new JToolBar("Toolbar", JToolBar.HORIZONTAL);
+ 	    JToolBar toolbar = new JToolBar("Toolbar", SwingConstants.HORIZONTAL);
 
 		this.directorybutton = new JButton("", createImageIcon("images/downloadto.png",""));
 		this.directorybutton.addActionListener( this );
@@ -630,7 +631,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.directorytextfield.addActionListener( this );
 
 		downpanel.add(dirhint);
-		downpanel.add(directorytextfield);
+		downpanel.add(this.directorytextfield);
 
         //Custom component to draw the current image
         //at a particular offset.
@@ -639,22 +640,22 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
         animator.setBackground(Color.white);
        // setContentPane(animator);
 		ImageIcon imgicon = createImageIcon("animages/1.gif");
-		titlelabel = new JLabel(imgicon);
+		this.titlelabel = new JLabel(imgicon);
         //titlelabel.setVerticalTextPosition(JLabel.BOTTOM);
         //titlelabel.setHorizontalTextPosition(JLabel.CENTER);
        // titlelabel.setHorizontalAlignment(JLabel.CENTER);
        // titlelabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
-        animator.add(titlelabel, BorderLayout.CENTER);
+        animator.add(this.titlelabel, BorderLayout.CENTER);
 
         centerpanel.add(downpanel, BorderLayout.NORTH);
 		centerpanel.add(animator, BorderLayout.CENTER);
 	
 		this.dlm = new DefaultListModel();
-		this.urllist = new JList( this.dlm );
+		JFCMainClient.urllist = new JList( this.dlm );
 		// TODO maybe we add a button to remove added URLs from list?
 //		this.userlist.setSelectionMode( ListSelectionModel.MULTIPLE_INTERVAL_SELECTION );
-		this.urllist.setFocusable( false );
+		JFCMainClient.urllist.setFocusable( false );
 
 		this.textarea = new JTextArea( 2, 2 );
 		this.textarea.setEditable( true );
@@ -665,7 +666,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.textarea.setWrapStyleWord(true);
         this.textarea.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-		JScrollPane leftscrollpane = new JScrollPane( this.urllist );
+		JScrollPane leftscrollpane = new JScrollPane( JFCMainClient.urllist );
 		JScrollPane rightscrollpane = new JScrollPane( this.textarea );
 		this.middlepane = new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, leftscrollpane, rightscrollpane );
 		this.middlepane.setOneTouchExpandable( true );
@@ -678,10 +679,10 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		this.middlepane.setPreferredSize( new Dimension( 900, 200 ) ); // looks OK on a 23" Samsung LCD at 2048x1152 ;)
 
 		this.infoframe = new JFrame("Download Details");
-		Container c = infoframe.getContentPane();
+		Container c = this.infoframe.getContentPane();
 		c.add( this.middlepane );
-		infoframe.pack();
-		infoframe.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("images/info.png")));
+		this.infoframe.pack();
+		this.infoframe.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("images/info.png")));
 
 		JPanel southpanel = new JPanel(new FlowLayout());
 		JLabel hint = new JLabel( isgerman()?"Video Addresse:":"Video address:");
@@ -696,21 +697,21 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		southpanel.add( this.textinputfield );		
 
 		this.aboutframe = new JFrame("About MyTube Downloader");
-		Container ca = aboutframe.getContentPane();
+		Container ca = this.aboutframe.getContentPane();
 
 		JEditorPane editorPane = new JEditorPane();
 		editorPane.setEditable(false);
         editorPane.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-		java.net.URL aboutURL = JFCMainClient.class.getResource(
-                                "about.html");
+		java.net.URL aboutURL = getClass().getResource("about.html"); //JFCMainClient.class.getResource("about.html");
 		if (aboutURL != null) {
-   		 try {
-       		 editorPane.setPage(aboutURL);
-  			  } catch (IOException e) {
-      	  System.err.println("Attempted to read a bad URL: " + aboutURL);
-   		 }
+			try {
+				JFCMainClient.debugoutput("aboutURL: ".concat(aboutURL.getFile()));
+				editorPane.setPage(aboutURL);
+			} catch (IOException e) {
+				System.err.println("Attempted to read a bad URL: " + aboutURL);
+			}
 		} else {
- 		   System.err.println("Couldn't find file: about.html");
+			System.err.println("Couldn't find file: about.html");
 		}
 
 		//Put the about page editor pane in a scroll pane.
@@ -719,19 +720,19 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		editorScrollPane.setMinimumSize(new Dimension(10, 10));
 		ca.add(editorScrollPane, BorderLayout.CENTER);
      
-        webbutton = new JButton("Visit the Site");
-        webbutton.addActionListener(new ActionListener() {
+        this.webbutton = new JButton("Visit the Site");
+        this.webbutton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
-            BareBonesBrowserLaunch.openURL("http://ytd2.sourceforge.net/"); }
+            BareBonesBrowserLaunch.openURL("http://mytubedownloader.net/"); }
          } );
 
 		JPanel webpanel = new JPanel(new FlowLayout());
-		webpanel.add(webbutton);
+		webpanel.add(this.webbutton);
 		ca.add(webpanel, BorderLayout.SOUTH);
-		aboutframe.pack();
-		aboutframe.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("images/help.png")));
-		aboutframe.setSize(480,360);
-		aboutframe.setResizable(false);
+		this.aboutframe.pack();
+		this.aboutframe.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("images/help.png")));
+		this.aboutframe.setSize(480,360);
+		this.aboutframe.setResizable(false);
 
 		this.panel.add(toolbar,BorderLayout.NORTH);
 		this.panel.add( centerpanel, BorderLayout.CENTER);
@@ -1130,11 +1131,11 @@ protected ImageIcon createImageIcon(String path) {
  */ 
 
     //Background task for loading images.
-    SwingWorker aniworker = new SwingWorker<ImageIcon[], Void>() {
+    SwingWorker<ImageIcon[], Void> aniworker = new SwingWorker<ImageIcon[], Void>() {
         @Override
         public ImageIcon[] doInBackground() {
-            final ImageIcon[] innerImgs = new ImageIcon[nimgs];
-            for (int i = 0; i < nimgs; i++) {
+            final ImageIcon[] innerImgs = new ImageIcon[JFCMainClient.this.nimgs];
+            for (int i = 0; i < JFCMainClient.this.nimgs; i++) {
                 innerImgs[i] = loadImage(i + 1);
             }
  
@@ -1145,9 +1146,9 @@ protected ImageIcon createImageIcon(String path) {
         public void done() {
             //Remove the "Loading images" label.
             //animator.removeAll();
-            loopslot = -1;
+            JFCMainClient.this.loopslot = -1;
             try {
-                imgs = get();
+                JFCMainClient.this.imgs = get();
             } catch (InterruptedException ignore) {}
             catch (java.util.concurrent.ExecutionException e) {
                 String why = null;
@@ -1168,7 +1169,7 @@ protected ImageIcon createImageIcon(String path) {
      * efficiency and so it'll work in older versions of Java Plug-in.
      */
     protected ImageIcon loadImage(int imageNum) {
-        String path = dir + "/" + imageNum + ".gif";
+        String path = this.dir + "/" + imageNum + ".gif";
         int MAX_IMAGE_SIZE = 9000;  //Change this to the size of
                                      //your biggest image, in bytes.
         int count = 0;
@@ -1204,10 +1205,10 @@ protected ImageIcon createImageIcon(String path) {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
 
-            if (aniworker.isDone() &&
-                (loopslot > -1) && (loopslot < nimgs)) {
-                if (imgs != null && imgs[loopslot] != null) {
-                    imgs[loopslot].paintIcon(this, g, 141, 0);
+            if (JFCMainClient.this.aniworker.isDone() &&
+                (JFCMainClient.this.loopslot > -1) && (JFCMainClient.this.loopslot < JFCMainClient.this.nimgs)) {
+                if (JFCMainClient.this.imgs != null && JFCMainClient.this.imgs[JFCMainClient.this.loopslot] != null) {
+                    JFCMainClient.this.imgs[JFCMainClient.this.loopslot].paintIcon(this, g, 141, 0);
                 }
             }
         }
