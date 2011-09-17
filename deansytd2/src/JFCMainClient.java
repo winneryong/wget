@@ -54,7 +54,6 @@ import java.io.InputStreamReader;
 
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import javax.swing.*;
