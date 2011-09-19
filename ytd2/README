@@ -68,11 +68,11 @@ PROXY
   input "proxy http://proxyhost:proxyport" with or without http://
   
   example (on GNU/Linux) before start:
-      knoedel@section60:~/workspace$ set http_proxy=http://localhost:3128
+      knoedel@section60:~/workspace$ http_proxy=http://localhost:3128
       knoedel@section60:~/workspace$ java -jar runytd2.jar
       
   example (on M$-Windows) before start:
-      c:\> http_proxy=http://localhost:3128
+      c:\> set http_proxy=http://localhost:3128
       c:\> java -jar runytd2.jar
   
   example after start - type in as URL:
