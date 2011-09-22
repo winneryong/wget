@@ -363,10 +363,10 @@ public class YTDownloadThread extends Thread {
 						try {
 							ssourcecodevideourls.put(fmtUrlPair[1], fmtUrlPair[0]); // save that URL
 							debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[1],ssourcecodevideourls.get(fmtUrlPair[1]) ));
-							// TODO add unknown resolutions (43-45)
+							// TODO add unknown resolutions (43-45,84?)
 							output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[1].equals("22")?"720p":fmtUrlPair[1].equals("35")?"480p?":fmtUrlPair[1].equals("18")?"270p?":fmtUrlPair[1].equals("34")?"360p?":fmtUrlPair[1].equals("37")?"1080p":fmtUrlPair[1].equals("5")?"240p?":"unknown resolution? (".concat(fmtUrlPair[1]).concat(")")));
 						} catch (java.lang.ArrayIndexOutOfBoundsException aioobe) {
-							// TODO there is a new problem it itag=82 (not &itag=84)							
+							// TODO there is a new problem with itag=84 (not &itag=84)							
 						}
 					} // for
 

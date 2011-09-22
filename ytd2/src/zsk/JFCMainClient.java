@@ -70,7 +70,7 @@ import javax.swing.event.DocumentListener;
  *
  * technobase.fm / We Are One! 
  * 
- * using Eclipse 3.7.0 64Bit Indigo
+ * using Eclipse 3.5/3.6/3.7
  * TODOs are for Eclipse IDE - Tasks View
  * 
  * tested on GNU/Linux JRE 1.6.0_24 64bit, M$-Windows XP 64bit JRE 1.6.0_22 32&64Bit and M$-Windows 7 32Bit JRE 1.6.0_23 32Bit
@@ -82,7 +82,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110829_1722 by MrKnödelmann";
+	public static final String szVersion = "V20110922_2202 by MrKnödelmann";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
@@ -709,6 +709,7 @@ public class JFCMainClient extends JFrame implements ActionListener, WindowListe
 		sinput = sinput.replaceAll("&feature=related", "");
 		sinput = sinput.replaceAll("&feature=mfu_in_order&list=[0-9A-Z]{1,2}", "");
 		sinput = sinput.replaceAll("&feature=[a-zA-Z]{1,2}&list=([a-zA-Z0-9]*)&index=[0-9]{1,2}", "");
+		sinput = sinput.replaceAll("&feature=[0-9A-Z]{1,3}&list=(PL[a-zA-Z0-9]{16})&index=[0-9]{1,2}", "");
 		sinput = sinput.replaceAll("&playnext=[0-9A-Z]{1,2}&list=(PL[a-zA-Z0-9]{16})", "");
 		sinput = sinput.replaceAll("&NR=[0-9]&", "&");
 		sinput = sinput.replaceAll("&NR=[0-9]http", "http");
