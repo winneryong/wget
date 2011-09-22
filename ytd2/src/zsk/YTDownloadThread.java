@@ -360,10 +360,14 @@ public class YTDownloadThread extends Thread {
 						fmtUrlPair[0] = fmtUrlPair[0].replaceFirst("url=http%3A%2F%2F", "http://"); // 2011-08-20 key-value exchanged
 						fmtUrlPair[0] = fmtUrlPair[0].replaceAll("%3F","?").replaceAll("%2F", "/").replaceAll("%3D","=").replaceAll("%26", "&");
 						fmtUrlPair[0] = fmtUrlPair[0].replaceFirst("&quality=.*", "");
-						ssourcecodevideourls.put(fmtUrlPair[1], fmtUrlPair[0]); // save that URL
-						debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[1],ssourcecodevideourls.get(fmtUrlPair[1]) ));
-						// TODO add unknown resolutions (43-45)
-						output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[1].equals("22")?"720p":fmtUrlPair[1].equals("35")?"480p?":fmtUrlPair[1].equals("18")?"270p?":fmtUrlPair[1].equals("34")?"360p?":fmtUrlPair[1].equals("37")?"1080p":fmtUrlPair[1].equals("5")?"240p?":"unknown resolution? (".concat(fmtUrlPair[1]).concat(")")));
+						try {
+							ssourcecodevideourls.put(fmtUrlPair[1], fmtUrlPair[0]); // save that URL
+							debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[1],ssourcecodevideourls.get(fmtUrlPair[1]) ));
+							// TODO add unknown resolutions (43-45)
+							output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[1].equals("22")?"720p":fmtUrlPair[1].equals("35")?"480p?":fmtUrlPair[1].equals("18")?"270p?":fmtUrlPair[1].equals("34")?"360p?":fmtUrlPair[1].equals("37")?"1080p":fmtUrlPair[1].equals("5")?"240p?":"unknown resolution? (".concat(fmtUrlPair[1]).concat(")")));
+						} catch (java.lang.ArrayIndexOutOfBoundsException aioobe) {
+							// TODO there is a new problem it itag=82 (not &itag=84)							
+						}
 					} // for
 
 					debugoutput("ssourcecodevideourls.length: ".concat(Integer.toString(ssourcecodevideourls.size())));
