@@ -99,7 +99,7 @@ import javax.swing.event.DocumentListener;
  * java code could be easily converted to Java 1.4.2
  */
 public class JFCMainClient extends JFrame implements ActionListener, WindowListener, DocumentListener, ChangeListener, DropTargetListener {
-	public static final String szVersion = "V20110829_2239 by MrKnödelmann, GUI V20110505 by dean703";
+	public static final String szVersion = "V20110829_1722 by MrKnödelmann, GUI V20110505 by dean703";
 	
 	private static final long serialVersionUID = 6791957129816930254L;
 
