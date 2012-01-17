@@ -284,6 +284,12 @@ public class YTD2 {
         return t1.isAlive();
     }
 
+    public Exception getException() {
+        synchronized (t1.statsLock) {
+            return t1.e;
+        }
+    }
+
     public void close() {
         shutdownAppl();
     }
@@ -348,5 +354,8 @@ public class YTD2 {
 
             System.out.println("title: " + y.getTitle() + " bytes: " + y.getBytes() + " total: " + y.getTotal());
         }
+
+        if (y.getException() != null)
+            y.getException().printStackTrace();
     }
 }

@@ -53,6 +53,7 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 //import org.apache.http.protocol.BasicHttpContext;
@@ -111,10 +112,14 @@ public class YTDownloadThread extends Thread {
     String sdirectorychoosed;
     YTD2 ytd2;
 
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
+
     Object statsLock = new Object();
     String input;
     long count = 0;
     long total = 0;
+    Exception e;
 
     public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2 ytd2, String input) {
         super("YTD2 Downloading Thread");
@@ -174,6 +179,9 @@ public class YTDownloadThread extends Thread {
                 HttpProtocolParams.setContentCharset(params, "UTF-8");
                 HttpProtocolParams.setUseExpectContinue(params, true);
 
+                HttpConnectionParams.setConnectionTimeout(params, CONNECT_TIMEOUT);
+                HttpConnectionParams.setSoTimeout(params, READ_TIMEOUT);
+
                 ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, supportedSchemes);
 
                 // with proxy
@@ -182,12 +190,21 @@ public class YTDownloadThread extends Thread {
                 this.httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
             } else {
                 // without proxy
-                this.httpclient = new DefaultHttpClient();
+
+                HttpParams params = new BasicHttpParams();
+                HttpConnectionParams.setConnectionTimeout(params, CONNECT_TIMEOUT);
+                HttpConnectionParams.setSoTimeout(params, READ_TIMEOUT);
+
+                this.httpclient = new DefaultHttpClient(params);
                 this.httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
             }
             this.httpget = new HttpGet(getURI(sURL));
             this.target = new HttpHost(getHost(sURL), 80, "http");
         } catch (Exception e) {
+            synchronized (statsLock) {
+                this.e = e;
+            }
+            ytd2.changed();
         }
 
         // we dont need cookies at all because the download runs even without it
@@ -211,10 +228,10 @@ public class YTDownloadThread extends Thread {
 
         try {
             this.response = this.httpclient.execute(this.target, this.httpget, this.localContext);
-        } catch (ClientProtocolException cpe) {
-        } catch (UnknownHostException uhe) {
-        } catch (IOException ioe) {
-        } catch (IllegalStateException ise) {
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception uhe) {
+            throw new RuntimeException(uhe);
         }
 
         /*
@@ -292,9 +309,15 @@ public class YTDownloadThread extends Thread {
                 else
                     this.binaryreader = new BufferedInputStream(entity.getContent());
             } catch (IllegalStateException e1) {
-                e1.printStackTrace();
+                synchronized (statsLock) {
+                    this.e = e1;
+                }
+                ytd2.changed();
             } catch (IOException e1) {
-                e1.printStackTrace();
+                synchronized (statsLock) {
+                    this.e = e1;
+                }
+                ytd2.changed();
             }
             try {
                 // test if we got a webpage
@@ -312,17 +335,15 @@ public class YTDownloadThread extends Thread {
                     this.sVideoURL = null;
                 }
             } catch (IOException ex) {
-                try {
-                    throw ex;
-                } catch (IOException e) {
-                    e.printStackTrace();
+                synchronized (statsLock) {
+                    this.e = ex;
                 }
+                ytd2.changed();
             } catch (RuntimeException ex) {
-                try {
-                    throw ex;
-                } catch (Exception e) {
-                    e.printStackTrace();
+                synchronized (statsLock) {
+                    this.e = ex;
                 }
+                ytd2.changed();
             }
         } // if (entity != null)
 
@@ -728,7 +749,10 @@ public class YTDownloadThread extends Thread {
         } catch (NullPointerException npe) {
             // debugoutput("npe - nothing to download?");
         } catch (Exception e) {
-            e.printStackTrace();
+            synchronized (statsLock) {
+                this.e = e;
+            }
+            ytd2.changed();
         }
     } // run()
 
