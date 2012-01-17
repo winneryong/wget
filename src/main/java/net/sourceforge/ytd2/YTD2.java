@@ -346,6 +346,15 @@ public class YTD2 {
     }
 
     /**
+     * is veresying done ok?
+     * 
+     * @return true if true
+     */
+    public boolean done() {
+        return getBytes() >= getTotal();
+    }
+
+    /**
      * Please not by using listener you agree to handle multithread calls. I
      * suggest if you do SwingUtils.invokeLater (or your current thread manager)
      * for each changed event.
