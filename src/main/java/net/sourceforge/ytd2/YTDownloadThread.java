@@ -120,6 +120,7 @@ public class YTDownloadThread extends Thread {
     long count = 0;
     long total = 0;
     Exception e;
+    boolean join = false;
 
     public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2 ytd2, String input) {
         super("YTD2 Downloading Thread");
@@ -746,6 +747,12 @@ public class YTDownloadThread extends Thread {
             // download one webresource and show result
             downloadone(this.sURL, sdirectorychoosed);
             this.iRecursionCount = -1;
+
+            synchronized (statsLock) {
+                join = true;
+            }
+
+            ytd2.changed();
         } catch (NullPointerException npe) {
             // debugoutput("npe - nothing to download?");
         } catch (Exception e) {

@@ -284,6 +284,27 @@ public class YTD2 {
         return t1.isAlive();
     }
 
+    /**
+     * check if working thread has send the last possible event. so we can join.
+     * 
+     * @return true - we can join
+     */
+    public boolean isJoin() {
+        synchronized (t1.statsLock) {
+            return t1.join;
+        }
+    }
+
+    /**
+     * Join to working thread and wait until it done
+     */
+    public void join() {
+        try {
+            t1.join();
+        } catch (InterruptedException e) {
+        }
+    }
+
     public Exception getException() {
         synchronized (t1.statsLock) {
             return t1.e;
