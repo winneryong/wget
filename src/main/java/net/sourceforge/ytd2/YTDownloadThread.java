@@ -235,23 +235,6 @@ public class YTDownloadThread extends Thread {
             throw new RuntimeException(uhe);
         }
 
-        /*
-         * CookieOrigin cookieOrigin = (CookieOrigin) localContext.getAttribute(
-         * ClientContext.COOKIE_ORIGIN); CookieSpec cookieSpec = (CookieSpec)
-         * localContext.getAttribute( ClientContext.COOKIE_SPEC); CookieStore
-         * cookieStore = (CookieStore) localContext.getAttribute(
-         * ClientContext.COOKIE_STORE) ; try {
-         * debugoutput("HTTP Cookie store: ".concat(
-         * cookieStore.getCookies().toString( ))); } catch (NullPointerException
-         * npe) {} // useless if we don't set our own CookieStore before calling
-         * httpclient.execute try {
-         * debugoutput("HTTP Cookie origin: ".concat(cookieOrigin.toString()));
-         * debugoutput("HTTP Cookie spec used: ".concat(cookieSpec.toString()));
-         * debugoutput
-         * ("HTTP Cookie store (persistent): ".concat(this.bcs.getCookies
-         * ().toString())); } catch (NullPointerException npe) { }
-         */
-
         try {
             // for (int i = 0; i < response.getAllHeaders().length; i++) {
             // debugoutput(response.getAllHeaders()[i].getName().concat("=").concat(response.getAllHeaders()[i].getValue()));
@@ -401,7 +384,7 @@ public class YTDownloadThread extends Thread {
                     // by anonymous
                     sline = sline.replaceFirst(".*\"url_encoded_fmt_stream_map\": \"", "").replaceFirst("\".*", "")
                             .replace("%25", "%").replace("\\u0026", "&").replace("\\", "");
-                    String[] ssourcecodeyturls = sline.split(",");
+
                     String[] urlStrings = sline.split(",");
 
                     for (String urlString : urlStrings) {
@@ -510,20 +493,29 @@ public class YTDownloadThread extends Thread {
         FileOutputStream fos = null;
         try {
             File f;
-            Integer idupcount = 0;
-            String sfilename = this.getTitle()/* .replaceAll(" ", "_") */.concat(
-                    this.sFilenameResPart == null ? "" : this.sFilenameResPart);
-            do {
-                f = new File(sdirectorychoosed, sfilename
-                        .concat((idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "")).concat(".")
-                        .concat(this.sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
-                idupcount += 1;
-            } while (f.exists());
-            this.setFileName(f.getAbsolutePath());
+            if (getFileName() == null) {
+                Integer idupcount = 0;
+                String sfilename = this.getTitle()/* .replaceAll(" ", "_") */.concat(
+                        this.sFilenameResPart == null ? "" : this.sFilenameResPart);
+                do {
+                    f = new File(sdirectorychoosed, sfilename
+                            .concat((idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "")).concat(".")
+                            .concat(this.sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
+                    idupcount += 1;
+                } while (f.exists());
+                this.setFileName(f.getAbsolutePath());
+            } else {
+                f = new File(getFileName());
+            }
 
             Long iBytesReadSum = (long) 0;
             Long iPercentage = (long) -1;
             Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
+
+            // does reader + yotube know how to skip?
+            // binaryreader.skip(f.length());
+            f.delete();
+
             fos = new FileOutputStream(f);
 
             synchronized (statsLock) {
@@ -556,10 +548,7 @@ public class YTDownloadThread extends Thread {
                 if ((((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks) > iPercentage) {
                     iPercentage = (((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks);
                 }
-                try {
-                    fos.write(bytes, 0, iBytesRead);
-                } catch (IndexOutOfBoundsException ioob) {
-                }
+                fos.write(bytes, 0, iBytesRead);
                 this.bisinterrupted = ytd2.getbQuitrequested(); // try to get
                                                                 // information
                                                                 // about
@@ -599,9 +588,6 @@ public class YTDownloadThread extends Thread {
                                                                    // datastream
                                                                    // to be
                                                                    // transmitted
-                changeFileNamewith("CANCELED.");
-
-                f.renameTo(new File(this.getFileName()));
             }
         } catch (FileNotFoundException fnfe) {
             throw (fnfe);
@@ -709,7 +695,7 @@ public class YTDownloadThread extends Thread {
             if (this.sFileName != null)
                 return this.sFileName;
             else
-                return ("");
+                return null;
         }
     }
 

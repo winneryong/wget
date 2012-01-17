@@ -253,6 +253,8 @@ public class YTD2 {
     } // checkInputFieldforYTURLS
 
     ArrayList<Listener> list = new ArrayList<YTD2.Listener>();
+    String source;
+    String target;
 
     public static interface Listener {
         public void changed();
@@ -267,19 +269,43 @@ public class YTD2 {
     public YTD2(String source, String target) {
         super();
 
-        create();
-
-        checkInputFieldforYTURLs(source, target);
+        this.source = source;
+        this.target = target;
     }
 
+    /**
+     * ask thread to start work
+     */
     public void start() {
+        if (t1 != null && isActive())
+            throw new RuntimeException("already started");
+
+        String oldpath = null;
+        if (t1 != null)
+            oldpath = t1.getFileName();
+
+        create();
+        checkInputFieldforYTURLs(source, target);
+
+        t1.setFileName(oldpath);
+
+        setbQuitrequested(false);
         t1.start();
     }
 
+    /**
+     * ask thread to stop working. and wait for change event.
+     * 
+     */
     public void stop() {
-        t1.interrupt();
+        setbQuitrequested(true);
     }
 
+    /**
+     * if working thread is active.
+     * 
+     * @return
+     */
     public boolean isActive() {
         return t1.isAlive();
     }
@@ -305,40 +331,73 @@ public class YTD2 {
         }
     }
 
+    /**
+     * get exception.
+     * 
+     * @return
+     */
     public Exception getException() {
         synchronized (t1.statsLock) {
             return t1.e;
         }
     }
 
+    /**
+     * wait until thread ends and close it. do before you exit app.
+     */
     public void close() {
         shutdownAppl();
     }
 
+    /**
+     * get input url name
+     * 
+     * @return
+     */
     public String getInput() {
         synchronized (t1.statsLock) {
             return t1.input;
         }
     }
 
+    /**
+     * get output file on local file system
+     * 
+     * @return
+     */
     public String getOutput() {
         synchronized (t1.statsLock) {
             return t1.sFileName;
         }
     }
 
+    /**
+     * get bytes downloaded
+     * 
+     * @return
+     */
     public long getBytes() {
         synchronized (t1.statsLock) {
             return t1.count;
         }
     }
 
+    /**
+     * get total size of youtube movie
+     * 
+     * @return
+     */
     public long getTotal() {
         synchronized (t1.statsLock) {
             return t1.total;
         }
     }
 
+    /**
+     * get youtube title
+     * 
+     * @return
+     */
     public String getTitle() {
         synchronized (t1.statsLock) {
             return t1.getTitle();
@@ -346,7 +405,7 @@ public class YTD2 {
     }
 
     /**
-     * is veresying done ok?
+     * is everyting downloaded ok?
      * 
      * @return true if true
      */
@@ -357,7 +416,7 @@ public class YTD2 {
     /**
      * Please not by using listener you agree to handle multithread calls. I
      * suggest if you do SwingUtils.invokeLater (or your current thread manager)
-     * for each changed event.
+     * for each 'Listener.changed' event.
      * 
      * @param l
      *            listenrer
@@ -384,6 +443,11 @@ public class YTD2 {
 
             System.out.println("title: " + y.getTitle() + " bytes: " + y.getBytes() + " total: " + y.getTotal());
         }
+
+        if (y.isJoin())
+            y.join();
+
+        y.close();
 
         if (y.getException() != null)
             y.getException().printStackTrace();
