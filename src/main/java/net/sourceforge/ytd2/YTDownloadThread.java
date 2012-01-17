@@ -733,12 +733,6 @@ public class YTDownloadThread extends Thread {
             // download one webresource and show result
             downloadone(this.sURL, sdirectorychoosed);
             this.iRecursionCount = -1;
-
-            synchronized (statsLock) {
-                join = true;
-            }
-
-            ytd2.changed();
         } catch (NullPointerException npe) {
             // debugoutput("npe - nothing to download?");
         } catch (Exception e) {
@@ -747,6 +741,11 @@ public class YTDownloadThread extends Thread {
             }
             ytd2.changed();
         }
+
+        synchronized (statsLock) {
+            join = true;
+        }
+        ytd2.changed();
     } // run()
 
 } // class YTDownloadThread
