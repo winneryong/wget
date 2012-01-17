@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import javax.swing.*;
@@ -251,6 +252,18 @@ public class YTD2 {
 
     } // checkInputFieldforYTURLS
 
+    ArrayList<Listener> list = new ArrayList<YTD2.Listener>();
+
+    public static interface Listener {
+        public void changed();
+    }
+
+    void changed() {
+        for (Listener l : list) {
+            l.changed();
+        }
+    }
+
     public YTD2(String source, String target) {
         super();
 
@@ -276,23 +289,49 @@ public class YTD2 {
     }
 
     public String getInput() {
-        return t1.input;
+        synchronized (t1.statsLock) {
+            return t1.input;
+        }
     }
 
     public String getOutput() {
-        return t1.sFileName;
+        synchronized (t1.statsLock) {
+            return t1.sFileName;
+        }
     }
 
     public long getBytes() {
-        return t1.count;
+        synchronized (t1.statsLock) {
+            return t1.count;
+        }
     }
 
     public long getTotal() {
-        return t1.total;
+        synchronized (t1.statsLock) {
+            return t1.total;
+        }
     }
 
     public String getTitle() {
-        return t1.getTitle();
+        synchronized (t1.statsLock) {
+            return t1.getTitle();
+        }
+    }
+
+    /**
+     * Please not by using listener you agree to handle multithread calls. I
+     * suggest if you do SwingUtils.invokeLater (or your current thread manager)
+     * for each changed event.
+     * 
+     * @param l
+     *            listenrer
+     */
+    public void addListener(Listener l) {
+        list.add(l);
+    }
+
+    public void removeListener(Listener l) {
+        list.remove(l);
     }
 
     public static void main(String[] args) {
@@ -307,7 +346,7 @@ public class YTD2 {
             } catch (Exception e) {
             }
 
-            System.out.println("bytes: " + y.getBytes() + " total: " + y.getTotal() + " title: " + y.getTitle());
+            System.out.println("title: " + y.getTitle() + " bytes: " + y.getBytes() + " total: " + y.getTotal());
         }
     }
-} // class JFCMainClient
+}

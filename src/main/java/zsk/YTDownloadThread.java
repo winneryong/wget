@@ -110,6 +110,8 @@ public class YTDownloadThread extends Thread {
     HttpResponse response = null;
     String sdirectorychoosed;
     YTD2 ytd2;
+
+    Object statsLock = new Object();
     String input;
     long count = 0;
     long total = 0;
@@ -501,8 +503,10 @@ public class YTDownloadThread extends Thread {
             Long iPercentage = (long) -1;
             Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
             fos = new FileOutputStream(f);
-            
-            total = iBytesMax;
+
+            synchronized (statsLock) {
+                total = iBytesMax;
+            }
 
             byte[] bytes = new byte[4096];
             Integer iBytesRead = 1;
@@ -519,7 +523,13 @@ public class YTDownloadThread extends Thread {
             while (!this.bisinterrupted && iBytesRead > 0) {
                 iBytesRead = this.binaryreader.read(bytes);
                 iBytesReadSum += iBytesRead;
-                count = iBytesReadSum;
+
+                synchronized (statsLock) {
+                    count = iBytesReadSum;
+                }
+
+                ytd2.changed();
+
                 // drop a line every x% of the download
                 if ((((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks) > iPercentage) {
                     iPercentage = (((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks);
@@ -633,6 +643,7 @@ public class YTDownloadThread extends Thread {
 
         this.setFileName(f.getAbsolutePath());
 
+        ytd2.changed();
     } // changeFileNamewith
 
     String getProxy() {
@@ -656,25 +667,34 @@ public class YTDownloadThread extends Thread {
     } // gethost
 
     String getTitle() {
-        if (this.sTitle != null)
-            return this.sTitle;
-        else
-            return ("");
+        synchronized (statsLock) {
+            if (this.sTitle != null)
+                return this.sTitle;
+            else
+                return ("");
+
+        }
     }
 
     void setTitle(String sTitle) {
-        this.sTitle = sTitle;
+        synchronized (statsLock) {
+            this.sTitle = sTitle;
+        }
     }
 
     String getFileName() {
-        if (this.sFileName != null)
-            return this.sFileName;
-        else
-            return ("");
+        synchronized (statsLock) {
+            if (this.sFileName != null)
+                return this.sFileName;
+            else
+                return ("");
+        }
     }
 
     void setFileName(String sFileName) {
-        this.sFileName = sFileName;
+        synchronized (statsLock) {
+            this.sFileName = sFileName;
+        }
     }
 
     String getMyName() {
