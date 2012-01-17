@@ -508,9 +508,10 @@ public class YTDownloadThread extends Thread {
                 f = new File(getFileName());
             }
 
-            Long iBytesReadSum = (long) 0;
+            // here some bug with missing 1 byte in count. make it here 1 for start;
+            Long iBytesReadSum = (long) 1;
             Long iPercentage = (long) -1;
-            Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
+            final Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
 
             // does reader + yotube know how to skip?
             // binaryreader.skip(f.length());
