@@ -118,7 +118,7 @@ public class YTDownloadThread extends Thread {
 		} catch (NullPointerException npe) {
 			return(false);
 		}
-		if (JFCMainClient.getbQuitrequested()) return(false); // try to get information about application shutdown
+		if (YTD2.getbQuitrequested()) return(false); // try to get information about application shutdown
 		
 		debugoutput("start.");
 		
@@ -138,7 +138,7 @@ public class YTDownloadThread extends Thread {
 			// determine http_proxy environment variable
 			if (!this.getProxy().equals("")) {
 
-				String sproxy = JFCMainClient.sproxy.toLowerCase().replaceFirst("http://", "") ;
+				String sproxy = YTD2.sproxy.toLowerCase().replaceFirst("http://", "") ;
 				this.proxy = new HttpHost( sproxy.replaceFirst(":(.*)", ""), Integer.parseInt( sproxy.replaceFirst("(.*):", "")), "http");
 
 				SchemeRegistry supportedSchemes = new SchemeRegistry();
@@ -186,7 +186,7 @@ public class YTDownloadThread extends Thread {
 		} catch (ClientProtocolException cpe) {
 			debugoutput(cpe.getMessage());
 		} catch (UnknownHostException uhe) {
-			output((JFCMainClient.isgerman()?"Fehler bei der Verbindung zu: ":"error connecting to: ").concat(uhe.getMessage()));
+			output((YTD2.isgerman()?"Fehler bei der Verbindung zu: ":"error connecting to: ").concat(uhe.getMessage()));
 			debugoutput(uhe.getMessage());
 		} catch (IOException ioe) {
 			debugoutput(ioe.getMessage());
@@ -271,7 +271,7 @@ public class YTDownloadThread extends Thread {
             		savetextdata();
             	// test if we got the binary content
             	} else if (this.sContentType.matches("video/(.)*")) {
-            		if (JFCMainClient.bNODOWNLOAD)
+            		if (YTD2.bNODOWNLOAD)
             			reportheaderinfo();
             		else
             			savebinarydata();
@@ -364,7 +364,7 @@ public class YTDownloadThread extends Thread {
 							ssourcecodevideourls.put(fmtUrlPair[1], fmtUrlPair[0]); // save that URL
 							debugoutput(String.format( "video url saved with key %s: %s",fmtUrlPair[1],ssourcecodevideourls.get(fmtUrlPair[1]) ));
 							// TODO add unknown resolutions (43-45,84?)
-							output((JFCMainClient.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[1].equals("22")?"720p":fmtUrlPair[1].equals("35")?"480p?":fmtUrlPair[1].equals("18")?"270p?":fmtUrlPair[1].equals("34")?"360p?":fmtUrlPair[1].equals("37")?"1080p":fmtUrlPair[1].equals("5")?"240p?":"unknown resolution? (".concat(fmtUrlPair[1]).concat(")")));
+							output((YTD2.isgerman()?"gefundene Video URL für Auflösung: ":"found video URL for resolution: ").concat(fmtUrlPair[1].equals("22")?"720p":fmtUrlPair[1].equals("35")?"480p?":fmtUrlPair[1].equals("18")?"270p?":fmtUrlPair[1].equals("34")?"360p?":fmtUrlPair[1].equals("37")?"1080p":fmtUrlPair[1].equals("5")?"240p?":"unknown resolution? (".concat(fmtUrlPair[1]).concat(")")));
 						} catch (java.lang.ArrayIndexOutOfBoundsException aioobe) {
 							// TODO there is a new problem with itag=84 (not &itag=84)							
 						}
@@ -373,7 +373,7 @@ public class YTDownloadThread extends Thread {
 					debugoutput("ssourcecodevideourls.length: ".concat(Integer.toString(ssourcecodevideourls.size())));
 					String sno="";
 					// figure out what resolution-button is pressed now and fill list with possible URLs
-					switch (JFCMainClient.getIdlbuttonstate()) {
+					switch (YTD2.getIdlbuttonstate()) {
 					case 4:
 						// 37|22 - better quality first
 						this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno="37"));
@@ -403,7 +403,7 @@ public class YTDownloadThread extends Thread {
 					}
 					
 					if (this.sNextVideoURL.get(0)==null && this.sNextVideoURL.get(1)==null) {
-						String smsg = JFCMainClient.isgerman()?"Konnte Video URL für ausgewählte Auflösung nicht finden. Versuche geringere Auflösung!":"could not find video url for selected resolution! trying lower res...";
+						String smsg = YTD2.isgerman()?"Konnte Video URL für ausgewählte Auflösung nicht finden. Versuche geringere Auflösung!":"could not find video url for selected resolution! trying lower res...";
 						output(smsg); debugoutput(smsg);
 					}
 					
@@ -435,8 +435,8 @@ public class YTDownloadThread extends Thread {
 		try {
 			File f; Integer idupcount = 0;
 			String sdirectorychoosed;
-			synchronized (JFCMainClient.frame.directorytextfield) {
-				sdirectorychoosed = JFCMainClient.frame.directorytextfield.getText();
+			synchronized (YTD2.frame.directorytextfield) {
+				sdirectorychoosed = YTD2.frame.directorytextfield.getText();
 			}
 			String sfilename = this.getTitle()/*.replaceAll(" ", "_")*/.concat( this.sFilenameResPart==null?"":this.sFilenameResPart );
     		debugoutput("title: ".concat(this.getTitle()).concat("sfilename: ").concat(sfilename));
@@ -452,11 +452,11 @@ public class YTDownloadThread extends Thread {
 			fos = new FileOutputStream(f);
 			
 			debugoutput(String.format("writing %d bytes to: %s",iBytesMax,this.getFileName()));
-			output((JFCMainClient.isgerman()?"Dateigröße von \"":"file size of \"").concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
+			output((YTD2.isgerman()?"Dateigröße von \"":"file size of \"").concat(this.getTitle()).concat("\" = ").concat(iBytesMax.toString()).concat(" Bytes").concat(" ~ ").concat(Long.toString((iBytesMax/1024)).concat(" KiB")).concat(" ~ ").concat(Long.toString((iBytesMax/1024/1024)).concat(" MiB")));
 		    
 			byte[] bytes = new byte[4096];
 			Integer iBytesRead = 1;
-			String sOldURL = JFCMainClient.szDLSTATE.concat(this.sURL);
+			String sOldURL = YTD2.szDLSTATE.concat(this.sURL);
 			String sNewURL = "";
 			
 			// adjust blocks of percentage to output - larger files are shown with smaller pieces
@@ -467,15 +467,15 @@ public class YTDownloadThread extends Thread {
 				// drop a line every x% of the download 
 				if ( (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks) > iPercentage ) {
 					iPercentage = (((iBytesReadSum*100/iBytesMax) / iblocks) * iblocks);
-					sNewURL = JFCMainClient.szDLSTATE.concat("(").concat(Long.toString(iPercentage).concat(" %) ").concat(this.sURL));
-					JFCMainClient.exchangeYTURLInList(sOldURL, sNewURL);
+					sNewURL = YTD2.szDLSTATE.concat("(").concat(Long.toString(iPercentage).concat(" %) ").concat(this.sURL));
+					YTD2.exchangeYTURLInList(sOldURL, sNewURL);
 					sOldURL = sNewURL ; 
 				}
 				try {fos.write(bytes,0,iBytesRead);} catch (IndexOutOfBoundsException ioob) {}
-				this.bisinterrupted = JFCMainClient.getbQuitrequested(); // try to get information about application shutdown
+				this.bisinterrupted = YTD2.getbQuitrequested(); // try to get information about application shutdown
 			} // while
 			
-			JFCMainClient.exchangeYTURLInList(sNewURL, JFCMainClient.szDLSTATE.concat(this.sURL));
+			YTD2.exchangeYTURLInList(sNewURL, YTD2.szDLSTATE.concat(this.sURL));
 			
 			// rename files if download was interrupted before completion of download
 			if (this.bisinterrupted && iBytesReadSum<iBytesMax) {
@@ -556,17 +556,17 @@ public class YTDownloadThread extends Thread {
 	} // changeFileNamewith
 
 	String getProxy() {
-		String sproxy = JFCMainClient.sproxy;
+		String sproxy = YTD2.sproxy;
 		if (sproxy==null) return(""); else return(sproxy);
 	} // getProxy() 
 
 	String getURI(String sURL) {
-		String suri = "/".concat(sURL.replaceFirst(JFCMainClient.szYTHOSTREGEX, ""));
+		String suri = "/".concat(sURL.replaceFirst(YTD2.szYTHOSTREGEX, ""));
 		return(suri);
 	} // getURI
 
 	String getHost(String sURL) {
-		String shost = sURL.replaceFirst(JFCMainClient.szYTHOSTREGEX, "");
+		String shost = sURL.replaceFirst(YTD2.szYTHOSTREGEX, "");
 		shost = sURL.substring(0, sURL.length()-shost.length());
 		shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
 		return(shost);
@@ -589,23 +589,23 @@ public class YTDownloadThread extends Thread {
 	}
 
 	void debugoutput (String s) {
-		if (!JFCMainClient.bDEBUG)
+		if (!YTD2.bDEBUG)
 			return;
 		// sometimes this happens:  Exception in thread "Thread-2" java.lang.Error: Interrupted attempt to aquire write lock (on quit only)
 		// maybe we should use synchronize anyway
 		try {
-			JFCMainClient.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
+			YTD2.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
 		} catch (Exception e) {
 			try { Thread.sleep(50); } catch (InterruptedException e1) {}
-			try { JFCMainClient.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s)); } catch (Exception e2) {}
+			try { YTD2.addTextToConsole("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s)); } catch (Exception e2) {}
 		}
 		System.out.println("#DEBUG ".concat(this.getMyName()).concat(" ").concat(s));
 	} // debugoutput
 	
 	void output (String s) {
-		if (JFCMainClient.bDEBUG)
+		if (YTD2.bDEBUG)
 			return;
-		JFCMainClient.addTextToConsole("#info - ".concat(s));
+		YTD2.addTextToConsole("#info - ".concat(s));
 	} // output
 	
 	String getMyName() {
@@ -620,28 +620,28 @@ public class YTDownloadThread extends Thread {
 		boolean bDOWNLOADOK = false;
 		while (!this.bisinterrupted) {
 			try {
-				synchronized (JFCMainClient.frame.dlm) {
+				synchronized (YTD2.frame.dlm) {
 //					debugoutput("going to sleep.");
-					JFCMainClient.frame.dlm.wait(1000); // check for new URLs (if they got pasted faster than threads removing them)
+					YTD2.frame.dlm.wait(1000); // check for new URLs (if they got pasted faster than threads removing them)
 //					debugoutput("woke up ".concat(this.getClass().getName()));
-					this.bisinterrupted = JFCMainClient.getbQuitrequested(); // if quit was pressed while this threads works it would not get the InterruptedException and therefore prevent application shutdown 
+					this.bisinterrupted = YTD2.getbQuitrequested(); // if quit was pressed while this threads works it would not get the InterruptedException and therefore prevent application shutdown 
 				}
 				// TODO check what kind of website the URL is from - this class can only handle YouTube-URLs ... we add other video sources later
-				this.sURL = JFCMainClient.getfirstURLFromList();
-				output((JFCMainClient.isgerman()?"versuche herunterzuladen: ":"try to download: ").concat(this.sURL));
-				JFCMainClient.removeURLFromList(this.sURL);
-				JFCMainClient.addYTURLToList(JFCMainClient.szDLSTATE.concat(this.sURL));
+				this.sURL = YTD2.getfirstURLFromList();
+				output((YTD2.isgerman()?"versuche herunterzuladen: ":"try to download: ").concat(this.sURL));
+				YTD2.removeURLFromList(this.sURL);
+				YTD2.addYTURLToList(YTD2.szDLSTATE.concat(this.sURL));
 				
-				this.bNODOWNLOAD = JFCMainClient.getbNODOWNLOAD(); // copy ndl-state because this thread should end with a complete file (and report so) even if someone switches to nodl before this thread is finished
+				this.bNODOWNLOAD = YTD2.getbNODOWNLOAD(); // copy ndl-state because this thread should end with a complete file (and report so) even if someone switches to nodl before this thread is finished
 				
 				// download one webresource and show result
 				bDOWNLOADOK = downloadone(this.sURL); this.iRecursionCount=-1;
 				if (bDOWNLOADOK && !this.bNODOWNLOAD)
-					output((JFCMainClient.isgerman()?"fertig heruntergeladen: ":"download complete: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
+					output((YTD2.isgerman()?"fertig heruntergeladen: ":"download complete: ").concat("\"").concat(this.getTitle()).concat("\"").concat(" to ").concat(this.getFileName()));
 				else
-					output((JFCMainClient.isgerman()?"Fehler beim herunterladen: ":"error downloading: ").concat(this.sURL));
+					output((YTD2.isgerman()?"Fehler beim herunterladen: ":"error downloading: ").concat(this.sURL));
 				
-				JFCMainClient.removeURLFromList(JFCMainClient.szDLSTATE.concat(this.sURL));
+				YTD2.removeURLFromList(YTD2.szDLSTATE.concat(this.sURL));
 			} catch (InterruptedException e) {
 				this.bisinterrupted = true;
 			} catch (NullPointerException npe) {
