@@ -548,7 +548,8 @@ public class YTDownloadThread extends Thread {
                 if ((((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks) > iPercentage) {
                     iPercentage = (((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks);
                 }
-                fos.write(bytes, 0, iBytesRead);
+                if (iBytesRead > 0)
+                    fos.write(bytes, 0, iBytesRead);
                 this.bisinterrupted = ytd2.getbQuitrequested(); // try to get
                                                                 // information
                                                                 // about
