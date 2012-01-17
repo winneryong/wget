@@ -14,7 +14,7 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package zsk;
+package net.sourceforge.ytd2;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
