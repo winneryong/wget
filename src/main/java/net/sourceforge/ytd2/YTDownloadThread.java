@@ -24,12 +24,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Vector;
 // necessary external libraries
 // http://hc.apache.org/downloads.cgi -> httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz (or any later version?!)
 // plus corresponding sources as Source Attachment within the Eclipse Project Properties
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -481,8 +485,10 @@ public class YTDownloadThread extends Thread {
                 // TODO exchange HTML characters to UTF-8 =
                 // http://sourceforge.net/projects/htmlparser/
                 if (this.iRecursionCount == 0 && sline.matches("(.*)<meta name=\"title\" content=(.*)")) {
-                    this.setTitle(sline.replaceFirst("<meta name=\"title\" content=", "").trim()
-                            .replaceAll("&amp;", "&").replaceAll("[!\"#$%'*+,/:;<=>\\?@\\[\\]\\^`\\{|\\}~\\.]", ""));
+                    String name = sline.replaceFirst("<meta name=\"title\" content=", "").trim();
+                    name = StringUtils.strip(name, "\">");
+                    name = StringEscapeUtils.unescapeHtml4(name);
+                    this.setTitle(name);
                 }
             } catch (NullPointerException npe) {
             }
@@ -508,7 +514,8 @@ public class YTDownloadThread extends Thread {
                 f = new File(getFileName());
             }
 
-            // here some bug with missing 1 byte in count. make it here 1 for start;
+            // here some bug with missing 1 byte in count. make it here 1 for
+            // start;
             Long iBytesReadSum = (long) 1;
             Long iPercentage = (long) -1;
             final Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());

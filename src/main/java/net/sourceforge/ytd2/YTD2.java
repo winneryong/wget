@@ -430,7 +430,7 @@ public class YTD2 {
     }
 
     public static void main(String[] args) {
-        YTD2 y = new YTD2("http://www.youtube.com/watch?v=svJvT6ruolA&feature=relmfu", "/Users/axet/Downloads");
+        YTD2 y = new YTD2("http://www.youtube.com/watch?v=WbVgNVmhzOM&feature=youtube_gdata", "/Users/axet/Downloads");
         y.start();
 
         System.out.println("input: " + y.getInput());
