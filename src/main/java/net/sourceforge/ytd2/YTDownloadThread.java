@@ -16,52 +16,40 @@
  */
 package net.sourceforge.ytd2;
 
-import java.io.BufferedReader;
-
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.FileNotFoundException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Vector;
-// necessary external libraries
-// http://hc.apache.org/downloads.cgi -> httpcomponents-client-4.0.3-bin-with-dependencies.tar.gz (or any later version?!)
-// plus corresponding sources as Source Attachment within the Eclipse Project Properties
+
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
-import org.apache.http.client.ClientProtocolException;
-//import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
-//import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
-//import org.apache.http.cookie.CookieOrigin;
-//import org.apache.http.cookie.CookieSpec;
-//import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-//import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 
 /**
  * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies
@@ -293,7 +281,8 @@ public class YTDownloadThread extends Thread {
         if (entity != null) {
             try {
                 if (this.response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("^text/html(.*)"))
-                    this.textreader = new BufferedReader(new InputStreamReader(entity.getContent()));
+                    this.textreader = new BufferedReader(new InputStreamReader(entity.getContent(),
+                            EntityUtils.getContentCharSet(entity)));
                 else
                     this.binaryreader = new BufferedInputStream(entity.getContent());
             } catch (IllegalStateException e1) {
