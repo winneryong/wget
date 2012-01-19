@@ -16,6 +16,7 @@
  */
 package net.sourceforge.ytd2;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -130,7 +131,6 @@ public class YTD2 {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.exit(0);
     } // shutdownAppl()
 
     /**
@@ -228,6 +228,8 @@ public class YTD2 {
     String source;
     String target;
 
+    String targetForce;
+
     public static interface Listener {
         public void changed();
     }
@@ -245,6 +247,10 @@ public class YTD2 {
         this.target = target;
     }
 
+    public void setTarget(File path) {
+        targetForce = path.toString();
+    }
+
     /**
      * ask thread to start work
      */
@@ -255,6 +261,9 @@ public class YTD2 {
         String oldpath = null;
         if (t1 != null)
             oldpath = t1.getFileName();
+
+        if (targetForce != null)
+            oldpath = targetForce;
 
         create();
         checkInputFieldforYTURLs(source, target);
@@ -383,6 +392,10 @@ public class YTD2 {
      */
     public boolean done() {
         return getBytes() >= getTotal();
+    }
+
+    public boolean canceled() {
+        return getbQuitrequested();
     }
 
     /**
