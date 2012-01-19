@@ -6,11 +6,6 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>ytd2</name>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -28,20 +23,32 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.4.3</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
+        <version>2.3.1</version>
         <configuration>
           <archive>
             <manifest>
               <mainClass>zsk.JFCMainClient</mainClass>
-              <packageName>YTD2</packageName>
+              <packageName>ytd2</packageName>
             </manifest>
           </archive>
         </configuration>
