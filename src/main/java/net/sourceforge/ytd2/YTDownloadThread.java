@@ -503,9 +503,7 @@ public class YTDownloadThread extends Thread {
                 f = new File(getFileName());
             }
 
-            // here some bug with missing 1 byte in count. make it here 1 for
-            // start;
-            Long iBytesReadSum = (long) 1;
+            Long iBytesReadSum = (long) 0;
             Long iPercentage = (long) -1;
             final Long iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
 
@@ -533,10 +531,12 @@ public class YTDownloadThread extends Thread {
                 iblocks = 1;
             while (!this.bisinterrupted && iBytesRead > 0) {
                 iBytesRead = this.binaryreader.read(bytes);
-                iBytesReadSum += iBytesRead;
+                if (iBytesRead > 0) {
+                    iBytesReadSum += iBytesRead;
 
-                synchronized (statsLock) {
-                    count = iBytesReadSum;
+                    synchronized (statsLock) {
+                        count = iBytesReadSum;
+                    }
                 }
 
                 ytd2.changed();
