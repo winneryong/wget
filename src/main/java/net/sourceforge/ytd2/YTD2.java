@@ -205,7 +205,7 @@ public class YTD2 {
 
         // if nothing could be replaced we have to yt-URL found
         if (sinput.equals(surl))
-            return;
+            throw new RuntimeException("url not found");
 
         // starting at index 0 because szYTREGEX should start with ^ // if
         // szYTREGEX does not start with ^ then you have to find the index where
