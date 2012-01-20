@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
-
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -409,28 +408,33 @@ public class YTDownloadThread extends Thread {
                         }
                     } // for
 
-                    String sno = "";
                     // figure out what resolution-button is pressed now and fill
                     // list with possible URLs
-                    switch (ytd2.getIdlbuttonstate()) {
+                    switch (1) {
                     case 4:
                         // 37|22 - better quality first
-                        this.addVideo(0, ssourcecodevideourls.get(sno = "37"));
+                        this.addVideo(0, ssourcecodevideourls.get("37"));
+                        if (ssourcecodevideourls.get("37") != null && vq == null)
+                            vq = VideoQuality.p1080;
                         this.addVideo(1, ssourcecodevideourls.get("22"));
-                        if (!sNextVideoURL.isEmpty() && vq == null)
-                            vq = VideoQuality.HI;
+                        if (ssourcecodevideourls.get("22") != null && vq == null)
+                            vq = VideoQuality.p720;
                     case 2:
                         // 35|34
-                        this.addVideo(0, ssourcecodevideourls.get(sno = "35"));
+                        this.addVideo(0, ssourcecodevideourls.get("35"));
+                        if (ssourcecodevideourls.get("35") != null && vq == null)
+                            vq = VideoQuality.p480;
                         this.addVideo(1, ssourcecodevideourls.get("34"));
-                        if (!sNextVideoURL.isEmpty() && vq == null)
-                            vq = VideoQuality.NORMAL;
+                        if (ssourcecodevideourls.get("34") != null && vq == null)
+                            vq = VideoQuality.p360;
                     case 1:
                         // 18|5
-                        this.addVideo(0, ssourcecodevideourls.get(sno = "18"));
+                        this.addVideo(0, ssourcecodevideourls.get("18"));
+                        if (ssourcecodevideourls.get("18") != null && vq == null)
+                            vq = VideoQuality.p240;
                         this.addVideo(1, ssourcecodevideourls.get("5"));
-                        if (!sNextVideoURL.isEmpty() && vq == null)
-                            vq = VideoQuality.LOW;
+                        if (ssourcecodevideourls.get("5") != null && vq == null)
+                            vq = VideoQuality.p120;
                         break;
                     default:
                         this.sNextVideoURL = null;
@@ -445,34 +449,6 @@ public class YTDownloadThread extends Thread {
                     for (int x = this.sNextVideoURL.size() - 1; x >= 0; x--) {
                         if (this.sNextVideoURL.get(x) == null)
                             this.sNextVideoURL.remove(x);
-                    }
-
-                    try {
-                        this.sFilenameResPart = sno.equals("5") ? "(LD)" : ""; // Standard
-                                                                               // is
-                                                                               // 360p/480p
-                                                                               // and
-                                                                               // HD
-                                                                               // is
-                                                                               // either
-                                                                               // 720p
-                                                                               // or
-                                                                               // 1080p
-                                                                               // but
-                                                                               // it's
-                                                                               // a
-                                                                               // mp4-file
-                                                                               // so
-                                                                               // adding
-                                                                               // text
-                                                                               // the
-                                                                               // the
-                                                                               // filename
-                                                                               // provides
-                                                                               // no
-                                                                               // extra
-                                                                               // information
-                    } catch (NullPointerException npe) {
                     }
 
                     // 2011-03-08 new - skip generate_204

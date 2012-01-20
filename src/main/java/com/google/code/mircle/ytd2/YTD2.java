@@ -235,7 +235,7 @@ public class YTD2 {
     }
 
     public enum VideoQuality {
-        HI, NORMAL, LOW
+        p1080, p720, p480, p360, p240, p120
     }
 
     void changed() {
