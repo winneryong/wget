@@ -105,14 +105,6 @@ public class YTD2 {
         this.bQuitrequested = bQuitrequested;
     }
 
-    // always HD
-    synchronized int getIdlbuttonstate() {
-        // 4 - hd
-        // 2 - st
-        // 1 - low
-        return 4;
-    }
-
     void shutdownAppl() {
         // running downloads are difficult to terminate (Thread.isInterrupted()
         // does not work there)
@@ -163,11 +155,11 @@ public class YTD2 {
 
     }
 
-    void download(String url, String sdirectory) {
+    void download(String url, String sdirectory, VideoQuality max) {
         // lets respect the upload limit of google (youtube)
         // downloading is faster than viewing anyway so don't start more than
         // four threads and don't play around with the URL-strings please!!!
-        t1 = new YTDownloadThread(bDEBUG, sdirectory, this, url);
+        t1 = new YTDownloadThread(bDEBUG, sdirectory, this, url, max);
     }
 
     /**
@@ -177,7 +169,7 @@ public class YTD2 {
      * the user can paste a long string containing many youtube-URLs .. but here
      * is work to do because we have to erase the string(s) that remain(s)
      */
-    void checkInputFieldforYTURLs(String sinput, String sdirectory) {
+    void checkInputFieldforYTURLs(String sinput, String sdirectory, VideoQuality max) {
         // TODO this can probably be done better - replace input so URLs get
         // extracted without user activity (works even if URLs are spread across
         // multiple lines and pasted at once)
@@ -211,7 +203,7 @@ public class YTD2 {
         // szYTREGEX does not start with ^ then you have to find the index where
         // the match is before you can cut out the URL
         surl = sinput.substring(0, sinput.length() - surl.length());
-        download(surl, sdirectory);
+        download(surl, sdirectory, max);
         sinput = sinput.substring(surl.length());
 
         // if remaining text is shorter than shortest possible yt-url we delete
@@ -229,6 +221,8 @@ public class YTD2 {
     String target;
 
     String targetForce;
+
+    VideoQuality max = VideoQuality.p1080;
 
     public static interface Listener {
         public void changed();
@@ -251,6 +245,15 @@ public class YTD2 {
         this.target = target;
     }
 
+    public YTD2(String source, String target, VideoQuality max) {
+        super();
+
+        this.source = source;
+        this.target = target;
+
+        this.max = max;
+    }
+
     public void setTarget(File path) {
         targetForce = path.toString();
     }
@@ -270,7 +273,7 @@ public class YTD2 {
             oldpath = targetForce;
 
         create();
-        checkInputFieldforYTURLs(source, target);
+        checkInputFieldforYTURLs(source, target, max);
 
         t1.setFileName(oldpath);
 
@@ -423,7 +426,7 @@ public class YTD2 {
     }
 
     public static void main(String[] args) {
-        YTD2 y = new YTD2("http://www.youtube.com/watch?v=a-ogf8whmC0", "/Users/axet/Downloads");
+        YTD2 y = new YTD2("http://www.youtube.com/watch?v=OY7fmYkpsRs", "/Users/axet/Downloads");
         y.start();
 
         System.out.println("input: " + y.getInput());
@@ -434,7 +437,8 @@ public class YTD2 {
             } catch (Exception e) {
             }
 
-            System.out.println("title: " + y.getTitle() + " bytes: " + y.getBytes() + " total: " + y.getTotal());
+            System.out.println("title: " + y.getTitle() + ", Quality: " + y.getVideoQuality() + ", bytes: "
+                    + y.getBytes() + ", total: " + y.getTotal());
         }
 
         if (y.isJoin())

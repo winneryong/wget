@@ -105,6 +105,7 @@ public class YTDownloadThread extends Thread {
     HttpResponse response = null;
     String sdirectorychoosed;
     YTD2 ytd2;
+    VideoQuality max;
 
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
@@ -117,15 +118,16 @@ public class YTDownloadThread extends Thread {
     boolean join = false;
     VideoQuality vq;
 
-    public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2 ytd2, String input) {
+    public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2 ytd2, String input, VideoQuality max) {
         super("YTD2 Downloading Thread");
         this.bDEBUG = bD;
         this.sdirectorychoosed = sdirectorychoosed;
         this.ytd2 = ytd2;
         this.input = input;
+        this.max = max;
     } // YTDownloadThread()
 
-    boolean downloadone(String sURL, String sdirectorychoosed) {
+    boolean downloadone(String sURL, String sdirectorychoosed, VideoQuality vd) {
         boolean rc = false;
         boolean rc204 = false;
         boolean rc302 = false;
@@ -260,12 +262,12 @@ public class YTDownloadThread extends Thread {
                 return (rc & rc204 & rc302);
             }
             if (rc204) {
-                rc = downloadone(this.sNextVideoURL.get(0), sdirectorychoosed);
+                rc = downloadone(this.sNextVideoURL.get(0), sdirectorychoosed, vd);
                 return (rc);
             }
             if (rc403) {
                 this.sFilenameResPart = null;
-                rc = downloadone(this.s403VideoURL, sdirectorychoosed);
+                rc = downloadone(this.s403VideoURL, sdirectorychoosed, vd);
             }
         } catch (NullPointerException npe) {
             // if an IllegalStateException was catched while calling
@@ -303,7 +305,7 @@ public class YTDownloadThread extends Thread {
                 // test if we got a webpage
                 this.sContentType = this.response.getFirstHeader("Content-Type").getValue().toLowerCase();
                 if (this.sContentType.matches("^text/html(.*)")) {
-                    savetextdata();
+                    savetextdata(vd);
                     // test if we got the binary content
                 } else if (this.sContentType.matches("video/(.)*")) {
                     if (ytd2.bNODOWNLOAD)
@@ -315,22 +317,16 @@ public class YTDownloadThread extends Thread {
                     this.sVideoURL = null;
                 }
             } catch (IOException ex) {
-                synchronized (statsLock) {
-                    this.e = ex;
-                }
-                ytd2.changed();
+                throw new RuntimeException(ex);
             } catch (RuntimeException ex) {
-                synchronized (statsLock) {
-                    this.e = ex;
-                }
-                ytd2.changed();
+                throw ex;
             }
         } // if (entity != null)
 
         this.httpclient.getConnectionManager().shutdown();
 
         try {
-            rc = downloadone(this.sVideoURL, sdirectorychoosed);
+            rc = downloadone(this.sVideoURL, sdirectorychoosed, vd);
             this.sVideoURL = null;
         } catch (NullPointerException npe) {
         }
@@ -343,12 +339,16 @@ public class YTDownloadThread extends Thread {
         this.sVideoURL = null;
     } // reportheaderinfo()
 
-    void addVideo(int i, String s) {
-        if (s != null)
-            sNextVideoURL.add(i, s);
+    boolean addVideo(String s) {
+        if (s != null) {
+            sNextVideoURL.add(s);
+            return true;
+        }
+
+        return false;
     }
 
-    void savetextdata() throws IOException {
+    void savetextdata(VideoQuality vd) throws IOException {
         // read lines one by one and search for video URL
         String sline = "";
         while (sline != null) {
@@ -410,31 +410,40 @@ public class YTDownloadThread extends Thread {
 
                     // figure out what resolution-button is pressed now and fill
                     // list with possible URLs
-                    switch (1) {
-                    case 4:
+                    switch (vd) {
+                    case p1080:
                         // 37|22 - better quality first
-                        this.addVideo(0, ssourcecodevideourls.get("37"));
-                        if (ssourcecodevideourls.get("37") != null && vq == null)
+                        if (this.addVideo(ssourcecodevideourls.get("37"))) {
                             vq = VideoQuality.p1080;
-                        this.addVideo(1, ssourcecodevideourls.get("22"));
-                        if (ssourcecodevideourls.get("22") != null && vq == null)
+                            break;
+                        }
+                    case p720:
+                        if (this.addVideo(ssourcecodevideourls.get("22"))) {
                             vq = VideoQuality.p720;
-                    case 2:
+                            break;
+                        }
+                    case p480:
                         // 35|34
-                        this.addVideo(0, ssourcecodevideourls.get("35"));
-                        if (ssourcecodevideourls.get("35") != null && vq == null)
+                        if (this.addVideo(ssourcecodevideourls.get("35"))) {
                             vq = VideoQuality.p480;
-                        this.addVideo(1, ssourcecodevideourls.get("34"));
-                        if (ssourcecodevideourls.get("34") != null && vq == null)
+                            break;
+                        }
+                    case p360:
+                        if (this.addVideo(ssourcecodevideourls.get("34"))) {
                             vq = VideoQuality.p360;
-                    case 1:
+                            break;
+                        }
+                    case p240:
                         // 18|5
-                        this.addVideo(0, ssourcecodevideourls.get("18"));
-                        if (ssourcecodevideourls.get("18") != null && vq == null)
+                        if (this.addVideo(ssourcecodevideourls.get("18"))) {
                             vq = VideoQuality.p240;
-                        this.addVideo(1, ssourcecodevideourls.get("5"));
-                        if (ssourcecodevideourls.get("5") != null && vq == null)
+                            break;
+                        }
+                    case p120:
+                        if (this.addVideo(ssourcecodevideourls.get("5"))) {
                             vq = VideoQuality.p120;
+                            break;
+                        }
                         break;
                     default:
                         this.sNextVideoURL = null;
@@ -712,7 +721,7 @@ public class YTDownloadThread extends Thread {
                                                       // thread is finished
 
             // download one webresource and show result
-            downloadone(this.sURL, sdirectorychoosed);
+            downloadone(this.sURL, sdirectorychoosed, max);
             this.iRecursionCount = -1;
         } catch (NullPointerException npe) {
             // debugoutput("npe - nothing to download?");
