@@ -408,18 +408,10 @@ public class YTDownloadThread extends Thread {
                         // 37|22 - better quality first
                         this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno = "37"));
                         this.sNextVideoURL.add(1, ssourcecodevideourls.get("22"));
-                        this.sNextVideoURL.add(2, ssourcecodevideourls.get("35"));
-                        this.sNextVideoURL.add(3, ssourcecodevideourls.get("34"));
-                        this.sNextVideoURL.add(4, ssourcecodevideourls.get("18"));
-                        this.sNextVideoURL.add(5, ssourcecodevideourls.get("5"));
-                        break;
                     case 2:
                         // 35|34
                         this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno = "35"));
                         this.sNextVideoURL.add(1, ssourcecodevideourls.get("34"));
-                        this.sNextVideoURL.add(2, ssourcecodevideourls.get("18"));
-                        this.sNextVideoURL.add(3, ssourcecodevideourls.get("5"));
-                        break;
                     case 1:
                         // 18|5
                         this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno = "18"));
