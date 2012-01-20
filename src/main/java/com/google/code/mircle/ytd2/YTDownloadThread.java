@@ -14,7 +14,7 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.sourceforge.ytd2;
+package com.google.code.mircle.ytd2;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
-import net.sourceforge.ytd2.YTD2.VideoQuality;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,6 +51,8 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+
+import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
 /**
  * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies

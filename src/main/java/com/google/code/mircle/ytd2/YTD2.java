@@ -14,7 +14,7 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package net.sourceforge.ytd2;
+package com.google.code.mircle.ytd2;
 
 import java.io.File;
 import java.util.ArrayList;
