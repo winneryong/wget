@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
  * no warning java code could be easily converted to Java 1.4.2
  */
 public class YTD2 {
-    public static final String szVersion = "V20110922_2202 by MrKnödelmann";
+    static final String szVersion = "V20110922_2202 by MrKnödelmann";
 
     // more or less (internal) output
     boolean bDEBUG = false;
@@ -68,24 +68,24 @@ public class YTD2 {
     // video)
     boolean bNODOWNLOAD = false;
 
-    public static String sproxy = null;
+    static String sproxy = null;
 
-    public static String szDLSTATE = "downloading ";
+    static String szDLSTATE = "downloading ";
 
     // TODO download with cli only? does this make sense if its all about
     // videos?!
 
     // something like
     // [http://][www.]youtube.[cc|to|pl|ev|do|ma|in]/watch?v=0123456789A
-    public static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=[^&]{11}"; // http://de.wikipedia.org/wiki/CcTLD
+    static final String szYTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?((W|w)(W|w)(W|w)\\.)?(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/(W|w)(A|a)(T|t)(C|c)(H|h)\\?(v|V)=[^&]{11}"; // http://de.wikipedia.org/wiki/CcTLD
     // something like [http://][*].youtube.[cc|to|pl|ev|do|ma|in]/ the last / is
     // for marking the end of host, it does not belong to the hostpart
-    public static final String szYTHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
+    static final String szYTHOSTREGEX = "^((H|h)(T|t)(T|t)(P|p)://)?(.*)\\.(Y|y)(O|o)(U|u)(T|t)(U|u)(B|b)(E|e)\\..{2,5}/";
 
     // RFC-1123 ? hostname [with protocol]
     // public static final String szPROXYREGEX =
     // "^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$";
-    public static final String szPROXYREGEX = "(^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]+:[a-zA-Z0-9]+@)?([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*(:[0-90-90-90-9]{1,4})?$)|()";
+    static final String szPROXYREGEX = "(^((H|h)(T|t)(T|t)(P|p)://)?([a-zA-Z0-9]+:[a-zA-Z0-9]+@)?([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*(:[0-90-90-90-9]{1,4})?$)|()";
 
     private static final String szPLAYLISTREGEX = "/view_play_list\\?p=([A-Za-z0-9]*)&playnext=[0-9]{1,2}&v=";
 
@@ -97,23 +97,23 @@ public class YTD2 {
 
     YTDownloadThread t1;
 
-    public synchronized Boolean getbQuitrequested() {
+    synchronized Boolean getbQuitrequested() {
         return bQuitrequested;
     }
 
-    public synchronized void setbQuitrequested(Boolean bQuitrequested) {
+    synchronized void setbQuitrequested(Boolean bQuitrequested) {
         this.bQuitrequested = bQuitrequested;
     }
 
     // always HD
-    public synchronized int getIdlbuttonstate() {
+    synchronized int getIdlbuttonstate() {
         // 4 - hd
         // 2 - st
         // 1 - low
         return 4;
     }
 
-    public void shutdownAppl() {
+    void shutdownAppl() {
         // running downloads are difficult to terminate (Thread.isInterrupted()
         // does not work there)
         synchronized (bQuitrequested) {
@@ -232,6 +232,10 @@ public class YTD2 {
 
     public static interface Listener {
         public void changed();
+    }
+
+    public enum VideoQuality {
+        HI, NORMAL, LOW
     }
 
     void changed() {
@@ -398,6 +402,10 @@ public class YTD2 {
         return getbQuitrequested();
     }
 
+    public VideoQuality getVideoQuality() {
+        return t1.vq;
+    }
+
     /**
      * Please not by using listener you agree to handle multithread calls. I
      * suggest if you do SwingUtils.invokeLater (or your current thread manager)
@@ -415,7 +423,7 @@ public class YTD2 {
     }
 
     public static void main(String[] args) {
-        YTD2 y = new YTD2("http://www.youtube.com/watch?v=WbVgNVmhzOM&feature=youtube_gdata", "/Users/axet/Downloads");
+        YTD2 y = new YTD2("http://www.youtube.com/watch?v=a-ogf8whmC0", "/Users/axet/Downloads");
         y.start();
 
         System.out.println("input: " + y.getInput());

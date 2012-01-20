@@ -26,6 +26,8 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
+import net.sourceforge.ytd2.YTD2.VideoQuality;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -113,6 +115,7 @@ public class YTDownloadThread extends Thread {
     long total = 0;
     Exception e;
     boolean join = false;
+    VideoQuality vq;
 
     public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2 ytd2, String input) {
         super("YTD2 Downloading Thread");
@@ -340,6 +343,11 @@ public class YTDownloadThread extends Thread {
         this.sVideoURL = null;
     } // reportheaderinfo()
 
+    void addVideo(int i, String s) {
+        if (s != null)
+            sNextVideoURL.add(i, s);
+    }
+
     void savetextdata() throws IOException {
         // read lines one by one and search for video URL
         String sline = "";
@@ -406,16 +414,22 @@ public class YTDownloadThread extends Thread {
                     switch (ytd2.getIdlbuttonstate()) {
                     case 4:
                         // 37|22 - better quality first
-                        this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno = "37"));
-                        this.sNextVideoURL.add(1, ssourcecodevideourls.get("22"));
+                        this.addVideo(0, ssourcecodevideourls.get(sno = "37"));
+                        this.addVideo(1, ssourcecodevideourls.get("22"));
+                        if (!sNextVideoURL.isEmpty() && vq == null)
+                            vq = VideoQuality.HI;
                     case 2:
                         // 35|34
-                        this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno = "35"));
-                        this.sNextVideoURL.add(1, ssourcecodevideourls.get("34"));
+                        this.addVideo(0, ssourcecodevideourls.get(sno = "35"));
+                        this.addVideo(1, ssourcecodevideourls.get("34"));
+                        if (!sNextVideoURL.isEmpty() && vq == null)
+                            vq = VideoQuality.NORMAL;
                     case 1:
                         // 18|5
-                        this.sNextVideoURL.add(0, ssourcecodevideourls.get(sno = "18"));
-                        this.sNextVideoURL.add(1, ssourcecodevideourls.get("5"));
+                        this.addVideo(0, ssourcecodevideourls.get(sno = "18"));
+                        this.addVideo(1, ssourcecodevideourls.get("5"));
+                        if (!sNextVideoURL.isEmpty() && vq == null)
+                            vq = VideoQuality.LOW;
                         break;
                     default:
                         this.sNextVideoURL = null;
