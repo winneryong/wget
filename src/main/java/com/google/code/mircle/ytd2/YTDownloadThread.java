@@ -127,7 +127,7 @@ public class YTDownloadThread extends Thread {
         this.max = max;
     } // YTDownloadThread()
 
-    boolean downloadone(String sURL, String sdirectorychoosed, VideoQuality vd) {
+    boolean downloadone(String sURL, String sdirectorychoosed, VideoQuality vd) throws Exception {
         boolean rc = false;
         boolean rc204 = false;
         boolean rc302 = false;
@@ -224,13 +224,7 @@ public class YTDownloadThread extends Thread {
         // TODO maybe we save the video IDs+res that were downloaded to avoid
         // downloading the same video again?
 
-        try {
-            this.response = this.httpclient.execute(this.target, this.httpget, this.localContext);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception uhe) {
-            throw new RuntimeException(uhe);
-        }
+        this.response = this.httpclient.execute(this.target, this.httpget, this.localContext);
 
         try {
             // for (int i = 0; i < response.getAllHeaders().length; i++) {
@@ -284,24 +278,15 @@ public class YTDownloadThread extends Thread {
 
         // try to read HTTP response body
         if (entity != null) {
-            try {
+            {
                 if (this.response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("^text/html(.*)"))
                     this.textreader = new BufferedReader(new InputStreamReader(entity.getContent(),
                             EntityUtils.getContentCharSet(entity)));
                 else
                     this.binaryreader = new BufferedInputStream(entity.getContent());
-            } catch (IllegalStateException e1) {
-                synchronized (statsLock) {
-                    this.e = e1;
-                }
-                ytd2.changed();
-            } catch (IOException e1) {
-                synchronized (statsLock) {
-                    this.e = e1;
-                }
-                ytd2.changed();
             }
-            try {
+
+            {
                 // test if we got a webpage
                 this.sContentType = this.response.getFirstHeader("Content-Type").getValue().toLowerCase();
                 if (this.sContentType.matches("^text/html(.*)")) {
@@ -316,10 +301,6 @@ public class YTDownloadThread extends Thread {
                     rc = false;
                     this.sVideoURL = null;
                 }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } catch (RuntimeException ex) {
-                throw ex;
             }
         } // if (entity != null)
 
@@ -579,10 +560,6 @@ public class YTDownloadThread extends Thread {
                                                                    // to be
                                                                    // transmitted
             }
-        } catch (FileNotFoundException fnfe) {
-            throw (fnfe);
-        } catch (IOException ioe) {
-            throw (ioe);
         } finally {
             this.sVideoURL = null;
             try {
