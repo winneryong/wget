@@ -1,9 +1,6 @@
+ytd2 library
 
-          ======================================
-               README of YouTubeDownloader2 Library
-          ======================================
-
-This is YTD2 clone of https://sourceforge.net/projects/ytd2/.
+This is ytd2 clone of https://sourceforge.net/projects/ytd2/.
 
 The main goal of this project is to provide stand alone library
 for downloading videos from youtube.
