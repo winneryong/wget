@@ -1,13 +1,19 @@
 
           ======================================
-               README of YouTubeDownloader2
+               README of YouTubeDownloader2 Library
           ======================================
 
-This is YTD2 library project. Clone of https://sourceforge.net/projects/ytd2/.
+This is YTD2 clone of https://sourceforge.net/projects/ytd2/.
 
-This file is part of ytd2
+The main goal of this project is to provide stand alone library
+for downloading videos from youtube.
 
-ytd2 is free software: you can redistribute it and/or modify
+The main project dose not go this way, so I deside to create clone
+and make it possible.
+
+Simple exmpale can be found in YTD2.java in the main function.
+
+ytd2 library is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -19,147 +25,3 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with ytd2.
 If not, see <http://www.gnu.org/licenses/>.
-
-
-USAGE
-
-  YTD2 is for downloading videos as flv/mp4-files on your
-  computer.
-  The web-browser downloads webresources (e.g. binary data) to
-  a temporary folder before displaying it. YTD2 does the
-  same except You can choose where to save the files.
-  YTD2 is meant for private non-commercial use only. 
-
-
-FILES
-
-  The source code is available via subversion at
-  https://sourceforge.net/projects/ytd2/.
-  The repository contains either the latest released sources or
-  changes for the next upcoming release. There are no branches or
-  tags for now.
-  The jar-files/sources of the http-components can be downloaded at
-  http://hc.apache.org/downloads.cgi
-
-
-INSTALL
-
-  There is no need to install it. YTD2 consists of just one
-  runnable file. Maybe there is an option of Java Web Start in the
-  future. 
-
-	
-RUNNING
-
-  runytd2.jar should be executable via Java Runtime Environment
-  JRE 1.5 and later.
-
-  running ytd2 via command shell:
-  java -jar runytd2.jar 
-
-  running ytd2 via file explorer:
-  just click on the jar-file  (works if the file has execute file
-  permissions (on *ix platform) and JRE is a registered application
-  for jar-files)
-  
-  
-PROXY
-
-  You can set the proxy either before running ytd2 or after start via
-  input "proxy http://proxyhost:proxyport" with or without http://
-  
-  example (on GNU/Linux) before start:
-      knoedel@section60:~/workspace$ http_proxy=http://localhost:3128
-      knoedel@section60:~/workspace$ java -jar runytd2.jar
-      
-  example (on M$-Windows) before start:
-      c:\> set http_proxy=http://localhost:3128
-      c:\> java -jar runytd2.jar
-  
-  example after start - type in as URL:
-      proxy http://localhost:3128
-
-  
-  localhost:3128 is just an example (of a local squid-cache proxy)
-
-
-TODO
-  
-  - GUI option for proxy
-  - correct handling of directories for download (esp. on M$-Windows)
-  - user-friendly behavior in case webpage source codes changes
-  - submit login credentials
-	
-  maybe: Java Web Start, translated GUI (or no text at all),
-         video from other websites (imdb.com, video.web.de,..)
-
-  Any hints, suggestions, features, questions .. are welcome!
-  
-
-CHANGES
-
-  V20110922
-                bug fix with itag=8
-
-  V20110828
-    2011-08-29                     - " -
-    
-  V20110730
-    2011-07-30  changed to work with new webpage source code
-    
-  V20110328
-    2011-07-04  simplified source code for parsing javascript
-                bug fix (clearing proxy)
-    2011-03-28  bug fix (utf8 characters)
-                some translations    
-
-  V20110308
-    2011-03-08  changed to work with new webpage source code
-
-  V20110219
-    2011-02-19  new option (ndl) to only show file sizes
-    2011-02-15  video resolution can be selected
-    2011-02-05  files get renamed if download was canceled
-                
-  V20110121
-    2011-01-21  bug fix (drop events from Firefox on GNU/Linux)
-                minor changes in GUI
-    2011-01-12  proxy can be set with input
-                german text in GUI if JRE environment is german
-  	
-  V20110111
-    2011-01-11  bug fixes (better handling of drop events)
-
-  V20110103
-    2011-01-03  URLs with a playlist now work
-                selected folder will be saved
-                entire GUI as drop target for mouse events
-
-  V20101223
-    2010-12-27  better handling of URLs pasted in
-                bugfixes: proxy now works with/without protocol
-                application can be shut down while download runs
-    2010-12-23  files being downloaded are shown with "downloading "
-                percentage is correct now ;)
-                
-  V20101219
-    2010-12-19  URLs to mp4 (hd) now work		
-
-  initial version
-    2010-12-17  fixing bugs regarding application shutdown
-    2010-12-16  sf.net project page registered and
-                initial version uploaded
-    2010-12-01? development started
-				
-					
-  I decided not to provide a single version number but rather
-  a releasedate_time. A number does not provide any extra
-  information but the date does. (IMHO)
-  YTD2 is named after ytd (https://sourceforge.net/projects/ytd/)
-  but the author never changed any bug reports nor answered
-  forum posts.
-
-  
-THANKS
-
-  My special thanks to Dean, Anonyous, "Loki" and "Odie" for testing and support! :)

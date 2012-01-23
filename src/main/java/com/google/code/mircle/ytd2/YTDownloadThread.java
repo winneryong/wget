@@ -19,7 +19,6 @@ package com.google.code.mircle.ytd2;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -65,7 +64,7 @@ import com.google.code.mircle.ytd2.YTD2.VideoQuality;
  * works without cookies as well
  * 
  */
-public class YTDownloadThread extends Thread {
+class YTDownloadThread extends Thread {
 
     public boolean bDEBUG;
 
@@ -104,7 +103,7 @@ public class YTDownloadThread extends Thread {
     HttpContext localContext = null;
     HttpResponse response = null;
     String sdirectorychoosed;
-    YTD2 ytd2;
+    YTD2Base ytd2;
     VideoQuality max;
 
     static final int CONNECT_TIMEOUT = 5000;
@@ -118,7 +117,7 @@ public class YTDownloadThread extends Thread {
     boolean join = false;
     VideoQuality vq;
 
-    public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2 ytd2, String input, VideoQuality max) {
+    public YTDownloadThread(boolean bD, String sdirectorychoosed, YTD2Base ytd2, String input, VideoQuality max) {
         super("YTD2 Downloading Thread");
         this.bDEBUG = bD;
         this.sdirectorychoosed = sdirectorychoosed;
