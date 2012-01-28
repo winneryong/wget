@@ -162,60 +162,6 @@ class YTD2Base {
         t1 = new YTDownloadThread(bDEBUG, sdirectory, this, url, max);
     }
 
-    /**
-     * check if a youtube-URL was pasted or typed in if yes cut it out and send
-     * it to the URLList to get processed by one of the threads
-     * 
-     * the user can paste a long string containing many youtube-URLs .. but here
-     * is work to do because we have to erase the string(s) that remain(s)
-     */
-    void checkInputFieldforYTURLs(String sinput, String sdirectory, VideoQuality max) {
-        // TODO this can probably be done better - replace input so URLs get
-        // extracted without user activity (works even if URLs are spread across
-        // multiple lines and pasted at once)
-        sinput = sinput.replaceAll("&feature=fvwp&", "&"); // after that text
-                                                           // there could be
-                                                           // another yt-URL or
-                                                           // more query_string
-                                                           // options
-        sinput = sinput.replaceAll("&feature=fvwphttp", "http");
-        sinput = sinput.replaceAll("&feature=fvwp", "");
-        sinput = sinput.replaceAll("&feature=related&", "&");
-        sinput = sinput.replaceAll("&feature=relatedhttp", "http");
-        sinput = sinput.replaceAll("&feature=related", "");
-        sinput = sinput.replaceAll("&feature=mfu_in_order&list=[0-9A-Z]{1,2}", "");
-        sinput = sinput.replaceAll("&feature=[a-zA-Z]{1,2}&list=([a-zA-Z0-9]*)&index=[0-9]{1,2}", "");
-        sinput = sinput.replaceAll("&feature=[0-9A-Z]{1,3}&list=(PL[a-zA-Z0-9]{16})&index=[0-9]{1,2}", "");
-        sinput = sinput.replaceAll("&playnext=[0-9A-Z]{1,2}&list=(PL[a-zA-Z0-9]{16})", "");
-        sinput = sinput.replaceAll("&NR=[0-9]&", "&");
-        sinput = sinput.replaceAll("&NR=[0-9]http", "http");
-        sinput = sinput.replaceAll("&NR=[0-9]", "");
-        sinput = sinput.replaceAll(" ", "");
-        sinput = sinput.replaceAll(szPLAYLISTREGEX, "/watch?v=");
-
-        String surl = sinput.replaceFirst(szYTREGEX, "");
-
-        // if nothing could be replaced we have to yt-URL found
-        if (sinput.equals(surl))
-            throw new RuntimeException("url not found");
-
-        // starting at index 0 because szYTREGEX should start with ^ // if
-        // szYTREGEX does not start with ^ then you have to find the index where
-        // the match is before you can cut out the URL
-        surl = sinput.substring(0, sinput.length() - surl.length());
-        download(surl, sdirectory, max);
-        sinput = sinput.substring(surl.length());
-
-        // if remaining text is shorter than shortest possible yt-url we delete
-        // it
-        if (sinput.length() < "youtube.com/watch?v=0123456789a".length())
-            sinput = "";
-
-        // frame.textinputfield.setText(sinput); // generates a
-        // java.lang.IllegalStateException: Attempt to mutate in notification
-
-    } // checkInputFieldforYTURLS
-
     void changed() {
     }
 }
