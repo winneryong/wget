@@ -47,15 +47,15 @@ public class YTD2 extends YTD2Base {
     public YTD2(String source, String target) {
         super();
 
-        this.source = source;
-        this.target = target;
+        this.source = source.trim();
+        this.target = target.trim();
     }
 
     public YTD2(String source, String target, VideoQuality max) {
         super();
 
-        this.source = source;
-        this.target = target;
+        this.source = source.trim();
+        this.target = target.trim();
 
         this.max = max;
     }
@@ -79,7 +79,7 @@ public class YTD2 extends YTD2Base {
             oldpath = targetForce;
 
         create();
-        checkInputFieldforYTURLs(source, target, max);
+        download(source, target, max);
 
         t1.setFileName(oldpath);
 
