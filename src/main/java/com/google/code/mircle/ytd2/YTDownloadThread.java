@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
@@ -464,6 +465,18 @@ class YTDownloadThread extends Thread {
                 Integer idupcount = 0;
                 String sfilename = this.getTitle()/* .replaceAll(" ", "_") */.concat(
                         this.sFilenameResPart == null ? "" : this.sFilenameResPart);
+
+                // lack in FilenameUtils
+                sfilename = sfilename.replaceAll("/", ".");
+                sfilename = sfilename.replaceAll("\\\\", ".");
+                sfilename = sfilename.replaceAll(":", ".");
+                sfilename = sfilename.replaceAll("\\?", ".");
+                sfilename = sfilename.replaceAll("\\\"", ".");
+                sfilename = sfilename.replaceAll("\\*", ".");
+                sfilename = sfilename.replaceAll("<", ".");
+                sfilename = sfilename.replaceAll(">", ".");
+                sfilename = sfilename.replaceAll("|", ".");
+                
                 do {
                     f = new File(sdirectorychoosed, sfilename
                             .concat((idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "")).concat(".")
