@@ -475,7 +475,7 @@ class YTDownloadThread extends Thread {
                 sfilename = sfilename.replaceAll("\\*", ".");
                 sfilename = sfilename.replaceAll("<", ".");
                 sfilename = sfilename.replaceAll(">", ".");
-                sfilename = sfilename.replaceAll("|", ".");
+                sfilename = sfilename.replaceAll("\\|", ".");
                 
                 do {
                     f = new File(sdirectorychoosed, sfilename
