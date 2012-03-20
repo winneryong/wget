@@ -467,16 +467,19 @@ class YTDownloadThread extends Thread {
                         this.sFilenameResPart == null ? "" : this.sFilenameResPart);
 
                 // lack in FilenameUtils
-                sfilename = sfilename.replaceAll("/", ".");
-                sfilename = sfilename.replaceAll("\\\\", ".");
-                sfilename = sfilename.replaceAll(":", ".");
-                sfilename = sfilename.replaceAll("\\?", ".");
-                sfilename = sfilename.replaceAll("\\\"", ".");
-                sfilename = sfilename.replaceAll("\\*", ".");
-                sfilename = sfilename.replaceAll("<", ".");
-                sfilename = sfilename.replaceAll(">", ".");
-                sfilename = sfilename.replaceAll("\\|", ".");
-                
+                String replace = " ";
+                sfilename = sfilename.replaceAll("/", replace);
+                sfilename = sfilename.replaceAll("\\\\", replace);
+                sfilename = sfilename.replaceAll(":", replace);
+                sfilename = sfilename.replaceAll("\\?", replace);
+                sfilename = sfilename.replaceAll("\\\"", replace);
+                sfilename = sfilename.replaceAll("\\*", replace);
+                sfilename = sfilename.replaceAll("<", replace);
+                sfilename = sfilename.replaceAll(">", replace);
+                sfilename = sfilename.replaceAll("\\|", replace);
+                sfilename = sfilename.replaceAll("  ", " ");
+                sfilename = sfilename.trim();
+
                 do {
                     f = new File(sdirectorychoosed, sfilename
                             .concat((idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "")).concat(".")
