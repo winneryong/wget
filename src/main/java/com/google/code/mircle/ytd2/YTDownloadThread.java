@@ -457,6 +457,25 @@ class YTDownloadThread extends Thread {
         } // while
     } // savetextdata()
 
+    static String replaceBadChars(String sfilename) {
+        String replace = " ";
+        sfilename = sfilename.replaceAll("/", replace);
+        sfilename = sfilename.replaceAll("\\\\", replace);
+        sfilename = sfilename.replaceAll(":", replace);
+        sfilename = sfilename.replaceAll("\\?", replace);
+        sfilename = sfilename.replaceAll("\\\"", replace);
+        sfilename = sfilename.replaceAll("\\*", replace);
+        sfilename = sfilename.replaceAll("<", replace);
+        sfilename = sfilename.replaceAll(">", replace);
+        sfilename = sfilename.replaceAll("\\|", replace);
+        sfilename = sfilename.replaceAll("  ", " ");
+        sfilename = sfilename.trim();
+        sfilename = StringUtils.removeEnd(sfilename, ".");
+        sfilename = sfilename.trim();
+
+        return sfilename;
+    }
+
     void savebinarydata(String sdirectorychoosed) throws IOException {
         FileOutputStream fos = null;
         try {
@@ -466,19 +485,7 @@ class YTDownloadThread extends Thread {
                 String sfilename = this.getTitle()/* .replaceAll(" ", "_") */.concat(
                         this.sFilenameResPart == null ? "" : this.sFilenameResPart);
 
-                // lack in FilenameUtils
-                String replace = " ";
-                sfilename = sfilename.replaceAll("/", replace);
-                sfilename = sfilename.replaceAll("\\\\", replace);
-                sfilename = sfilename.replaceAll(":", replace);
-                sfilename = sfilename.replaceAll("\\?", replace);
-                sfilename = sfilename.replaceAll("\\\"", replace);
-                sfilename = sfilename.replaceAll("\\*", replace);
-                sfilename = sfilename.replaceAll("<", replace);
-                sfilename = sfilename.replaceAll(">", replace);
-                sfilename = sfilename.replaceAll("\\|", replace);
-                sfilename = sfilename.replaceAll("  ", " ");
-                sfilename = sfilename.trim();
+                sfilename = replaceBadChars(sfilename);
 
                 do {
                     f = new File(sdirectorychoosed, sfilename
