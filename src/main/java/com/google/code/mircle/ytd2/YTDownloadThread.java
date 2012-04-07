@@ -79,7 +79,7 @@ class YTDownloadThread extends Thread {
 
     public String getInput() {
         synchronized (statsLock) {
-            return ei.input;
+            return ei.source;
         }
     }
 

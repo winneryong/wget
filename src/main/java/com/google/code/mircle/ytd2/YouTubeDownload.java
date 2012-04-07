@@ -43,9 +43,6 @@ class YouTubeDownload {
     Vector<String> sNextVideoURL = new Vector<String>(); // list of URLs from
                                                          // webpage source
     String sFileName = null; // contains the absolute filename
-    // CookieStore bcs = null; // contains cookies after first HTTP GET
-    boolean bisinterrupted = false; // basically the same as
-                                    // Thread.isInterrupted()
 
     BufferedInputStream binaryreader = null;
     String target;
@@ -165,7 +162,7 @@ class YouTubeDownload {
             if (iBytesMax > 56 * 1024 * 1024)
                 iblocks = 1;
 
-            while (!ei.bisinterrupted && iBytesRead > 0) {
+            while (!ytd2.getbQuitrequested() && iBytesRead > 0) {
                 iBytesRead = this.binaryreader.read(bytes);
                 if (iBytesRead > 0) {
                     iBytesReadSum += iBytesRead;
@@ -183,16 +180,11 @@ class YouTubeDownload {
                 }
                 if (iBytesRead > 0)
                     fos.write(bytes, 0, iBytesRead);
-                this.bisinterrupted = ytd2.getbQuitrequested(); // try to get
-                                                                // information
-                                                                // about
-                                                                // application
-                                                                // shutdown
-            } // while
+            }
 
             // rename files if download was interrupted before completion of
             // download
-            if (this.bisinterrupted && iBytesReadSum < iBytesMax) {
+            if (ytd2.getbQuitrequested() && iBytesReadSum < iBytesMax) {
                 try {
                     // this part is especially for our M$-Windows users because
                     // of the different behavior of File.renameTo() in contrast

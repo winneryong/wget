@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -33,27 +34,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
-/**
- * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies
- * savecookies.txt --keep-session-cookies --output-document=-
- * http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep
- * --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e
- * 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\u0026/\&/g' -e
- * 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g' -e 's/"//g' ` && wget
- * --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
- * 
- * works without cookies as well
- * 
- */
 public class YouTubeInfo {
 
-    // basically the same as
-    // Thread.isInterrupted()
-    boolean bisinterrupted = false;
     HashMap<VideoQuality, String> sNextVideoURL = new HashMap<VideoQuality, String>();
-    // will be used as filename
     String sTitle = null;
-    String sContentType = null;
 
     // can contain a string that prepends the
     // filename
@@ -65,10 +49,9 @@ public class YouTubeInfo {
     // to one video
     int iRecursionCount = -1;
     String html;
-    BufferedReader textreader = null;
     YTD2Base ytd2;
 
-    String input;
+    String source;
     String sVideoURL = null;
 
     HttpURLConnection con;
@@ -78,7 +61,7 @@ public class YouTubeInfo {
 
     public YouTubeInfo(YTD2Base ytd2, String input) {
         this.ytd2 = ytd2;
-        this.input = input;
+        this.source = input;
     }
 
     boolean downloadone(String sURL) throws Exception {
@@ -124,29 +107,22 @@ public class YouTubeInfo {
             this.sVideoURL = null;
         }
 
-        InputStream entity = null;
-        entity = this.con.getInputStream();
-
-        // try to read HTTP response body
-        if (entity != null) {
-            {
-                if (this.con.getContentType().toLowerCase().matches("^text/html(.*)")) {
-                    this.textreader = new BufferedReader(new InputStreamReader(entity,
-                            con.getContentEncoding() == null ? "UTF-8" : con.getContentEncoding()));
-                }
+        {
+            if (this.con.getContentType().toLowerCase().matches("^text/html(.*)")) {
             }
+        }
 
-            {
-                // test if we got a webpage
-                this.sContentType = this.con.getContentType().toLowerCase();
-                if (this.sContentType.matches("^text/html(.*)")) {
-                    this.html = readHtml();
-                    extractHtmlInfo(html);
-                    // test if we got the binary content
-                } else { // content-type is not video/
-                    rc = false;
-                    this.sVideoURL = null;
-                }
+        {
+            // test if we got a webpage
+            String sContentType = null;
+            sContentType = this.con.getContentType().toLowerCase();
+            if (sContentType.matches("^text/html(.*)")) {
+                this.html = readHtml();
+                extractHtmlInfo(html);
+                // test if we got the binary content
+            } else { // content-type is not video/
+                rc = false;
+                this.sVideoURL = null;
             }
         }
 
@@ -155,11 +131,19 @@ public class YouTubeInfo {
     }
 
     String readHtml() {
+        BufferedReader textreader = null;
+        try {
+            textreader = new BufferedReader(new InputStreamReader(con.getInputStream(),
+                    con.getContentEncoding() == null ? "UTF-8" : con.getContentEncoding()));
+        } catch (IOException e1) {
+            throw new RuntimeException(e1);
+        }
+
         StringBuilder contents = new StringBuilder();
         String line = "";
         while (line != null) {
             try {
-                line = this.textreader.readLine();
+                line = textreader.readLine();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -296,7 +280,7 @@ public class YouTubeInfo {
 
     public void extract() {
         try {
-            downloadone(input);
+            downloadone(source);
             this.iRecursionCount = -1;
         } catch (RuntimeException e) {
             throw e;
