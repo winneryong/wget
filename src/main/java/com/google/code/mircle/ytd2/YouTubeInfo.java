@@ -55,10 +55,6 @@ public class YouTubeInfo {
     String sTitle = null;
     String sContentType = null;
 
-    final String ssourcecodeurl = "http://";
-    final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
-    // main URL (youtube start web page)
-    String sURL = null;
     // can contain a string that prepends the
     // filename
     String sFilenameResPart = null;
@@ -73,7 +69,6 @@ public class YouTubeInfo {
     YTD2Base ytd2;
 
     String input;
-    boolean join = false;
     String sVideoURL = null;
 
     HttpURLConnection con;
@@ -299,38 +294,15 @@ public class YouTubeInfo {
         }
     }
 
-    String getProxy() {
-        String sproxy = YTD2.sproxy;
-        if (sproxy == null)
-            return ("");
-        else
-            return (sproxy);
-    }
-
-    String getHost(String sURL) {
-        String shost = sURL.replaceFirst(YTD2.szYTHOSTREGEX, "");
-        shost = sURL.substring(0, sURL.length() - shost.length());
-        shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
-        return (shost);
-    }
-
     public void extract() {
         try {
-            // TODO check what kind of website the URL is from - this class
-            // can only handle YouTube-URLs ... we add other video sources
-            // later
-            this.sURL = input;
-
-            // download one webresource and show result
-            downloadone(this.sURL);
+            downloadone(input);
             this.iRecursionCount = -1;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        join = true;
     }
 
 }

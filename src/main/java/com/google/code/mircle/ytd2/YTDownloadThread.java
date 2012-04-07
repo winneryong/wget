@@ -20,7 +20,8 @@ import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
 class YTDownloadThread extends Thread {
 
-    boolean join = false;
+    // is the main thread done working?
+    boolean canJoin = false;
     Exception e;
 
     Object statsLock = new Object();
@@ -101,7 +102,7 @@ class YTDownloadThread extends Thread {
         }
 
         synchronized (statsLock) {
-            join = true;
+            canJoin = true;
         }
         notify.run();
     }

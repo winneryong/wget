@@ -18,7 +18,6 @@ package com.google.code.mircle.ytd2;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 public class YTD2 extends YTD2Base {
 
@@ -78,7 +77,6 @@ public class YTD2 extends YTD2Base {
         if (targetForce != null)
             oldpath = targetForce;
 
-        create();
         download(source, target, max);
 
         t1.setFileName(oldpath);
@@ -111,7 +109,7 @@ public class YTD2 extends YTD2Base {
      */
     public boolean isJoin() {
         synchronized (t1.statsLock) {
-            return t1.join;
+            return t1.canJoin;
         }
     }
 

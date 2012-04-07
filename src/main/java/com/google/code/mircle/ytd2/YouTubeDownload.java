@@ -114,6 +114,9 @@ class YouTubeDownload {
         try {
             URL url = new URL(getVideoUrl());
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            
+            conn.setConnectTimeout(CONNECT_TIMEOUT);
+            conn.setReadTimeout(READ_TIMEOUT);
 
             String sContentType = conn.getContentType();
 
