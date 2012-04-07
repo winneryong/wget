@@ -111,7 +111,6 @@ public class YouTubeInfo {
     String input;
     long count = 0;
     long total = 0;
-    Exception e;
     boolean join = false;
     VideoQuality vq;
 
@@ -193,9 +192,10 @@ public class YouTubeInfo {
             }
             this.httpget = new HttpGet(getURI(sURL));
             this.target = new HttpHost(getHost(sURL), 80, "http");
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            this.e = e;
-            ytd2.changed();
+            throw new RuntimeException(e);
         }
 
         // we dont need cookies at all because the download runs even without it
@@ -293,8 +293,6 @@ public class YouTubeInfo {
                 }
             }
         } // if (entity != null)
-
-        this.httpclient.getConnectionManager().shutdown();
 
         return (rc);
 
@@ -500,11 +498,10 @@ public class YouTubeInfo {
             // download one webresource and show result
             downloadone(this.sURL, max);
             this.iRecursionCount = -1;
-        } catch (NullPointerException npe) {
-            // debugoutput("npe - nothing to download?");
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            this.e = e;
-            ytd2.changed();
+            throw new RuntimeException(e);
         }
 
         join = true;

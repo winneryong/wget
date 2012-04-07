@@ -222,6 +222,8 @@ public class YTD2 extends YTD2Base {
     }
 
     public static void main(String[] args) {
+        YTD2 y = new YTD2("http://www.youtube.com/watch?v=OY7fmYkpsRs", "/Users/axet/Downloads");
+
         // YTD2 y = new
         // YTD2("http://www.youtube.com/watch?v=QoTWRHheshw&feature=youtube_gdata",
         // "/Users/axet/Downloads");
@@ -230,8 +232,9 @@ public class YTD2 extends YTD2Base {
         // YTD2("http://www.youtube.com/user/cubert01?v=gidumziw4JE&feature=pyv&ad=8307058643&kw=youtube%20download",
         // "/Users/axet/Downloads");
 
-        YTD2 y = new YTD2("http://www.youtube.com/watch?v=43uLEOvR6sE&feature=g-all-u&context=G21f35c2FAAAAAAAACAA",
-                "/Users/axet/Downloads");
+        // YTD2 y = new
+        // YTD2("http://www.youtube.com/watch?v=43uLEOvR6sE&feature=g-all-u&context=G21f35c2FAAAAAAAACAA",
+        // "/Users/axet/Downloads");
 
         y.start();
 
