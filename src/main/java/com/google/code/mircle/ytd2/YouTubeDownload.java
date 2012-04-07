@@ -22,7 +22,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.net.CookiePolicy;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Vector;
 
 import javax.net.ssl.SSLSocketFactory;
@@ -31,30 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
-/**
- * knoedel@section60:~/YouTube Downloads$ url=`wget --save-cookies
- * savecookies.txt --keep-session-cookies --output-document=-
- * http://www.youtube.com/watch?v=9QFK1cLhytY 2>/dev/null | grep
- * --after-context=6 --max-count=1 yt.preload.start | grep img.src | sed -e
- * 's/img.src =//' -e 's/generate_204/videoplayback/' -e 's/\\\u0026/\&/g' -e
- * 's/\\\//g' -e 's/;//g' -e "s/'//g" -e 's/ //g' -e 's/"//g' ` && wget
- * --load-cookies=savecookies.txt -O videofile.flv ${url} && echo ok || echo nok
- * 
- * works without cookies as well
- * 
- */
 class YouTubeDownload {
-
-    public boolean bDEBUG;
-
-    boolean bNODOWNLOAD;
-
-    static int iThreadcount = 0;
-    int iThreadNo = YouTubeDownload.iThreadcount++; // every download thread
-                                                    // get its own number
-
-    final String ssourcecodeurl = "http://";
-    final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
 
     String sFilenameResPart = null; // can contain a string that prepends the
                                     // filename
@@ -67,15 +46,10 @@ class YouTubeDownload {
     // CookieStore bcs = null; // contains cookies after first HTTP GET
     boolean bisinterrupted = false; // basically the same as
                                     // Thread.isInterrupted()
-    int iRecursionCount = -1; // counted in downloadone() for the 3 webrequest
-                              // to one video
 
-    String sContentType = null;
-    BufferedReader textreader = null;
     BufferedInputStream binaryreader = null;
-    String sdirectorychoosed;
+    String target;
     YTD2Base ytd2;
-    VideoQuality max;
 
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
@@ -83,24 +57,22 @@ class YouTubeDownload {
     Object statsLock = new Object();
     String input;
     long count = 0;
-    long total = 0;
-    boolean join = false;
-    VideoQuality vq;
-    Exception e;
 
     YouTubeInfo ei;
     Runnable notify;
 
+    long iBytesMax;
+
+    final static VideoQuality DEFAULT_QUALITY = VideoQuality.p1080;
+
+    VideoQuality max = DEFAULT_QUALITY;
+
     public YouTubeDownload(YTD2Base base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
         this.ei = e;
-        this.sdirectorychoosed = sdirectorychoosed;
+        this.target = sdirectorychoosed;
         this.notify = notify;
         this.ytd2 = base;
-    } // YTDownloadThread()
-
-    void reportheaderinfo() {
-        this.sVideoURL = null;
-    } // reportheaderinfo()
+    }
 
     boolean addVideo(String s) {
         if (s != null) {
@@ -137,9 +109,14 @@ class YouTubeDownload {
         return sfilename;
     }
 
-    void savebinarydata(String sdirectorychoosed) {
+    void savebinarydata() {
         FileOutputStream fos = null;
         try {
+            URL url = new URL(getVideoUrl());
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            String sContentType = conn.getContentType();
+
             File f;
             if (getFileName() == null) {
                 Integer idupcount = 0;
@@ -149,9 +126,9 @@ class YouTubeDownload {
                 sfilename = replaceBadChars(sfilename);
 
                 do {
-                    f = new File(sdirectorychoosed, sfilename
+                    f = new File(target, sfilename
                             .concat((idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "")).concat(".")
-                            .concat(ei.sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
+                            .concat(sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
                     idupcount += 1;
                 } while (f.exists());
                 this.setFileName(f.getAbsolutePath());
@@ -168,25 +145,22 @@ class YouTubeDownload {
 
             fos = new FileOutputStream(f);
 
-            synchronized (statsLock) {
-                total = ei.iBytesMax;
-            }
-
             byte[] bytes = new byte[4096];
             Integer iBytesRead = 1;
+
+            this.binaryreader = new BufferedInputStream(conn.getInputStream());
+
+            iBytesMax = conn.getContentLength();
 
             // adjust blocks of percentage to output - larger files are shown
             // with smaller pieces
             Integer iblocks = 10;
-            if (ei.iBytesMax > 20 * 1024 * 1024)
+            if (iBytesMax > 20 * 1024 * 1024)
                 iblocks = 4;
-            if (ei.iBytesMax > 32 * 1024 * 1024)
+            if (iBytesMax > 32 * 1024 * 1024)
                 iblocks = 2;
-            if (ei.iBytesMax > 56 * 1024 * 1024)
+            if (iBytesMax > 56 * 1024 * 1024)
                 iblocks = 1;
-            
-            URL url = new URL(ei.sVideoURL);
-            this.binaryreader = new BufferedInputStream(url.openStream());
 
             while (!ei.bisinterrupted && iBytesRead > 0) {
                 iBytesRead = this.binaryreader.read(bytes);
@@ -201,8 +175,8 @@ class YouTubeDownload {
                 notify.run();
 
                 // drop a line every x% of the download
-                if ((((iBytesReadSum * 100 / ei.iBytesMax) / iblocks) * iblocks) > iPercentage) {
-                    iPercentage = (((iBytesReadSum * 100 / ei.iBytesMax) / iblocks) * iblocks);
+                if ((((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks) > iPercentage) {
+                    iPercentage = (((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks);
                 }
                 if (iBytesRead > 0)
                     fos.write(bytes, 0, iBytesRead);
@@ -215,7 +189,7 @@ class YouTubeDownload {
 
             // rename files if download was interrupted before completion of
             // download
-            if (this.bisinterrupted && iBytesReadSum < ei.iBytesMax) {
+            if (this.bisinterrupted && iBytesReadSum < iBytesMax) {
                 try {
                     // this part is especially for our M$-Windows users because
                     // of the different behavior of File.renameTo() in contrast
@@ -246,79 +220,11 @@ class YouTubeDownload {
             } catch (Exception e) {
             }
             try {
-                this.textreader.close();
-            } catch (Exception e) {
-            }
-            try {
                 this.binaryreader.close();
             } catch (Exception e) {
             }
-        } // try
-    } // savebinarydata()
-
-    void changeFileNamewith(String string) {
-        File f = null;
-        Integer idupcount = 0;
-        String sfilesep = System.getProperty("file.separator");
-        if (sfilesep.equals("\\"))
-            sfilesep += sfilesep; // on m$-windows we need to escape the \
-
-        String sdirectorychoosed = "";
-        String[] srenfilename = this.getFileName().split(sfilesep);
-
-        try {
-            for (int i = 0; i < srenfilename.length - 1; i++) {
-                sdirectorychoosed += srenfilename[i].concat((i < srenfilename.length - 1) ? sfilesep : ""); // constructing
-                                                                                                            // folder
-                                                                                                            // where
-                                                                                                            // file
-                                                                                                            // is
-                                                                                                            // saved
-                                                                                                            // now
-                                                                                                            // (could
-                                                                                                            // be
-                                                                                                            // changed
-                                                                                                            // in
-                                                                                                            // GUI
-                                                                                                            // already)
-            }
-        } catch (ArrayIndexOutOfBoundsException aioobe) {
         }
-
-        String sfilename = srenfilename[srenfilename.length - 1];
-
-        do {
-            // filename will be prepended with a parameter string and possibly a
-            // duplicate counter
-            f = new File(sdirectorychoosed, string.concat(
-                    (idupcount > 0 ? "(".concat(idupcount.toString()).concat(")") : "")).concat(sfilename));
-            idupcount += 1;
-        } while (f.exists());
-
-        this.setFileName(f.getAbsolutePath());
-
-        notify.run();
-    } // changeFileNamewith
-
-    String getProxy() {
-        String sproxy = YTD2.sproxy;
-        if (sproxy == null)
-            return ("");
-        else
-            return (sproxy);
-    } // getProxy()
-
-    String getURI(String sURL) {
-        String suri = "/".concat(sURL.replaceFirst(YTD2.szYTHOSTREGEX, ""));
-        return (suri);
-    } // getURI
-
-    String getHost(String sURL) {
-        String shost = sURL.replaceFirst(YTD2.szYTHOSTREGEX, "");
-        shost = sURL.substring(0, sURL.length() - shost.length());
-        shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
-        return (shost);
-    } // gethost
+    }
 
     String getFileName() {
         synchronized (statsLock) {
@@ -335,16 +241,28 @@ class YouTubeDownload {
         }
     }
 
-    String getMyName() {
-        return this.getClass().getName().concat(Integer.toString(this.iThreadNo));
-    } // getMyName()
-
-    public void setbDEBUG(boolean bDEBUG) {
-        this.bDEBUG = bDEBUG;
-    } // setbDEBUG
-
     public void download() {
-        savebinarydata(sdirectorychoosed);
-    } // run()
+        savebinarydata();
+    }
 
-} // class YTDownloadThread
+    String getVideoUrl() {
+        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p1080, VideoQuality.p720, VideoQuality.p480,
+                VideoQuality.p360, VideoQuality.p240, VideoQuality.p120 };
+
+        int i = 0;
+        for (; i < avail.length; i++) {
+            if (avail[i] == max)
+                break;
+        }
+
+        String video = null;
+
+        for (; i < avail.length; i++) {
+            video = ei.sNextVideoURL.get(avail[i]);
+            if (video != null)
+                return video;
+        }
+
+        throw new RuntimeException("no video with required quality found");
+    }
+}

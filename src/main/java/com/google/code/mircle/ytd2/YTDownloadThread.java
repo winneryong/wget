@@ -20,11 +20,6 @@ import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
 class YTDownloadThread extends Thread {
 
-    VideoQuality max;
-    YTD2Base base;
-    String url;
-    String target;
-
     boolean join = false;
     Exception e;
 
@@ -32,30 +27,23 @@ class YTDownloadThread extends Thread {
     YouTubeInfo ei;
     YouTubeDownload d;
 
-    final static VideoQuality DEFAULT_QUALITY = VideoQuality.p1080;
+    Runnable notify;
 
-    public YTDownloadThread(YTD2Base base, String url, String target) {
-        this.base = base;
-        this.url = url;
-        this.target = target;
+    public YTDownloadThread(final YTD2Base base, String url, String target) {
 
-        final YTDownloadThread that = this;
-
-        Runnable notify = new Runnable() {
+        notify = new Runnable() {
             @Override
             public void run() {
-                that.base.changed();
+                base.changed();
             }
         };
 
-        ei = new YouTubeInfo(base, url, DEFAULT_QUALITY);
+        ei = new YouTubeInfo(base, url);
         d = new YouTubeDownload(base, ei, target, notify);
     }
 
     public void setMaxQuality(VideoQuality max) {
-        this.max = max;
-
-        ei.vq = max;
+        d.max = max;
     }
 
     public String getTitle() {
@@ -66,7 +54,7 @@ class YTDownloadThread extends Thread {
 
     public long getTotal() {
         synchronized (statsLock) {
-            return ei.iBytesMax;
+            return d.iBytesMax;
         }
     }
 
@@ -78,7 +66,7 @@ class YTDownloadThread extends Thread {
 
     public VideoQuality getVideoQuality() {
         synchronized (statsLock) {
-            return ei.vq;
+            return d.max;
         }
     }
 
@@ -109,12 +97,12 @@ class YTDownloadThread extends Thread {
             synchronized (statsLock) {
                 this.e = e;
             }
-            base.changed();
+            notify.run();
         }
 
         synchronized (statsLock) {
             join = true;
         }
-        base.changed();
+        notify.run();
     }
 }

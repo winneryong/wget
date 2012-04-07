@@ -47,23 +47,14 @@ import com.google.code.mircle.ytd2.YTD2.VideoQuality;
  */
 public class YouTubeInfo {
 
-    // info values
-    long iBytesMax = 0;
     // basically the same as
     // Thread.isInterrupted()
     boolean bisinterrupted = false;
-    // one video web resource
-    String sVideoURL = null;
+    HashMap<VideoQuality, String> sNextVideoURL = new HashMap<VideoQuality, String>();
     // will be used as filename
     String sTitle = null;
     String sContentType = null;
 
-    boolean bDEBUG;
-    boolean bNODOWNLOAD;
-    static int iThreadcount = 0;
-    // every download thread
-    // get its own number
-    int iThreadNo = YouTubeInfo.iThreadcount++;
     final String ssourcecodeurl = "http://";
     final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
     // main URL (youtube start web page)
@@ -74,35 +65,28 @@ public class YouTubeInfo {
     // the video URL which we can use as fallback to
     // my wget call
     String s403VideoURL = null;
-    // list of URLs from
-    // webpage source
-    // CookieStore bcs = null; // contains cookies after first HTTP GET
-    Vector<String> sNextVideoURL = new Vector<String>();
     // counted in downloadone() for the 3 webrequest
     // to one video
     int iRecursionCount = -1;
     String html;
     BufferedReader textreader = null;
     YTD2Base ytd2;
-    VideoQuality max;
 
     String input;
     boolean join = false;
-    VideoQuality vq;
+    String sVideoURL = null;
 
     HttpURLConnection con;
 
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
 
-    public YouTubeInfo(YTD2Base ytd2, String input, VideoQuality max) {
-        this.bDEBUG = false;
+    public YouTubeInfo(YTD2Base ytd2, String input) {
         this.ytd2 = ytd2;
         this.input = input;
-        this.max = max;
     }
 
-    boolean downloadone(String sURL, VideoQuality vd) throws Exception {
+    boolean downloadone(String sURL) throws Exception {
         boolean rc = false;
         boolean rc204 = false;
         boolean rc302 = false;
@@ -131,12 +115,12 @@ public class YouTubeInfo {
                 return (rc & rc204 & rc302);
             }
             if (rc204) {
-                rc = downloadone(this.sNextVideoURL.get(0), vd);
+                rc = downloadone(this.sNextVideoURL.values().iterator().next());
                 return (rc);
             }
             if (rc403) {
                 this.sFilenameResPart = null;
-                rc = downloadone(this.s403VideoURL, vd);
+                rc = downloadone(this.s403VideoURL);
             }
         } catch (NullPointerException npe) {
             // if an IllegalStateException was catched while calling
@@ -162,19 +146,14 @@ public class YouTubeInfo {
                 this.sContentType = this.con.getContentType().toLowerCase();
                 if (this.sContentType.matches("^text/html(.*)")) {
                     this.html = readHtml();
-                    extractHtmlInfo(html, vd);
+                    extractHtmlInfo(html);
                     // test if we got the binary content
-                } else if (this.sContentType.matches("video/(.)*")) {
-                    reportheaderinfo();
-                    return false;
                 } else { // content-type is not video/
                     rc = false;
                     this.sVideoURL = null;
                 }
             }
         }
-
-        rc = downloadone(this.sVideoURL, vd);
 
         return (rc);
 
@@ -194,10 +173,6 @@ public class YouTubeInfo {
         return contents.toString();
     }
 
-    void reportheaderinfo() {
-        iBytesMax = this.con.getContentLength();
-    }
-
     /**
      * Add resolution video for specific youtube link.
      * 
@@ -205,16 +180,16 @@ public class YouTubeInfo {
      *            download source url
      * @return
      */
-    boolean addVideo(String s) {
+    boolean addVideo(VideoQuality vd, String s) {
         if (s != null) {
-            sNextVideoURL.add(s);
+            sNextVideoURL.put(vd, s);
             return true;
         }
 
         return false;
     }
 
-    void extractHtmlInfo(String html, VideoQuality vd) throws IOException {
+    void extractHtmlInfo(String html) throws IOException {
         Pattern age = Pattern.compile("(verify_age)");
         Matcher ageMatch = age.matcher(html);
         if (ageMatch.find())
@@ -271,38 +246,32 @@ public class YouTubeInfo {
 
             // figure out what resolution-button is pressed now and fill
             // list with possible URLs
-            switch (vd) {
+            switch (VideoQuality.p1080) {
             case p1080:
                 // 37|22 - better quality first
-                if (this.addVideo(ssourcecodevideourls.get("37"))) {
-                    vq = VideoQuality.p1080;
+                if (this.addVideo(VideoQuality.p1080, ssourcecodevideourls.get("37"))) {
                     break;
                 }
             case p720:
-                if (this.addVideo(ssourcecodevideourls.get("22"))) {
-                    vq = VideoQuality.p720;
+                if (this.addVideo(VideoQuality.p720, ssourcecodevideourls.get("22"))) {
                     break;
                 }
             case p480:
                 // 35|34
-                if (this.addVideo(ssourcecodevideourls.get("35"))) {
-                    vq = VideoQuality.p480;
+                if (this.addVideo(VideoQuality.p480, ssourcecodevideourls.get("35"))) {
                     break;
                 }
             case p360:
-                if (this.addVideo(ssourcecodevideourls.get("34"))) {
-                    vq = VideoQuality.p360;
+                if (this.addVideo(VideoQuality.p360, ssourcecodevideourls.get("34"))) {
                     break;
                 }
             case p240:
                 // 18|5
-                if (this.addVideo(ssourcecodevideourls.get("18"))) {
-                    vq = VideoQuality.p240;
+                if (this.addVideo(VideoQuality.p240, ssourcecodevideourls.get("18"))) {
                     break;
                 }
             case p120:
-                if (this.addVideo(ssourcecodevideourls.get("5"))) {
-                    vq = VideoQuality.p120;
+                if (this.addVideo(VideoQuality.p120, ssourcecodevideourls.get("5"))) {
                     break;
                 }
                 break;
@@ -311,14 +280,6 @@ public class YouTubeInfo {
                 this.sVideoURL = null;
                 this.sFilenameResPart = null;
                 break;
-            }
-
-            // remove null entries in list - we later try to download
-            // the first (index 0) and if it fails the next one (at
-            // index 1) and so on
-            for (int x = this.sNextVideoURL.size() - 1; x >= 0; x--) {
-                if (this.sNextVideoURL.get(x) == null)
-                    this.sNextVideoURL.remove(x);
             }
 
             // 2011-03-08 new - skip generate_204
@@ -353,14 +314,6 @@ public class YouTubeInfo {
         return (shost);
     }
 
-    String getMyName() {
-        return this.getClass().getName().concat(Integer.toString(this.iThreadNo));
-    }
-
-    public void setbDEBUG(boolean bDEBUG) {
-        this.bDEBUG = bDEBUG;
-    }
-
     public void extract() {
         try {
             // TODO check what kind of website the URL is from - this class
@@ -368,18 +321,8 @@ public class YouTubeInfo {
             // later
             this.sURL = input;
 
-            // copy ndl-state
-            // because this thread
-            // should end with a
-            // complete file (and
-            // report so) even if
-            // someone switches to
-            // nodl before this
-            // thread is finished
-            this.bNODOWNLOAD = ytd2.getbNODOWNLOAD();
-
             // download one webresource and show result
-            downloadone(this.sURL, max);
+            downloadone(this.sURL);
             this.iRecursionCount = -1;
         } catch (RuntimeException e) {
             throw e;
