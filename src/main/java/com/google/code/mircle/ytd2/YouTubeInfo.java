@@ -109,10 +109,10 @@ public class YouTubeInfo {
     static final int READ_TIMEOUT = 5000;
 
     String input;
-    long count = 0;
-    long total = 0;
     boolean join = false;
     VideoQuality vq;
+
+    Long iBytesMax = new Long(0);
 
     public YouTubeInfo(YTD2Base ytd2, String input, VideoQuality max) {
         this.bDEBUG = false;
@@ -299,7 +299,6 @@ public class YouTubeInfo {
 
         try {
             rc = downloadone(this.sVideoURL, vd);
-            this.sVideoURL = null;
         } catch (NullPointerException npe) {
         }
 
@@ -308,7 +307,7 @@ public class YouTubeInfo {
     } // downloadone()
 
     void reportheaderinfo() {
-        this.sVideoURL = null;
+        iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
     } // reportheaderinfo()
 
     boolean addVideo(String s) {
@@ -514,8 +513,6 @@ public class YouTubeInfo {
         }
 
         join = true;
-
-        ytd2.changed();
     } // run()
 
 } // class YTDownloadThread

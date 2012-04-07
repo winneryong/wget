@@ -73,7 +73,7 @@ class YouTubeDownload {
 
     static int iThreadcount = 0;
     int iThreadNo = YouTubeDownload.iThreadcount++; // every download thread
-                                                   // get its own number
+                                                    // get its own number
 
     final String ssourcecodeurl = "http://";
     final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
@@ -119,10 +119,11 @@ class YouTubeDownload {
     YouTubeInfo ei;
     Runnable notify;
 
-    public YouTubeDownload(YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
+    public YouTubeDownload(YTD2Base base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
         this.ei = e;
         this.sdirectorychoosed = sdirectorychoosed;
         this.notify = notify;
+        this.ytd2 = base;
     } // YTDownloadThread()
 
     boolean downloadone(String sURL, String sdirectorychoosed, VideoQuality vd) throws Exception {
@@ -200,7 +201,7 @@ class YouTubeDownload {
             synchronized (statsLock) {
                 this.e = e;
             }
-            ytd2.changed();
+            notify.run();
         }
 
         // we dont need cookies at all because the download runs even without it
@@ -371,7 +372,6 @@ class YouTubeDownload {
 
             Long iBytesReadSum = (long) 0;
             Long iPercentage = (long) -1;
-            final Long iBytesMax = Long.parseLong(ei.response.getFirstHeader("Content-Length").getValue());
 
             // does reader + yotube know how to skip?
             // binaryreader.skip(f.length());
@@ -380,7 +380,7 @@ class YouTubeDownload {
             fos = new FileOutputStream(f);
 
             synchronized (statsLock) {
-                total = iBytesMax;
+                total = ei.iBytesMax;
             }
 
             byte[] bytes = new byte[4096];
@@ -389,14 +389,14 @@ class YouTubeDownload {
             // adjust blocks of percentage to output - larger files are shown
             // with smaller pieces
             Integer iblocks = 10;
-            if (iBytesMax > 20 * 1024 * 1024)
+            if (ei.iBytesMax > 20 * 1024 * 1024)
                 iblocks = 4;
-            if (iBytesMax > 32 * 1024 * 1024)
+            if (ei.iBytesMax > 32 * 1024 * 1024)
                 iblocks = 2;
-            if (iBytesMax > 56 * 1024 * 1024)
+            if (ei.iBytesMax > 56 * 1024 * 1024)
                 iblocks = 1;
-            while (!this.bisinterrupted && iBytesRead > 0) {
-                iBytesRead = this.binaryreader.read(bytes);
+            while (!ei.bisinterrupted && iBytesRead > 0) {
+                iBytesRead = ei.binaryreader.read(bytes);
                 if (iBytesRead > 0) {
                     iBytesReadSum += iBytesRead;
 
@@ -405,11 +405,11 @@ class YouTubeDownload {
                     }
                 }
 
-                ytd2.changed();
+                notify.run();
 
                 // drop a line every x% of the download
-                if ((((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks) > iPercentage) {
-                    iPercentage = (((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks);
+                if ((((iBytesReadSum * 100 / ei.iBytesMax) / iblocks) * iblocks) > iPercentage) {
+                    iPercentage = (((iBytesReadSum * 100 / ei.iBytesMax) / iblocks) * iblocks);
                 }
                 if (iBytesRead > 0)
                     fos.write(bytes, 0, iBytesRead);
@@ -422,7 +422,7 @@ class YouTubeDownload {
 
             // rename files if download was interrupted before completion of
             // download
-            if (this.bisinterrupted && iBytesReadSum < iBytesMax) {
+            if (this.bisinterrupted && iBytesReadSum < ei.iBytesMax) {
                 try {
                     // this part is especially for our M$-Windows users because
                     // of the different behavior of File.renameTo() in contrast
@@ -515,7 +515,7 @@ class YouTubeDownload {
 
         this.setFileName(f.getAbsolutePath());
 
-        ytd2.changed();
+        notify.run();
     } // changeFileNamewith
 
     String getProxy() {
@@ -537,7 +537,6 @@ class YouTubeDownload {
         shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
         return (shost);
     } // gethost
-
 
     String getFileName() {
         synchronized (statsLock) {
