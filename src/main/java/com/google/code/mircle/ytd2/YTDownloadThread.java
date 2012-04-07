@@ -60,7 +60,7 @@ class YTDownloadThread extends Thread {
 
     public String getTitle() {
         synchronized (statsLock) {
-            return ei.getTitle();
+            return ei.sTitle;
         }
     }
 

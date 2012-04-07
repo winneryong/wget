@@ -16,40 +16,17 @@
  */
 package com.google.code.mircle.ytd2;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Vector;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
 
 import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
@@ -79,29 +56,17 @@ public class YouTubeInfo {
     final String ssourcecodeuri = "[a-zA-Z0-9%&=\\.]";
 
     String sURL = null; // main URL (youtube start web page)
-    String sTitle = null; // will be used as filename
     String sFilenameResPart = null; // can contain a string that prepends the
                                     // filename
-    String sVideoURL = null; // one video web resource
     String s403VideoURL = null; // the video URL which we can use as fallback to
                                 // my wget call
     Vector<String> sNextVideoURL = new Vector<String>(); // list of URLs from
                                                          // webpage source
     // CookieStore bcs = null; // contains cookies after first HTTP GET
-    boolean bisinterrupted = false; // basically the same as
-                                    // Thread.isInterrupted()
     int iRecursionCount = -1; // counted in downloadone() for the 3 webrequest
                               // to one video
 
-    String sContentType = null;
     BufferedReader textreader = null;
-    BufferedInputStream binaryreader = null;
-    HttpGet httpget = null;
-    HttpClient httpclient = null;
-    HttpHost proxy = null;
-    HttpHost target = null;
-    HttpContext localContext = null;
-    HttpResponse response = null;
     YTD2Base ytd2;
     VideoQuality max;
 
@@ -112,7 +77,15 @@ public class YouTubeInfo {
     boolean join = false;
     VideoQuality vq;
 
-    Long iBytesMax = new Long(0);
+    HttpURLConnection con;
+
+    // info values
+    long iBytesMax = 0;
+    boolean bisinterrupted = false; // basically the same as
+    // Thread.isInterrupted()
+    String sVideoURL = null; // one video web resource
+    String sTitle = null; // will be used as filename
+    String sContentType = null;
 
     public YouTubeInfo(YTD2Base ytd2, String input, VideoQuality max) {
         this.bDEBUG = false;
@@ -139,113 +112,14 @@ public class YouTubeInfo {
         if (ytd2.getbQuitrequested())
             return (false); // try to get information about application shutdown
 
-        // TODO GUI option for proxy?
-
-        // http://www.youtube.com/watch?v=Mt7zsortIXs&feature=related 1080p !!
-        // "Lady Java" is cool, Oracle is not .. hopefully OpenOffice and Java
-        // stay open and free
-
-        // http://www.youtube.com/watch?v=WowZLe95WDY&feature=related Tom Petty
-        // And the Heartbreakers - Learning to Fly (wih lyrics)
-        // http://www.youtube.com/watch?v=86OfBExGSE0&feature=related URZ 720p
-        // http://www.youtube.com/watch?v=cNOP2t9FObw Blade 360 - 480
-        // http://www.youtube.com/watch?v=HvQBrM_i8bU MZ 1000 Street Fighter
-
-        // http://wiki.squid-cache.org/ConfigExamples/DynamicContent/YouTube
-        // using local squid to save download time for tests
+        URL url = new URL(sURL);
+        con = (HttpURLConnection) url.openConnection();
+        con.setConnectTimeout(CONNECT_TIMEOUT);
+        con.setReadTimeout(READ_TIMEOUT);
 
         try {
-            // determine http_proxy environment variable
-            if (!this.getProxy().equals("")) {
-
-                String sproxy = YTD2.sproxy.toLowerCase().replaceFirst("http://", "");
-                this.proxy = new HttpHost(sproxy.replaceFirst(":(.*)", ""), Integer.parseInt(sproxy.replaceFirst(
-                        "(.*):", "")), "http");
-
-                SchemeRegistry supportedSchemes = new SchemeRegistry();
-                supportedSchemes.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-                supportedSchemes.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
-
-                HttpParams params = new BasicHttpParams();
-                HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-                HttpProtocolParams.setContentCharset(params, "UTF-8");
-                HttpProtocolParams.setUseExpectContinue(params, true);
-
-                HttpConnectionParams.setConnectionTimeout(params, CONNECT_TIMEOUT);
-                HttpConnectionParams.setSoTimeout(params, READ_TIMEOUT);
-
-                ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, supportedSchemes);
-
-                // with proxy
-                this.httpclient = new DefaultHttpClient(ccm, params);
-                this.httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, this.proxy);
-                this.httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
-            } else {
-                // without proxy
-
-                HttpParams params = new BasicHttpParams();
-                HttpConnectionParams.setConnectionTimeout(params, CONNECT_TIMEOUT);
-                HttpConnectionParams.setSoTimeout(params, READ_TIMEOUT);
-
-                this.httpclient = new DefaultHttpClient(params);
-                this.httpclient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BEST_MATCH);
-            }
-            this.httpget = new HttpGet(getURI(sURL));
-            this.target = new HttpHost(getHost(sURL), 80, "http");
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        // we dont need cookies at all because the download runs even without it
-        // (like my wget does) - in fact it blocks downloading videos from
-        // different webpages, because we do not handle the bcs for every URL
-        // (downloading of one video with different resolutions does work)
-        /*
-         * this.localContext = new BasicHttpContext(); if (this.bcs == null)
-         * this.bcs = new BasicCookieStore(); // make cookies persistent,
-         * otherwise they would be stored in a HttpContext but get lost after
-         * calling
-         * org.apache.http.impl.client.AbstractHttpClient.execute(HttpHost
-         * target, HttpRequest request, HttpContext context)
-         * ((DefaultHttpClient) httpclient).setCookieStore(this.bcs); // cast to
-         * AbstractHttpclient would be best match because DefaultHttpClass is a
-         * subclass of AbstractHttpClient
-         */
-
-        // TODO maybe we save the video IDs+res that were downloaded to avoid
-        // downloading the same video again?
-
-        this.response = this.httpclient.execute(this.target, this.httpget, this.localContext);
-
-        try {
-            // for (int i = 0; i < response.getAllHeaders().length; i++) {
-            // debugoutput(response.getAllHeaders()[i].getName().concat("=").concat(response.getAllHeaders()[i].getValue()));
-            // }
-            // TODO youtube sends a "HTTP/1.1 303 See Other" response if you try
-            // to open a webpage that does not exist
-
-            // the second request of a browser is with an URL containing
-            // generate_204 which leads to an HTTP response code of (guess) 204!
-            // the next query is the same URL with videoplayback instead of
-            // generate_204 which leads to an HTTP response code of (guess
-            // again) .. no not 200! but 302 and in that response header there
-            // is a field Location with a different (host) which we can now
-            // request with HTTP GET and then we get a response of (guess :) yes
-            // .. 200 and the video resource in the body - whatever the
-            // girlsnboys at google had in mind developing this ping pong -
-            // we'll never now.
-            // but because all nessesary URLs are provided in the source code we
-            // dont have to do the same requests as web-browsers do
-            // abort if HTTP response code is != 200, != 302 and !=204 - wrong
-            // URL?
-            // make one exception for 403 - switch to old method of videplayback
-            // instead of generate_204
-            if (!(rc = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)200(.*)"))
-                    & !(rc204 = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)204(.*)"))
-                    & !(rc302 = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)302(.*)"))
-                    & !(rc403 = this.response.getStatusLine().toString().toLowerCase().matches("^(http)(.*)403(.*)"))) {
+            if (!(rc = this.con.getResponseCode() == 200) & !(rc204 = this.con.getResponseCode() == 204)
+                    & !(rc302 = this.con.getResponseCode() == 302) & !(rc403 = this.con.getResponseCode() == 403)) {
                 return (rc & rc204 & rc302);
             }
             if (rc204) {
@@ -263,25 +137,23 @@ public class YouTubeInfo {
             this.sVideoURL = null;
         }
 
-        HttpEntity entity = null;
+        InputStream entity = null;
         try {
-            entity = this.response.getEntity();
+            entity = this.con.getInputStream();
         } catch (NullPointerException npe) {
         }
 
         // try to read HTTP response body
         if (entity != null) {
             {
-                if (this.response.getFirstHeader("Content-Type").getValue().toLowerCase().matches("^text/html(.*)"))
-                    this.textreader = new BufferedReader(new InputStreamReader(entity.getContent(),
-                            EntityUtils.getContentCharSet(entity)));
-                else
-                    this.binaryreader = new BufferedInputStream(entity.getContent());
+                if (this.con.getContentType().toLowerCase().matches("^text/html(.*)"))
+                    this.textreader = new BufferedReader(new InputStreamReader(entity,
+                            con.getContentEncoding() == null ? "UTF-8" : con.getContentEncoding()));
             }
 
             {
                 // test if we got a webpage
-                this.sContentType = this.response.getFirstHeader("Content-Type").getValue().toLowerCase();
+                this.sContentType = this.con.getContentType().toLowerCase();
                 if (this.sContentType.matches("^text/html(.*)")) {
                     savetextdata(vd);
                     // test if we got the binary content
@@ -295,8 +167,6 @@ public class YouTubeInfo {
             }
         } // if (entity != null)
 
-        this.httpclient.getConnectionManager().shutdown();
-
         try {
             rc = downloadone(this.sVideoURL, vd);
         } catch (NullPointerException npe) {
@@ -307,7 +177,7 @@ public class YouTubeInfo {
     } // downloadone()
 
     void reportheaderinfo() {
-        iBytesMax = Long.parseLong(this.response.getFirstHeader("Content-Length").getValue());
+        iBytesMax = this.con.getContentLength();
     } // reportheaderinfo()
 
     boolean addVideo(String s) {
@@ -440,7 +310,7 @@ public class YouTubeInfo {
                     String name = sline.replaceFirst("<meta name=\"title\" content=", "").trim();
                     name = StringUtils.strip(name, "\">");
                     name = StringEscapeUtils.unescapeHtml4(name);
-                    this.setTitle(name);
+                    this.sTitle = name;
                 }
             } catch (NullPointerException npe) {
             }
@@ -466,18 +336,6 @@ public class YouTubeInfo {
         shost = shost.toLowerCase().replaceFirst("http://", "").replaceAll("/", "");
         return (shost);
     } // gethost
-
-    String getTitle() {
-        if (this.sTitle != null)
-            return this.sTitle;
-        else
-            return ("");
-
-    }
-
-    void setTitle(String sTitle) {
-        this.sTitle = sTitle;
-    }
 
     String getMyName() {
         return this.getClass().getName().concat(Integer.toString(this.iThreadNo));
