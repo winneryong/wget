@@ -287,12 +287,21 @@ public class YouTubeInfo {
                     // test if we got the binary content
                 } else if (this.sContentType.matches("video/(.)*")) {
                     reportheaderinfo();
+                    this.sVideoURL= null;
                 } else { // content-type is not video/
                     rc = false;
                     this.sVideoURL = null;
                 }
             }
         } // if (entity != null)
+
+        this.httpclient.getConnectionManager().shutdown();
+
+        try {
+            rc = downloadone(this.sVideoURL, vd);
+            this.sVideoURL = null;
+        } catch (NullPointerException npe) {
+        }
 
         return (rc);
 
