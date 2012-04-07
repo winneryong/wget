@@ -14,14 +14,14 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.google.code.mircle.ytd2;
+package com.google.code.mircle.vidget;
 
 import java.io.File;
 import java.util.ArrayList;
 
-public class YTD2 extends YTD2Base {
+public class VidGet extends VidGetBase {
 
-    ArrayList<Listener> list = new ArrayList<YTD2.Listener>();
+    ArrayList<Listener> list = new ArrayList<VidGet.Listener>();
     String source;
     String target;
 
@@ -43,14 +43,14 @@ public class YTD2 extends YTD2Base {
         }
     }
 
-    public YTD2(String source, String target) {
+    public VidGet(String source, String target) {
         super();
 
         this.source = source.trim();
         this.target = target.trim();
     }
 
-    public YTD2(String source, String target, VideoQuality max) {
+    public VidGet(String source, String target, VideoQuality max) {
         super();
 
         this.source = source.trim();
@@ -235,7 +235,7 @@ public class YTD2 extends YTD2Base {
         // "/Users/axet/Downloads");
 
         // hd test
-        YTD2 y = new YTD2("http://www.youtube.com/watch?v=rRS6xL1B8ig", "/Users/axet/Downloads");
+        VidGet y = new VidGet("http://www.youtube.com/watch?v=rRS6xL1B8ig", "/Users/axet/Downloads");
 
         y.start();
 

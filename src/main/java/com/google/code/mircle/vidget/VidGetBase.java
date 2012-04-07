@@ -14,16 +14,16 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.google.code.mircle.ytd2;
+package com.google.code.mircle.vidget;
 
 import java.util.regex.Pattern;
 
-import com.google.code.mircle.ytd2.YTD2.VideoQuality;
+import com.google.code.mircle.vidget.VidGet.VideoQuality;
 
-class YTD2Base {
+class VidGetBase {
     private Boolean bQuitrequested = false;
 
-    YTDownloadThread t1;
+    VidGetThread t1;
 
     synchronized Boolean getbQuitrequested() {
         return bQuitrequested;
@@ -65,7 +65,7 @@ class YTD2Base {
     } // replaceAll
 
     void download(String url, String sdirectory, VideoQuality max) {
-        t1 = new YTDownloadThread(this, url, sdirectory);
+        t1 = new VidGetThread(this, url, sdirectory);
         t1.setMaxQuality(max);
     }
 

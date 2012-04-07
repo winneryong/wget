@@ -14,11 +14,11 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.google.code.mircle.ytd2;
+package com.google.code.mircle.vidget;
 
-import com.google.code.mircle.ytd2.YTD2.VideoQuality;
+import com.google.code.mircle.vidget.VidGet.VideoQuality;
 
-class YTDownloadThread extends Thread {
+class VidGetThread extends Thread {
 
     // is the main thread done working?
     boolean canJoin = false;
@@ -30,7 +30,7 @@ class YTDownloadThread extends Thread {
 
     Runnable notify;
 
-    public YTDownloadThread(final YTD2Base base, String url, String target) {
+    public VidGetThread(final VidGetBase base, String url, String target) {
 
         notify = new Runnable() {
             @Override

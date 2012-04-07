@@ -1,24 +1,5 @@
-ytd2 library
+vidget library.
 
-This is ytd2 clone of https://sourceforge.net/projects/ytd2/.
+Inspired by http://sourceforge.net/projects/ytd2/.
 
-The main goal of this project is to provide stand alone library
-for downloading videos from youtube.
-
-The main project dose not go this way, so I deside to create clone
-and make it possible.
-
-Simple exmpale can be found in YTD2.java in the main function.
-
-ytd2 library is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-ytd2 is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-You should have received a copy of the GNU General Public License
-along with ytd2.
-If not, see <http://www.gnu.org/licenses/>.
+Code taken from ytd2 and completely rewritten to support more web sites.

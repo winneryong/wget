@@ -14,7 +14,7 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.google.code.mircle.ytd2;
+package com.google.code.mircle.vidget;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.code.mircle.ytd2.YTD2.VideoQuality;
+import com.google.code.mircle.vidget.VidGet.VideoQuality;
 
 public class YouTubeInfo {
 
@@ -57,7 +57,7 @@ public class YouTubeInfo {
     // to one video
     int iRecursionCount = -1;
     String html;
-    YTD2Base ytd2;
+    VidGetBase ytd2;
 
     String source;
     String sVideoURL = null;
@@ -67,7 +67,7 @@ public class YouTubeInfo {
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
 
-    public YouTubeInfo(YTD2Base ytd2, String input) {
+    public YouTubeInfo(VidGetBase ytd2, String input) {
         this.ytd2 = ytd2;
         this.source = input;
     }

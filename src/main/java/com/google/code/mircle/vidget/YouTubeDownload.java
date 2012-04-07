@@ -1,20 +1,4 @@
-/**
- *  This file is part of ytd2
- *
- *  ytd2 is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  ytd2 is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  You should have received a copy of the GNU General Public License
- *  along with ytd2.
- *  If not, see <http://www.gnu.org/licenses/>.
- */
-package com.google.code.mircle.ytd2;
+package com.google.code.mircle.vidget;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -31,7 +15,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.code.mircle.ytd2.YTD2.VideoQuality;
+import com.google.code.mircle.vidget.VidGet.VideoQuality;
 
 class YouTubeDownload {
 
@@ -46,7 +30,7 @@ class YouTubeDownload {
 
     BufferedInputStream binaryreader = null;
     String target;
-    YTD2Base ytd2;
+    VidGetBase ytd2;
 
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
@@ -64,7 +48,7 @@ class YouTubeDownload {
 
     VideoQuality max = DEFAULT_QUALITY;
 
-    public YouTubeDownload(YTD2Base base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
+    public YouTubeDownload(VidGetBase base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
         this.ei = e;
         this.target = sdirectorychoosed;
         this.notify = notify;
