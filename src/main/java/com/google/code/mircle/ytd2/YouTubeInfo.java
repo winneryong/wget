@@ -251,26 +251,22 @@ public class YouTubeInfo {
 
             for (String urlString : urlStrings) {
                 urlString = StringEscapeUtils.unescapeJava(urlString);
-                urlString = URLDecoder.decode(urlString, "UTF-8");
-                urlString = StringUtils.removeStart(urlString, "url=");
 
-                // 2011-08-20
-                // \\|
                 String[] fmtUrlPair = urlString.split("&itag=");
+                String url = fmtUrlPair[0];
+                String itag = fmtUrlPair[1];
+
+                url = StringUtils.removeStart(url, "url=");
+                url = URLDecoder.decode(url, "UTF-8");
+
                 // 2011-08-20
                 // key-value
                 // exchanged
-                fmtUrlPair[0] = fmtUrlPair[0].replaceFirst("&quality=.*", "");
-                try {
-                    // save
-                    // that
-                    // URL
-                    ssourcecodevideourls.put(fmtUrlPair[1], fmtUrlPair[0]);
-                    // TODO add unknown resolutions (43-45,84?)
-                } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    // TODO there is a new problem with itag=84 (not
-                    // &itag=84)
-                }
+                url = url.replaceFirst("&quality=.*", "");
+                // save
+                // that
+                // URL
+                ssourcecodevideourls.put(itag, url);
             }
 
             // figure out what resolution-button is pressed now and fill
