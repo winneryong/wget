@@ -1,17 +1,11 @@
 package com.google.code.mircle.vget;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Vector;
-
-import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -31,9 +25,6 @@ class YouTubeDownload {
     BufferedInputStream binaryreader = null;
     String target;
     VGetBase ytd2;
-
-    static final int CONNECT_TIMEOUT = 5000;
-    static final int READ_TIMEOUT = 5000;
 
     Object statsLock = new Object();
     String input;
@@ -99,8 +90,8 @@ class YouTubeDownload {
             URL url = new URL(ei.sNextVideoURL.get(vq));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            conn.setConnectTimeout(CONNECT_TIMEOUT);
-            conn.setReadTimeout(READ_TIMEOUT);
+            conn.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
+            conn.setReadTimeout(VGetThread.READ_TIMEOUT);
 
             String sContentType = conn.getContentType();
 

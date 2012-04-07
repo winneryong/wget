@@ -13,6 +13,9 @@ class VGetThread extends Thread {
     YouTubeDownload d;
 
     Runnable notify;
+    
+    static final int CONNECT_TIMEOUT = 5000;
+    static final int READ_TIMEOUT = 5000;
 
     public VGetThread(final VGetBase base, String url, String target) {
 

@@ -18,14 +18,11 @@ package com.google.code.mircle.vget;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,9 +61,6 @@ public class YouTubeInfo {
 
     HttpURLConnection con;
 
-    static final int CONNECT_TIMEOUT = 5000;
-    static final int READ_TIMEOUT = 5000;
-
     public YouTubeInfo(VGetBase ytd2, String input) {
         this.ytd2 = ytd2;
         this.source = input;
@@ -92,8 +86,8 @@ public class YouTubeInfo {
 
         URL url = new URL(sURL);
         con = (HttpURLConnection) url.openConnection();
-        con.setConnectTimeout(CONNECT_TIMEOUT);
-        con.setReadTimeout(READ_TIMEOUT);
+        con.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
+        con.setReadTimeout(VGetThread.READ_TIMEOUT);
 
         try {
             if (!(rc = this.con.getResponseCode() == 200) & !(rc204 = this.con.getResponseCode() == 204)
