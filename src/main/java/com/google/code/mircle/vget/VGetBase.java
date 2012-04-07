@@ -1,13 +1,13 @@
-package com.google.code.mircle.vidget;
+package com.google.code.mircle.vget;
 
 import java.util.regex.Pattern;
 
-import com.google.code.mircle.vidget.VidGet.VideoQuality;
+import com.google.code.mircle.vget.VGet.VideoQuality;
 
-class VidGetBase {
+class VGetBase {
     private Boolean bQuitrequested = false;
 
-    VidGetThread t1;
+    VGetThread t1;
 
     synchronized Boolean getbQuitrequested() {
         return bQuitrequested;
@@ -49,7 +49,7 @@ class VidGetBase {
     } // replaceAll
 
     void download(String url, String sdirectory, VideoQuality max) {
-        t1 = new VidGetThread(this, url, sdirectory);
+        t1 = new VGetThread(this, url, sdirectory);
         t1.setMaxQuality(max);
     }
 

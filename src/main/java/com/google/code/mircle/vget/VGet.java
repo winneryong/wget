@@ -14,14 +14,14 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.google.code.mircle.vidget;
+package com.google.code.mircle.vget;
 
 import java.io.File;
 import java.util.ArrayList;
 
-public class VidGet extends VidGetBase {
+public class VGet extends VGetBase {
 
-    ArrayList<Listener> list = new ArrayList<VidGet.Listener>();
+    ArrayList<Listener> list = new ArrayList<VGet.Listener>();
     String source;
     String target;
 
@@ -43,14 +43,14 @@ public class VidGet extends VidGetBase {
         }
     }
 
-    public VidGet(String source, String target) {
+    public VGet(String source, String target) {
         super();
 
         this.source = source.trim();
         this.target = target.trim();
     }
 
-    public VidGet(String source, String target, VideoQuality max) {
+    public VGet(String source, String target, VideoQuality max) {
         super();
 
         this.source = source.trim();
@@ -235,7 +235,7 @@ public class VidGet extends VidGetBase {
         // "/Users/axet/Downloads");
 
         // hd test
-        VidGet y = new VidGet("http://www.youtube.com/watch?v=rRS6xL1B8ig", "/Users/axet/Downloads");
+        VGet y = new VGet("http://www.youtube.com/watch?v=rRS6xL1B8ig", "/Users/axet/Downloads");
 
         y.start();
 

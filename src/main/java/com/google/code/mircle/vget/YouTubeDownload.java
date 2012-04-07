@@ -1,4 +1,4 @@
-package com.google.code.mircle.vidget;
+package com.google.code.mircle.vget;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -15,7 +15,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.code.mircle.vidget.VidGet.VideoQuality;
+import com.google.code.mircle.vget.VGet.VideoQuality;
 
 class YouTubeDownload {
 
@@ -30,7 +30,7 @@ class YouTubeDownload {
 
     BufferedInputStream binaryreader = null;
     String target;
-    VidGetBase ytd2;
+    VGetBase ytd2;
 
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
@@ -48,7 +48,7 @@ class YouTubeDownload {
 
     VideoQuality max = DEFAULT_QUALITY;
 
-    public YouTubeDownload(VidGetBase base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
+    public YouTubeDownload(VGetBase base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
         this.ei = e;
         this.target = sdirectorychoosed;
         this.notify = notify;

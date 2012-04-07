@@ -1,8 +1,8 @@
-package com.google.code.mircle.vidget;
+package com.google.code.mircle.vget;
 
-import com.google.code.mircle.vidget.VidGet.VideoQuality;
+import com.google.code.mircle.vget.VGet.VideoQuality;
 
-class VidGetThread extends Thread {
+class VGetThread extends Thread {
 
     // is the main thread done working?
     boolean canJoin = false;
@@ -14,7 +14,7 @@ class VidGetThread extends Thread {
 
     Runnable notify;
 
-    public VidGetThread(final VidGetBase base, String url, String target) {
+    public VGetThread(final VGetBase base, String url, String target) {
 
         notify = new Runnable() {
             @Override
