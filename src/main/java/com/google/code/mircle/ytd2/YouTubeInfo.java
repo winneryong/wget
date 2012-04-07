@@ -36,6 +36,14 @@ import com.google.code.mircle.ytd2.YTD2.VideoQuality;
 
 public class YouTubeInfo {
 
+    public static class AgeException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public AgeException() {
+            super("Age restriction, account required");
+        }
+    }
+
     HashMap<VideoQuality, String> sNextVideoURL = new HashMap<VideoQuality, String>();
     String sTitle = null;
 
@@ -172,7 +180,7 @@ public class YouTubeInfo {
         Pattern age = Pattern.compile("(verify_age)");
         Matcher ageMatch = age.matcher(html);
         if (ageMatch.find())
-            throw new RuntimeException("Age restriction, account required");
+            throw new AgeException();
 
         Pattern gen = Pattern.compile("\"(http(.*)generate_204(.*))\"");
         Matcher genMatch = gen.matcher(html);
