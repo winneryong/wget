@@ -149,9 +149,7 @@ public class YTD2 extends YTD2Base {
      * @return
      */
     public String getInput() {
-        synchronized (t1.statsLock) {
-            return t1.input;
-        }
+        return t1.getInput();
     }
 
     /**
@@ -160,9 +158,7 @@ public class YTD2 extends YTD2Base {
      * @return
      */
     public String getOutput() {
-        synchronized (t1.statsLock) {
-            return t1.sFileName;
-        }
+        return t1.getFileName();
     }
 
     /**
@@ -171,9 +167,7 @@ public class YTD2 extends YTD2Base {
      * @return
      */
     public long getBytes() {
-        synchronized (t1.statsLock) {
-            return t1.count;
-        }
+        return t1.getCount();
     }
 
     /**
@@ -182,9 +176,7 @@ public class YTD2 extends YTD2Base {
      * @return
      */
     public long getTotal() {
-        synchronized (t1.statsLock) {
-            return t1.total;
-        }
+        return t1.getTotal();
     }
 
     /**
@@ -193,9 +185,7 @@ public class YTD2 extends YTD2Base {
      * @return
      */
     public String getTitle() {
-        synchronized (t1.statsLock) {
-            return t1.getTitle();
-        }
+        return t1.getTitle();
     }
 
     /**
@@ -212,7 +202,7 @@ public class YTD2 extends YTD2Base {
     }
 
     public VideoQuality getVideoQuality() {
-        return t1.vq;
+        return t1.getVideoQuality();
     }
 
     /**
@@ -232,7 +222,17 @@ public class YTD2 extends YTD2Base {
     }
 
     public static void main(String[] args) {
-        YTD2 y = new YTD2("http://www.youtube.com/watch?v=OY7fmYkpsRs", "/Users/axet/Downloads");
+        // YTD2 y = new
+        // YTD2("http://www.youtube.com/watch?v=QoTWRHheshw&feature=youtube_gdata",
+        // "/Users/axet/Downloads");
+
+        // YTD2 y = new
+        // YTD2("http://www.youtube.com/user/cubert01?v=gidumziw4JE&feature=pyv&ad=8307058643&kw=youtube%20download",
+        // "/Users/axet/Downloads");
+
+        YTD2 y = new YTD2("http://www.youtube.com/watch?v=43uLEOvR6sE&feature=g-all-u&context=G21f35c2FAAAAAAAACAA",
+                "/Users/axet/Downloads");
+
         y.start();
 
         System.out.println("input: " + y.getInput());
@@ -255,4 +255,5 @@ public class YTD2 extends YTD2Base {
         if (y.getException() != null)
             y.getException().printStackTrace();
     }
+
 }

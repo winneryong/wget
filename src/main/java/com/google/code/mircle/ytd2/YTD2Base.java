@@ -159,7 +159,8 @@ class YTD2Base {
         // lets respect the upload limit of google (youtube)
         // downloading is faster than viewing anyway so don't start more than
         // four threads and don't play around with the URL-strings please!!!
-        t1 = new YTDownloadThread(bDEBUG, sdirectory, this, url, max);
+        t1 = new YTDownloadThread(this, url, sdirectory);
+        t1.setMaxQuality(max);
     }
 
     void changed() {
