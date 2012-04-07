@@ -287,7 +287,7 @@ public class YouTubeInfo {
                     // test if we got the binary content
                 } else if (this.sContentType.matches("video/(.)*")) {
                     reportheaderinfo();
-                    this.sVideoURL= null;
+                    return false;
                 } else { // content-type is not video/
                     rc = false;
                     this.sVideoURL = null;
