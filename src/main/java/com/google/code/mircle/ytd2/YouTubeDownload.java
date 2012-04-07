@@ -109,9 +109,12 @@ class YouTubeDownload {
     void savebinarydata() {
         FileOutputStream fos = null;
         try {
-            URL url = new URL(getVideoUrl());
+            VideoQuality vq = getVideoUrl();
+            max = vq;
+
+            URL url = new URL(ei.sNextVideoURL.get(vq));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            
+
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
 
@@ -240,7 +243,7 @@ class YouTubeDownload {
         savebinarydata();
     }
 
-    String getVideoUrl() {
+    VideoQuality getVideoUrl() {
         VideoQuality[] avail = new VideoQuality[] { VideoQuality.p1080, VideoQuality.p720, VideoQuality.p480,
                 VideoQuality.p360, VideoQuality.p240, VideoQuality.p120 };
 
@@ -250,12 +253,9 @@ class YouTubeDownload {
                 break;
         }
 
-        String video = null;
-
         for (; i < avail.length; i++) {
-            video = ei.sNextVideoURL.get(avail[i]);
-            if (video != null)
-                return video;
+            if (ei.sNextVideoURL.containsKey(avail[i]))
+                return avail[i];
         }
 
         throw new RuntimeException("no video with required quality found");
