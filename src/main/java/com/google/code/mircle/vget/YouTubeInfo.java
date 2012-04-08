@@ -89,29 +89,17 @@ public class YouTubeInfo {
         con.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
         con.setReadTimeout(VGetThread.READ_TIMEOUT);
 
-        try {
-            if (!(rc = this.con.getResponseCode() == 200) & !(rc204 = this.con.getResponseCode() == 204)
-                    & !(rc302 = this.con.getResponseCode() == 302) & !(rc403 = this.con.getResponseCode() == 403)) {
-                return (rc & rc204 & rc302);
-            }
-            if (rc204) {
-                rc = downloadone(this.sNextVideoURL.values().iterator().next());
-                return (rc);
-            }
-            if (rc403) {
-                this.sFilenameResPart = null;
-                rc = downloadone(this.s403VideoURL);
-            }
-        } catch (NullPointerException npe) {
-            // if an IllegalStateException was catched while calling
-            // httpclient.execute(httpget) a NPE is caught here because
-            // response.getStatusLine() == null
-            this.sVideoURL = null;
+        if (!(rc = this.con.getResponseCode() == 200) & !(rc204 = this.con.getResponseCode() == 204)
+                & !(rc302 = this.con.getResponseCode() == 302) & !(rc403 = this.con.getResponseCode() == 403)) {
+            return (rc & rc204 & rc302);
         }
-
-        {
-            if (this.con.getContentType().toLowerCase().matches("^text/html(.*)")) {
-            }
+        if (rc204) {
+            rc = downloadone(this.sNextVideoURL.values().iterator().next());
+            return (rc);
+        }
+        if (rc403) {
+            this.sFilenameResPart = null;
+            rc = downloadone(this.s403VideoURL);
         }
 
         {
@@ -121,7 +109,6 @@ public class YouTubeInfo {
             if (sContentType.matches("^text/html(.*)")) {
                 this.html = readHtml();
                 extractHtmlInfo(html);
-                // test if we got the binary content
             } else { // content-type is not video/
                 rc = false;
                 this.sVideoURL = null;
@@ -201,28 +188,23 @@ public class YouTubeInfo {
             HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
 
             String sline = encodMatch.group(1);
-            // by anonymous
 
-            String[] urlStrings = sline.split(",");
+            String[] urlStrings = sline.split("url=");
 
             for (String urlString : urlStrings) {
                 urlString = StringEscapeUtils.unescapeJava(urlString);
 
-                String[] fmtUrlPair = urlString.split("&itag=");
-                String url = fmtUrlPair[0];
-                String itag = fmtUrlPair[1];
+                Pattern link = Pattern.compile("(.*)itag=(\\d+)");
+                Matcher linkMatch = link.matcher(urlString);
+                if (linkMatch.find()) {
+                    
+                    String url = linkMatch.group(1);
+                    String itag = linkMatch.group(2);
+                    
+                    url = URLDecoder.decode(url, "UTF-8");
 
-                url = StringUtils.removeStart(url, "url=");
-                url = URLDecoder.decode(url, "UTF-8");
-
-                // 2011-08-20
-                // key-value
-                // exchanged
-                url = url.replaceFirst("&quality=.*", "");
-                // save
-                // that
-                // URL
-                ssourcecodevideourls.put(itag, url);
+                    ssourcecodevideourls.put(itag, url);
+                }
             }
 
             // figure out what resolution-button is pressed now and fill
@@ -231,29 +213,23 @@ public class YouTubeInfo {
             case p1080:
                 // 37|22 - better quality first
                 if (this.addVideo(VideoQuality.p1080, ssourcecodevideourls.get("37"))) {
-                    break;
                 }
             case p720:
                 if (this.addVideo(VideoQuality.p720, ssourcecodevideourls.get("22"))) {
-                    break;
                 }
             case p480:
                 // 35|34
                 if (this.addVideo(VideoQuality.p480, ssourcecodevideourls.get("35"))) {
-                    break;
                 }
             case p360:
                 if (this.addVideo(VideoQuality.p360, ssourcecodevideourls.get("34"))) {
-                    break;
                 }
             case p240:
                 // 18|5
                 if (this.addVideo(VideoQuality.p240, ssourcecodevideourls.get("18"))) {
-                    break;
                 }
             case p120:
                 if (this.addVideo(VideoQuality.p120, ssourcecodevideourls.get("5"))) {
-                    break;
                 }
                 break;
             default:
@@ -262,9 +238,6 @@ public class YouTubeInfo {
                 this.sFilenameResPart = null;
                 break;
             }
-
-            // 2011-03-08 new - skip generate_204
-            this.sVideoURL = this.sNextVideoURL.get(0);
         }
 
         // TODO exchange HTML characters to UTF-8 =

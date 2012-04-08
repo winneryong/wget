@@ -1,8 +1,11 @@
 package com.google.code.mircle.vget;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Vector;
@@ -13,8 +16,6 @@ import com.google.code.mircle.vget.VGet.VideoQuality;
 
 class YouTubeDownload {
 
-    String sFilenameResPart = null; // can contain a string that prepends the
-                                    // filename
     String sVideoURL = null; // one video web resource
     String s403VideoURL = null; // the video URL which we can use as fallback to
                                 // my wget call
@@ -22,11 +23,9 @@ class YouTubeDownload {
                                                          // webpage source
     String sFileName = null; // contains the absolute filename
 
-    BufferedInputStream binaryreader = null;
     String target;
     VGetBase ytd2;
 
-    Object statsLock = new Object();
     String input;
     long count = 0;
 
@@ -82,12 +81,11 @@ class YouTubeDownload {
     }
 
     void savebinarydata() {
-        FileOutputStream fos = null;
         try {
-            VideoQuality vq = getVideoUrl();
-            max = vq;
+            FileOutputStream fos = null;
 
-            URL url = new URL(ei.sNextVideoURL.get(vq));
+            max = getVideoUrl();
+            URL url = new URL(ei.sNextVideoURL.get(max));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
@@ -95,127 +93,92 @@ class YouTubeDownload {
 
             String sContentType = conn.getContentType();
 
+            if (!sContentType.contains("video/")) {
+                throw new RuntimeException("unable to download video");
+            }
+
             File f;
             if (getFileName() == null) {
                 Integer idupcount = 0;
-                String sfilename = ei.sTitle/* .replaceAll(" ", "_") */.concat(this.sFilenameResPart == null ? ""
-                        : this.sFilenameResPart);
 
-                sfilename = replaceBadChars(sfilename);
+                String sfilename = replaceBadChars(ei.sTitle);
+                String ext = sContentType.replaceFirst("video/", "").replaceAll("x-", "");
 
                 do {
-                    f = new File(target, sfilename
-                            .concat((idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "")).concat(".")
-                            .concat(sContentType.replaceFirst("video/", "").replaceAll("x-", "")));
+                    String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
+
+                    f = new File(target, sfilename + add + "." + ext);
                     idupcount += 1;
                 } while (f.exists());
                 this.setFileName(f.getAbsolutePath());
             } else {
                 f = new File(getFileName());
+                f.delete();
             }
-
-            Long iBytesReadSum = (long) 0;
-            Long iPercentage = (long) -1;
-
-            // does reader + yotube know how to skip?
-            // binaryreader.skip(f.length());
-            f.delete();
 
             fos = new FileOutputStream(f);
 
             byte[] bytes = new byte[4096];
             Integer iBytesRead = 1;
 
-            this.binaryreader = new BufferedInputStream(conn.getInputStream());
+            BufferedInputStream binaryreader = null;
+            binaryreader = new BufferedInputStream(conn.getInputStream());
 
             iBytesMax = conn.getContentLength();
 
-            // adjust blocks of percentage to output - larger files are shown
-            // with smaller pieces
-            Integer iblocks = 10;
-            if (iBytesMax > 20 * 1024 * 1024)
-                iblocks = 4;
-            if (iBytesMax > 32 * 1024 * 1024)
-                iblocks = 2;
-            if (iBytesMax > 56 * 1024 * 1024)
-                iblocks = 1;
-
             while (!ytd2.getbQuitrequested() && iBytesRead > 0) {
-                iBytesRead = this.binaryreader.read(bytes);
+                iBytesRead = binaryreader.read(bytes);
                 if (iBytesRead > 0) {
-                    iBytesReadSum += iBytesRead;
-
-                    synchronized (statsLock) {
-                        count = iBytesReadSum;
-                    }
+                    count += iBytesRead;
                 }
 
-                notify.run();
-
-                // drop a line every x% of the download
-                if ((((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks) > iPercentage) {
-                    iPercentage = (((iBytesReadSum * 100 / iBytesMax) / iblocks) * iblocks);
-                }
                 if (iBytesRead > 0)
                     fos.write(bytes, 0, iBytesRead);
+
+                notify.run();
             }
 
-            // rename files if download was interrupted before completion of
-            // download
-            if (ytd2.getbQuitrequested() && iBytesReadSum < iBytesMax) {
-                try {
-                    // this part is especially for our M$-Windows users because
-                    // of the different behavior of File.renameTo() in contrast
-                    // to non-windows
-                    // see
-                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6213298
-                    // and others
-                    // even with Java 1.6.0_22 the renameTo() does not work
-                    // directly on M$-Windows!
-                    fos.close();
-                } catch (Exception e) {
-                }
-                // System.gc(); // we don't have to do this but to be sure the
-                // file handle gets released we do a thread sleep
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                }
-            }
+            fos.close();
+            binaryreader.close();
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            this.sVideoURL = null;
-            try {
-                fos.close();
-            } catch (Exception e) {
-            }
-            try {
-                this.binaryreader.close();
-            } catch (Exception e) {
-            }
         }
     }
 
     String getFileName() {
-        synchronized (statsLock) {
-            if (this.sFileName != null)
-                return this.sFileName;
-            else
-                return null;
-        }
+        return this.sFileName;
     }
 
     void setFileName(String sFileName) {
-        synchronized (statsLock) {
-            this.sFileName = sFileName;
-        }
+        this.sFileName = sFileName;
     }
 
     public void download() {
         savebinarydata();
+    }
+
+    String readHtml(HttpURLConnection conn) {
+        BufferedReader textreader = null;
+        try {
+            textreader = new BufferedReader(new InputStreamReader(conn.getInputStream(),
+                    conn.getContentEncoding() == null ? "UTF-8" : conn.getContentEncoding()));
+        } catch (IOException e1) {
+            throw new RuntimeException(e1);
+        }
+
+        StringBuilder contents = new StringBuilder();
+        String line = "";
+        while (line != null) {
+            try {
+                line = textreader.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            contents.append(line + "\n");
+        }
+        return contents.toString();
     }
 
     VideoQuality getVideoUrl() {
