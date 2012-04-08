@@ -194,13 +194,16 @@ public class YouTubeInfo {
             for (String urlString : urlStrings) {
                 urlString = StringEscapeUtils.unescapeJava(urlString);
 
-                Pattern link = Pattern.compile("(.*)itag=(\\d+)");
+                Pattern link = Pattern.compile("(.*)&quality=(.*)&fallback_host=(.*)&type=(.*)itag=(\\d+)");
                 Matcher linkMatch = link.matcher(urlString);
                 if (linkMatch.find()) {
-                    
+
                     String url = linkMatch.group(1);
-                    String itag = linkMatch.group(2);
-                    
+                    String quality = linkMatch.group(2);
+                    String fallback = linkMatch.group(3);
+                    String type = linkMatch.group(4);
+                    String itag = linkMatch.group(5);
+
                     url = URLDecoder.decode(url, "UTF-8");
 
                     ssourcecodevideourls.put(itag, url);
