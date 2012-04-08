@@ -14,7 +14,7 @@
  *  along with ytd2.
  *  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.google.code.mircle.vget;
+package com.github.axet.vget;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.code.mircle.vget.VGet.VideoQuality;
+import com.github.axet.vget.VGet.VideoQuality;
 
 public class YouTubeInfo {
 

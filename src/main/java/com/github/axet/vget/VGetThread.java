@@ -1,6 +1,6 @@
-package com.google.code.mircle.vget;
+package com.github.axet.vget;
 
-import com.google.code.mircle.vget.VGet.VideoQuality;
+import com.github.axet.vget.VGet.VideoQuality;
 
 class VGetThread extends Thread {
 

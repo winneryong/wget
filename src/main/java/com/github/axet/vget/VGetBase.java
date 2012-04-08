@@ -1,8 +1,8 @@
-package com.google.code.mircle.vget;
+package com.github.axet.vget;
 
 import java.util.regex.Pattern;
 
-import com.google.code.mircle.vget.VGet.VideoQuality;
+import com.github.axet.vget.VGet.VideoQuality;
 
 class VGetBase {
     private Boolean bQuitrequested = false;

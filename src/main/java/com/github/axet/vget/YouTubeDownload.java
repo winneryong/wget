@@ -1,4 +1,4 @@
-package com.google.code.mircle.vget;
+package com.github.axet.vget;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -12,7 +12,7 @@ import java.util.Vector;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.google.code.mircle.vget.VGet.VideoQuality;
+import com.github.axet.vget.VGet.VideoQuality;
 
 class YouTubeDownload {
 
