@@ -1,6 +1,9 @@
 package com.github.axet.vget;
 
-import com.github.axet.vget.VGetInfo.VideoQuality;
+import com.github.axet.vget.info.VGetInfo;
+import com.github.axet.vget.info.VGetInfo.VideoQuality;
+import com.github.axet.vget.info.VimeoInfo;
+import com.github.axet.vget.info.YouTubeInfo;
 
 class VGetThread extends Thread {
 
@@ -15,9 +18,6 @@ class VGetThread extends Thread {
     VGetDownload d;
 
     Runnable notify;
-
-    static final int CONNECT_TIMEOUT = 5000;
-    static final int READ_TIMEOUT = 5000;
 
     public VGetThread(final VGetBase base, String url, String target) {
 

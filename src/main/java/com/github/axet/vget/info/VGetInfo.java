@@ -1,4 +1,4 @@
-package com.github.axet.vget;
+package com.github.axet.vget.info;
 
 public interface VGetInfo {
 

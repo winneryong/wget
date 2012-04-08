@@ -3,7 +3,7 @@ package com.github.axet.vget;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.github.axet.vget.VGetInfo.VideoQuality;
+import com.github.axet.vget.info.VGetInfo.VideoQuality;
 
 public class VGet extends VGetBase {
 

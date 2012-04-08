@@ -1,4 +1,4 @@
-package com.github.axet.vget;
+package com.github.axet.vget.info;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -14,6 +14,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
+
+import com.github.axet.vget.VGetBase;
 
 public class VimeoInfo implements VGetInfo {
 
@@ -46,8 +48,8 @@ public class VimeoInfo implements VGetInfo {
         HttpURLConnection con;
         con = (HttpURLConnection) url.openConnection();
 
-        con.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
-        con.setReadTimeout(VGetThread.READ_TIMEOUT);
+        con.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
+        con.setReadTimeout(VGetBase.READ_TIMEOUT);
 
         String xml = readHtml(con);
 

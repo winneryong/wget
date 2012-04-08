@@ -8,6 +8,8 @@ import java.net.URL;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.github.axet.vget.info.VGetInfo;
+
 class VGetDownload {
 
     String targetDir;
@@ -68,8 +70,8 @@ class VGetDownload {
             URL url = new URL(max.url);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            conn.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
-            conn.setReadTimeout(VGetThread.READ_TIMEOUT);
+            conn.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
+            conn.setReadTimeout(VGetBase.READ_TIMEOUT);
 
             String sContentType = conn.getContentType();
 

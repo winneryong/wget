@@ -1,4 +1,4 @@
-package com.github.axet.vget;
+package com.github.axet.vget.info;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import com.github.axet.vget.VGetBase;
 
 public class YouTubeInfo implements VGetInfo {
 
@@ -64,8 +66,8 @@ public class YouTubeInfo implements VGetInfo {
         URL url = new URL(sURL);
         HttpURLConnection con;
         con = (HttpURLConnection) url.openConnection();
-        con.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
-        con.setReadTimeout(VGetThread.READ_TIMEOUT);
+        con.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
+        con.setReadTimeout(VGetBase.READ_TIMEOUT);
 
         if (!(rc = con.getResponseCode() == 200) & !(rc204 = con.getResponseCode() == 204)
                 & !(rc302 = con.getResponseCode() == 302) & !(rc403 = con.getResponseCode() == 403)) {

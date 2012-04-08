@@ -1,15 +1,18 @@
 package com.github.axet.vget;
 
-class VGetBase {
+public class VGetBase {
     private Boolean bQuitrequested = false;
 
     VGetThread t1;
 
-    synchronized Boolean getbQuitrequested() {
+    static public final int CONNECT_TIMEOUT = 5000;
+    static public final int READ_TIMEOUT = 5000;
+
+    public synchronized Boolean getbQuitrequested() {
         return bQuitrequested;
     }
 
-    synchronized void setbQuitrequested(Boolean bQuitrequested) {
+    public synchronized void setbQuitrequested(Boolean bQuitrequested) {
         this.bQuitrequested = bQuitrequested;
     }
 
