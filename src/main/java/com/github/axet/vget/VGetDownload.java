@@ -1,57 +1,39 @@
 package com.github.axet.vget;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Vector;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.github.axet.vget.VGet.VideoQuality;
+import com.github.axet.vget.VGetInfo.VideoQuality;
 
-class YouTubeDownload {
+class VGetDownload {
 
-    String sVideoURL = null; // one video web resource
-    String s403VideoURL = null; // the video URL which we can use as fallback to
-                                // my wget call
-    Vector<String> sNextVideoURL = new Vector<String>(); // list of URLs from
-                                                         // webpage source
-    String sFileName = null; // contains the absolute filename
+    String targetDir;
 
-    String target;
+    String target = null;
     VGetBase ytd2;
 
     String input;
+
+    // total bytes
+    long total = 0;
+    // downloaded bytes
     long count = 0;
 
-    YouTubeInfo ei;
+    VGetInfo ei;
     Runnable notify;
 
-    long iBytesMax;
+    VGetInfo.VideoURL max;
 
-    final static VideoQuality DEFAULT_QUALITY = VideoQuality.p1080;
-
-    VideoQuality max = DEFAULT_QUALITY;
-
-    public YouTubeDownload(VGetBase base, YouTubeInfo e, String sdirectorychoosed, Runnable notify) {
+    public VGetDownload(VGetBase base, VGetInfo e, String sdirectorychoosed, Runnable notify) {
         this.ei = e;
-        this.target = sdirectorychoosed;
+        this.targetDir = sdirectorychoosed;
         this.notify = notify;
         this.ytd2 = base;
-    }
-
-    boolean addVideo(String s) {
-        if (s != null) {
-            sNextVideoURL.add(s);
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -84,8 +66,8 @@ class YouTubeDownload {
         try {
             FileOutputStream fos = null;
 
-            max = getVideoUrl();
-            URL url = new URL(ei.sNextVideoURL.get(max));
+            max = ei.getVideo();
+            URL url = new URL(max.url);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setConnectTimeout(VGetThread.CONNECT_TIMEOUT);
@@ -98,21 +80,21 @@ class YouTubeDownload {
             }
 
             File f;
-            if (getFileName() == null) {
+            if (target == null) {
                 Integer idupcount = 0;
 
-                String sfilename = replaceBadChars(ei.sTitle);
+                String sfilename = replaceBadChars(ei.getTitle());
                 String ext = sContentType.replaceFirst("video/", "").replaceAll("x-", "");
 
                 do {
                     String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
 
-                    f = new File(target, sfilename + add + "." + ext);
+                    f = new File(targetDir, sfilename + add + "." + ext);
                     idupcount += 1;
                 } while (f.exists());
-                this.setFileName(f.getAbsolutePath());
+                this.target = f.getAbsolutePath();
             } else {
-                f = new File(getFileName());
+                f = new File(target);
                 f.delete();
             }
 
@@ -124,7 +106,7 @@ class YouTubeDownload {
             BufferedInputStream binaryreader = null;
             binaryreader = new BufferedInputStream(conn.getInputStream());
 
-            iBytesMax = conn.getContentLength();
+            total = conn.getContentLength();
 
             while (!ytd2.getbQuitrequested() && iBytesRead > 0) {
                 iBytesRead = binaryreader.read(bytes);
@@ -147,55 +129,8 @@ class YouTubeDownload {
         }
     }
 
-    String getFileName() {
-        return this.sFileName;
-    }
-
-    void setFileName(String sFileName) {
-        this.sFileName = sFileName;
-    }
-
     public void download() {
         savebinarydata();
     }
 
-    String readHtml(HttpURLConnection conn) {
-        BufferedReader textreader = null;
-        try {
-            textreader = new BufferedReader(new InputStreamReader(conn.getInputStream(),
-                    conn.getContentEncoding() == null ? "UTF-8" : conn.getContentEncoding()));
-        } catch (IOException e1) {
-            throw new RuntimeException(e1);
-        }
-
-        StringBuilder contents = new StringBuilder();
-        String line = "";
-        while (line != null) {
-            try {
-                line = textreader.readLine();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            contents.append(line + "\n");
-        }
-        return contents.toString();
-    }
-
-    VideoQuality getVideoUrl() {
-        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p1080, VideoQuality.p720, VideoQuality.p480,
-                VideoQuality.p360, VideoQuality.p240, VideoQuality.p120 };
-
-        int i = 0;
-        for (; i < avail.length; i++) {
-            if (avail[i] == max)
-                break;
-        }
-
-        for (; i < avail.length; i++) {
-            if (ei.sNextVideoURL.containsKey(avail[i]))
-                return avail[i];
-        }
-
-        throw new RuntimeException("no video with required quality found");
-    }
 }

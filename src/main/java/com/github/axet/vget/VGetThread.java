@@ -1,19 +1,21 @@
 package com.github.axet.vget;
 
-import com.github.axet.vget.VGet.VideoQuality;
+import com.github.axet.vget.VGetInfo.VideoQuality;
 
 class VGetThread extends Thread {
 
     // is the main thread done working?
     boolean canJoin = false;
+
+    // exception druning execution
     Exception e;
 
     Object statsLock = new Object();
-    YouTubeInfo ei;
-    YouTubeDownload d;
+    VGetInfo ei;
+    VGetDownload d;
 
     Runnable notify;
-    
+
     static final int CONNECT_TIMEOUT = 5000;
     static final int READ_TIMEOUT = 5000;
 
@@ -26,23 +28,27 @@ class VGetThread extends Thread {
             }
         };
 
-        ei = new YouTubeInfo(base, url);
-        d = new YouTubeDownload(base, ei, target, notify);
-    }
+        if (YouTubeInfo.probe(url))
+            ei = new YouTubeInfo(base, url);
 
-    public void setMaxQuality(VideoQuality max) {
-        d.max = max;
+        if (VimeoInfo.probe(url))
+            ei = new VimeoInfo(base, url);
+
+        if (ei == null)
+            throw new RuntimeException("unsupported web site");
+
+        d = new VGetDownload(base, ei, target, notify);
     }
 
     public String getTitle() {
         synchronized (statsLock) {
-            return ei.sTitle;
+            return ei.getTitle();
         }
     }
 
     public long getTotal() {
         synchronized (statsLock) {
-            return d.iBytesMax;
+            return d.total;
         }
     }
 
@@ -54,25 +60,25 @@ class VGetThread extends Thread {
 
     public VideoQuality getVideoQuality() {
         synchronized (statsLock) {
-            return d.max;
+            return d.max != null ? d.max.vq : null;
         }
     }
 
     public String getFileName() {
         synchronized (statsLock) {
-            return d.getFileName();
+            return d.target;
         }
     }
 
     public String getInput() {
         synchronized (statsLock) {
-            return ei.source;
+            return ei.getSource();
         }
     }
 
     public void setFileName(String file) {
         synchronized (statsLock) {
-            d.setFileName(file);
+            d.target = file;
         }
     }
 

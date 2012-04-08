@@ -1,23 +1,9 @@
-/**
- *  This file is part of ytd2
- *
- *  ytd2 is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  ytd2 is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  You should have received a copy of the GNU General Public License
- *  along with ytd2.
- *  If not, see <http://www.gnu.org/licenses/>.
- */
 package com.github.axet.vget;
 
 import java.io.File;
 import java.util.ArrayList;
+
+import com.github.axet.vget.VGetInfo.VideoQuality;
 
 public class VGet extends VGetBase {
 
@@ -27,14 +13,8 @@ public class VGet extends VGetBase {
 
     String targetForce;
 
-    VideoQuality max = VideoQuality.p1080;
-
     public static interface Listener {
         public void changed();
-    }
-
-    public enum VideoQuality {
-        p1080, p720, p480, p360, p240, p120
     }
 
     void changed() {
@@ -48,15 +28,6 @@ public class VGet extends VGetBase {
 
         this.source = source.trim();
         this.target = target.trim();
-    }
-
-    public VGet(String source, String target, VideoQuality max) {
-        super();
-
-        this.source = source.trim();
-        this.target = target.trim();
-
-        this.max = max;
     }
 
     public void setTarget(File path) {
@@ -77,7 +48,7 @@ public class VGet extends VGetBase {
         if (targetForce != null)
             oldpath = targetForce;
 
-        download(source, target, max);
+        download(source, target);
 
         t1.setFileName(oldpath);
 
@@ -235,7 +206,10 @@ public class VGet extends VGetBase {
         // "/Users/axet/Downloads");
 
         // hd test
-        VGet y = new VGet("http://www.youtube.com/watch?v=rRS6xL1B8ig", "/Users/axet/Downloads");
+        // VGet y = new VGet("http://www.youtube.com/watch?v=rRS6xL1B8ig",
+        // "/Users/axet/Downloads");
+
+        VGet y = new VGet("http://vimeo.com/39289096", "/Users/axet/Downloads");
 
         y.start();
 

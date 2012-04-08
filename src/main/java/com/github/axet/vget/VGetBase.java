@@ -1,9 +1,5 @@
 package com.github.axet.vget;
 
-import java.util.regex.Pattern;
-
-import com.github.axet.vget.VGet.VideoQuality;
-
 class VGetBase {
     private Boolean bQuitrequested = false;
 
@@ -18,8 +14,6 @@ class VGetBase {
     }
 
     void shutdownAppl() {
-        // running downloads are difficult to terminate (Thread.isInterrupted()
-        // does not work there)
         synchronized (bQuitrequested) {
             bQuitrequested = true;
         }
@@ -35,22 +29,10 @@ class VGetBase {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    } // shutdownAppl()
+    }
 
-    /**
-     * @param string
-     * @param regex
-     * @param replaceWith
-     * @return changed String
-     */
-    String replaceAll(String string, String regex, String replaceWith) {
-        Pattern myPattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        return (myPattern.matcher(string).replaceAll(replaceWith));
-    } // replaceAll
-
-    void download(String url, String sdirectory, VideoQuality max) {
+    void download(String url, String sdirectory) {
         t1 = new VGetThread(this, url, sdirectory);
-        t1.setMaxQuality(max);
     }
 
     void changed() {
