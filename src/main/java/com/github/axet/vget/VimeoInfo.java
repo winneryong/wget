@@ -15,9 +15,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
 
-import com.github.axet.vget.VGetInfo.VideoQuality;
-import com.github.axet.vget.VGetInfo.VideoURL;
-
 public class VimeoInfo implements VGetInfo {
 
     HashMap<VideoQuality, String> sNextVideoURL = new HashMap<VideoQuality, String>();

@@ -8,8 +8,6 @@ import java.net.URL;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.github.axet.vget.VGetInfo.VideoQuality;
-
 class VGetDownload {
 
     String targetDir;
