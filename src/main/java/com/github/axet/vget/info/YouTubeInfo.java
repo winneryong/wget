@@ -4,24 +4,38 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 
 import com.github.axet.vget.VGetBase;
 
 public class YouTubeInfo implements VGetInfo {
 
-    public static class AgeException extends RuntimeException {
+    public static class AgeException extends DownloadError {
         private static final long serialVersionUID = 1L;
 
         public AgeException() {
             super("Age restriction, account required");
+        }
+    }
+
+    public static class EmbeddingDisabled extends DownloadError {
+        private static final long serialVersionUID = 1L;
+
+        public EmbeddingDisabled(String msg) {
+            super(msg);
         }
     }
 
@@ -110,14 +124,15 @@ public class YouTubeInfo implements VGetInfo {
 
         StringBuilder contents = new StringBuilder();
         String line = "";
-        while (line != null) {
-            try {
-                line = textreader.readLine();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+
+        try {
+            while ((line = textreader.readLine()) != null) {
+                contents.append(line + "\n");
             }
-            contents.append(line + "\n");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
         return contents.toString();
     }
 
@@ -130,6 +145,49 @@ public class YouTubeInfo implements VGetInfo {
     void addVideo(VideoQuality vd, String s) {
         if (s != null)
             sNextVideoURL.put(vd, s);
+    }
+
+    void extractEmbedded() throws IOException {
+        Pattern u = Pattern.compile("youtube.com/.*v=([^&]*)");
+        Matcher um = u.matcher(source);
+        if (!um.find()) {
+            throw new RuntimeException("unknown url");
+        }
+        String id = um.group(1);
+
+        String get = String
+                .format("http://www.youtube.com/get_video_info?video_id=%s&el=embedded&ps=default&eurl=", id);
+
+        URL url = new URL(get);
+        HttpURLConnection con;
+        con = (HttpURLConnection) url.openConnection();
+
+        con.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
+        con.setReadTimeout(VGetBase.READ_TIMEOUT);
+
+        String qs = readHtml(con);
+        Map<String, String> map = getQueryMap(qs);
+        if (map.get("status").equals("fail"))
+            throw new EmbeddingDisabled(URLDecoder.decode(map.get("reason"), "UTF-8"));
+
+        String fmt_list = URLDecoder.decode(map.get("fmt_list"), "UTF-8");
+        String[] fmts = fmt_list.split(",");
+        String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), "UTF-8");
+    }
+
+    public static Map<String, String> getQueryMap(String qs) {
+        try {
+            qs = qs.trim();
+            List<NameValuePair> list;
+            list = URLEncodedUtils.parse(new URI(null, null, null, 0, null, qs, null), "UTF-8");
+            HashMap<String, String> map = new HashMap<String, String>();
+            for (NameValuePair p : list) {
+                map.put(p.getName(), p.getValue());
+            }
+            return map;
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     void extractHtmlInfo(String html) throws IOException {
@@ -149,10 +207,10 @@ public class YouTubeInfo implements VGetInfo {
             this.sVideoURL = sline;
         }
 
-        Pattern encod = Pattern.compile("\"url_encoded_fmt_stream_map\": \"([^\"]*)\"");
+        // normal embedded video
+        Pattern encod = Pattern.compile("\"url_encoded_fmt_stream_map\": \"url=([^\"]*)\"");
         Matcher encodMatch = encod.matcher(html);
         if (this.iRecursionCount == 0 && encodMatch.find()) {
-
             HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
 
             String sline = encodMatch.group(1);
@@ -168,6 +226,61 @@ public class YouTubeInfo implements VGetInfo {
 
                     String url = linkMatch.group(1);
                     String itag = linkMatch.group(5);
+
+                    url = URLDecoder.decode(url, "UTF-8");
+
+                    ssourcecodevideourls.put(itag, url);
+                }
+            }
+
+            // http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
+            switch (VideoQuality.p1080) {
+            case p1080:
+                // 37|22 - better quality first
+                addVideo(VideoQuality.p1080, ssourcecodevideourls.get("37"));
+                addVideo(VideoQuality.p1080, ssourcecodevideourls.get("46"));
+            case p720:
+                addVideo(VideoQuality.p720, ssourcecodevideourls.get("22"));
+            case p480:
+                // 35|34
+                addVideo(VideoQuality.p480, ssourcecodevideourls.get("35"));
+            case p360:
+                addVideo(VideoQuality.p360, ssourcecodevideourls.get("34"));
+            case p240:
+                // 18|5
+                addVideo(VideoQuality.p240, ssourcecodevideourls.get("18"));
+            case p120:
+                addVideo(VideoQuality.p120, ssourcecodevideourls.get("5"));
+                break;
+            default:
+                this.sNextVideoURL = null;
+                this.sVideoURL = null;
+                break;
+            }
+        }
+
+        // stream video
+        Pattern encodStream = Pattern.compile("\"url_encoded_fmt_stream_map\": \"stream=([^\"]*)\"");
+        Matcher encodStreamMatch = encodStream.matcher(html);
+        if (this.iRecursionCount == 0 && encodStreamMatch.find()) {
+            HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
+
+            String sline = encodStreamMatch.group(1);
+
+            String[] urlStrings = sline.split("stream=");
+
+            for (String urlString : urlStrings) {
+                urlString = StringEscapeUtils.unescapeJava(urlString);
+
+                Pattern link = Pattern.compile("(sparams.*)&itag=(\\d+)&.*&conn=rtmpe(.*),");
+                Matcher linkMatch = link.matcher(urlString);
+                if (linkMatch.find()) {
+
+                    String sparams = linkMatch.group(1);
+                    String itag = linkMatch.group(2);
+                    String url = linkMatch.group(3);
+
+                    url = "http" + url+ "?"+sparams;
 
                     url = URLDecoder.decode(url, "UTF-8");
 
