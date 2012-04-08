@@ -128,7 +128,8 @@ public class YouTubeInfo implements VGetInfo {
      *            download source url
      */
     void addVideo(VideoQuality vd, String s) {
-        sNextVideoURL.put(vd, s);
+        if (s != null)
+            sNextVideoURL.put(vd, s);
     }
 
     void extractHtmlInfo(String html) throws IOException {
