@@ -42,32 +42,32 @@ class VGetDownload {
     /**
      * Drop all foribiden characters from filename
      * 
-     * @param sfilename
+     * @param f
      *            input file name
      * @return normalized file name
      */
-    static String replaceBadChars(String sfilename) {
+    static String replaceBadChars(String f) {
         String replace = " ";
-        sfilename = sfilename.replaceAll("/", replace);
-        sfilename = sfilename.replaceAll("\\\\", replace);
-        sfilename = sfilename.replaceAll(":", replace);
-        sfilename = sfilename.replaceAll("\\?", replace);
-        sfilename = sfilename.replaceAll("\\\"", replace);
-        sfilename = sfilename.replaceAll("\\*", replace);
-        sfilename = sfilename.replaceAll("<", replace);
-        sfilename = sfilename.replaceAll(">", replace);
-        sfilename = sfilename.replaceAll("\\|", replace);
+        f = f.replaceAll("/", replace);
+        f = f.replaceAll("\\\\", replace);
+        f = f.replaceAll(":", replace);
+        f = f.replaceAll("\\?", replace);
+        f = f.replaceAll("\\\"", replace);
+        f = f.replaceAll("\\*", replace);
+        f = f.replaceAll("<", replace);
+        f = f.replaceAll(">", replace);
+        f = f.replaceAll("\\|", replace);
 
-        String sfilenameN;
-        do {
-            sfilenameN = sfilename.replaceAll("  ", " ");
-        } while (!sfilenameN.equals(sfilename));
+        String ff;
+        while (!(ff = f.replaceAll("  ", " ")).equals(f)) {
+            f = ff;
+        }
 
-        sfilename = sfilename.trim();
-        sfilename = StringUtils.removeEnd(sfilename, ".");
-        sfilename = sfilename.trim();
+        f = f.trim();
+        f = StringUtils.removeEnd(f, ".");
+        f = f.trim();
 
-        return sfilename;
+        return f;
     }
 
     void savebinarydata() {
