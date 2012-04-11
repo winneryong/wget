@@ -57,7 +57,12 @@ class VGetDownload {
         sfilename = sfilename.replaceAll("<", replace);
         sfilename = sfilename.replaceAll(">", replace);
         sfilename = sfilename.replaceAll("\\|", replace);
-        sfilename = sfilename.replaceAll("  ", " ");
+
+        String sfilenameN;
+        do {
+            sfilenameN = sfilename.replaceAll("  ", " ");
+        } while (!sfilenameN.equals(sfilename));
+
         sfilename = sfilename.trim();
         sfilename = StringUtils.removeEnd(sfilename, ".");
         sfilename = sfilename.trim();
