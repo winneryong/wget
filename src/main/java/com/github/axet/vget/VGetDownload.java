@@ -57,15 +57,14 @@ class VGetDownload {
         f = f.replaceAll("<", replace);
         f = f.replaceAll(">", replace);
         f = f.replaceAll("\\|", replace);
+        f = f.trim();
+        f = StringUtils.removeEnd(f, ".");
+        f = f.trim();
 
         String ff;
         while (!(ff = f.replaceAll("  ", " ")).equals(f)) {
             f = ff;
         }
-
-        f = f.trim();
-        f = StringUtils.removeEnd(f, ".");
-        f = f.trim();
 
         return f;
     }
