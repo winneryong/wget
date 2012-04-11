@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -125,16 +126,8 @@ public class VimeoInfo implements VGetInfo {
     }
 
     @Override
-    public VideoURL getVideo() {
-        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p1080, VideoQuality.p720, VideoQuality.p480,
-                VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
-
-        for (int i = 0; i < avail.length; i++) {
-            if (sNextVideoURL.containsKey(avail[i]))
-                return new VideoURL(avail[i], sNextVideoURL.get(avail[i]));
-        }
-
-        throw new RuntimeException("no video with required quality found");
+    public Map<VideoQuality, String> getVideos() {
+        return sNextVideoURL;
     }
 
 }

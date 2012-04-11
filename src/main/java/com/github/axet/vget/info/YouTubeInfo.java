@@ -20,6 +20,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
 import com.github.axet.vget.VGetBase;
+import com.github.axet.vget.info.VGetInfo.VideoQuality;
 
 public class YouTubeInfo implements VGetInfo {
 
@@ -314,16 +315,8 @@ public class YouTubeInfo implements VGetInfo {
     }
 
     @Override
-    public VideoURL getVideo() {
-        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p2304, VideoQuality.p1080, VideoQuality.p720,
-                VideoQuality.p480, VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
-
-        for (int i = 0; i < avail.length; i++) {
-            if (sNextVideoURL.containsKey(avail[i]))
-                return new VideoURL(avail[i], sNextVideoURL.get(avail[i]));
-        }
-
-        throw new RuntimeException("no video with required quality found");
+    public Map<VideoQuality, String> getVideos() {
+        return sNextVideoURL;
     }
 
 }

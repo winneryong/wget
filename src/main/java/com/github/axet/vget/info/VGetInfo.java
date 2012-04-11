@@ -1,5 +1,7 @@
 package com.github.axet.vget.info;
 
+import java.util.Map;
+
 public interface VGetInfo {
 
     public enum VideoQuality {
@@ -30,5 +32,5 @@ public interface VGetInfo {
 
     public String getTitle();
 
-    public VideoURL getVideo();
+    public Map<VideoQuality, String> getVideos();
 }

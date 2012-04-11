@@ -5,10 +5,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.github.axet.vget.info.VGetInfo;
+import com.github.axet.vget.info.VGetInfo.VideoQuality;
+import com.github.axet.vget.info.VGetInfo.VideoURL;
 
 class VGetDownload {
 
@@ -66,7 +69,7 @@ class VGetDownload {
         try {
             FileOutputStream fos = null;
 
-            max = ei.getVideo();
+            max = getVideo();
             URL url = new URL(max.url);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -133,4 +136,17 @@ class VGetDownload {
         savebinarydata();
     }
 
+    public VideoURL getVideo() {
+        Map<VideoQuality, String> sNextVideoURL = ei.getVideos();
+
+        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p2304, VideoQuality.p1080, VideoQuality.p720,
+                VideoQuality.p480, VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
+
+        for (int i = 0; i < avail.length; i++) {
+            if (sNextVideoURL.containsKey(avail[i]))
+                return new VideoURL(avail[i], sNextVideoURL.get(avail[i]));
+        }
+
+        throw new RuntimeException("no video with required quality found");
+    }
 }
