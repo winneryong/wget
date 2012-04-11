@@ -40,15 +40,12 @@ public class YouTubeInfo implements VGetInfo {
     }
 
     HashMap<VideoQuality, String> sNextVideoURL = new HashMap<VideoQuality, String>();
+
     String sTitle = null;
 
-    String s403VideoURL = null;
-
-    int iRecursionCount = -1;
     VGetBase ytd2;
 
     String source;
-    String sVideoURL = null;
 
     public YouTubeInfo(VGetBase ytd2, String input) {
         this.ytd2 = ytd2;
@@ -59,58 +56,28 @@ public class YouTubeInfo implements VGetInfo {
         return url.contains("youtube.com");
     }
 
-    boolean downloadone(String sURL) throws Exception {
-        boolean rc = false;
-        boolean rc204 = false;
-        boolean rc302 = false;
-        boolean rc403 = false;
-
-        this.iRecursionCount++;
-
-        // stop recursion
+    void downloadone(String sURL) throws Exception {
         try {
-            if (sURL.equals(""))
-                return (false);
-        } catch (NullPointerException npe) {
-            return (false);
+            extractEmbedded();
+        } catch (EmbeddingDisabled e) {
+            streamCpature(sURL);
         }
-        if (ytd2.getbQuitrequested())
-            return (false);
+    }
 
+    void streamCpature(String sURL) throws Exception {
         URL url = new URL(sURL);
         HttpURLConnection con;
         con = (HttpURLConnection) url.openConnection();
         con.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
         con.setReadTimeout(VGetBase.READ_TIMEOUT);
 
-        if (!(rc = con.getResponseCode() == 200) & !(rc204 = con.getResponseCode() == 204)
-                & !(rc302 = con.getResponseCode() == 302) & !(rc403 = con.getResponseCode() == 403)) {
-            return (rc & rc204 & rc302);
+        String sContentType = null;
+        sContentType = con.getContentType().toLowerCase();
+        if (sContentType.matches("^text/html(.*)")) {
+            String html;
+            html = readHtml(con);
+            extractHtmlInfo(html);
         }
-        if (rc204) {
-            rc = downloadone(this.sNextVideoURL.values().iterator().next());
-            return (rc);
-        }
-        if (rc403) {
-            rc = downloadone(this.s403VideoURL);
-        }
-
-        {
-            // test if we got a webpage
-            String sContentType = null;
-            sContentType = con.getContentType().toLowerCase();
-            if (sContentType.matches("^text/html(.*)")) {
-                String html;
-                html = readHtml(con);
-                extractHtmlInfo(html);
-            } else { // content-type is not video/
-                rc = false;
-                this.sVideoURL = null;
-            }
-        }
-
-        return (rc);
-
     }
 
     String readHtml(HttpURLConnection con) {
@@ -147,7 +114,59 @@ public class YouTubeInfo implements VGetInfo {
             sNextVideoURL.put(vd, s);
     }
 
-    void extractEmbedded() throws IOException {
+    void addVideo(Integer itag, String url) {
+        switch (itag) {
+        case 38:
+            // mp4
+            addVideo(VideoQuality.p1080, url);
+            break;
+        case 37:
+            // mp4
+            addVideo(VideoQuality.p1080, url);
+            break;
+        case 46:
+            // webm
+            addVideo(VideoQuality.p1080, url);
+            break;
+        case 22:
+            // mp4
+            addVideo(VideoQuality.p720, url);
+            break;
+        case 45:
+            // webm
+            addVideo(VideoQuality.p720, url);
+            break;
+        case 35:
+            // mp4
+            addVideo(VideoQuality.p480, url);
+            break;
+        case 44:
+            // webm
+            addVideo(VideoQuality.p480, url);
+            break;
+        case 18:
+            // mp4
+            addVideo(VideoQuality.p360, url);
+            break;
+        case 34:
+            // flv
+            addVideo(VideoQuality.p360, url);
+            break;
+        case 43:
+            // webm
+            addVideo(VideoQuality.p360, url);
+            break;
+        case 6:
+            // flv
+            addVideo(VideoQuality.p270, url);
+            break;
+        case 5:
+            addVideo(VideoQuality.p224, url);
+            break;
+        }
+    }
+
+    void extractEmbedded() throws Exception {
         Pattern u = Pattern.compile("youtube.com/.*v=([^&]*)");
         Matcher um = u.matcher(source);
         if (!um.find()) {
@@ -170,9 +189,12 @@ public class YouTubeInfo implements VGetInfo {
         if (map.get("status").equals("fail"))
             throw new EmbeddingDisabled(URLDecoder.decode(map.get("reason"), "UTF-8"));
 
-        String fmt_list = URLDecoder.decode(map.get("fmt_list"), "UTF-8");
-        String[] fmts = fmt_list.split(",");
+        sTitle = URLDecoder.decode(map.get("title"), "UTF-8");
+        // String fmt_list = URLDecoder.decode(map.get("fmt_list"), "UTF-8");
+        // String[] fmts = fmt_list.split(",");
         String url_encoded_fmt_stream_map = URLDecoder.decode(map.get("url_encoded_fmt_stream_map"), "UTF-8");
+
+        extractUrlEncodedVideos(url_encoded_fmt_stream_map);
     }
 
     public static Map<String, String> getQueryMap(String qs) {
@@ -190,7 +212,7 @@ public class YouTubeInfo implements VGetInfo {
         }
     }
 
-    void extractHtmlInfo(String html) throws IOException {
+    void extractHtmlInfo(String html) throws Exception {
         Pattern age = Pattern.compile("(verify_age)");
         Matcher ageMatch = age.matcher(html);
         if (ageMatch.find())
@@ -198,73 +220,25 @@ public class YouTubeInfo implements VGetInfo {
 
         Pattern gen = Pattern.compile("\"(http(.*)generate_204(.*))\"");
         Matcher genMatch = gen.matcher(html);
-        if (this.iRecursionCount == 0 && genMatch.find()) {
+        if (genMatch.find()) {
             String sline = genMatch.group(1);
 
             sline = StringEscapeUtils.unescapeJava(sline);
-
-            this.s403VideoURL = sline.replaceFirst("generate_204", "videoplayback");
-            this.sVideoURL = sline;
         }
 
-        // normal embedded video
+        // normal embedded video, unable to grab age restricted videos
         Pattern encod = Pattern.compile("\"url_encoded_fmt_stream_map\": \"url=([^\"]*)\"");
         Matcher encodMatch = encod.matcher(html);
-        if (this.iRecursionCount == 0 && encodMatch.find()) {
-            HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
-
+        if (encodMatch.find()) {
             String sline = encodMatch.group(1);
 
-            String[] urlStrings = sline.split("url=");
-
-            for (String urlString : urlStrings) {
-                urlString = StringEscapeUtils.unescapeJava(urlString);
-
-                Pattern link = Pattern.compile("(.*)&quality=(.*)&fallback_host=(.*)&type=(.*)itag=(\\d+)");
-                Matcher linkMatch = link.matcher(urlString);
-                if (linkMatch.find()) {
-
-                    String url = linkMatch.group(1);
-                    String itag = linkMatch.group(5);
-
-                    url = URLDecoder.decode(url, "UTF-8");
-
-                    ssourcecodevideourls.put(itag, url);
-                }
-            }
-
-            // http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
-            switch (VideoQuality.p1080) {
-            case p1080:
-                // 37|22 - better quality first
-                addVideo(VideoQuality.p1080, ssourcecodevideourls.get("37"));
-                addVideo(VideoQuality.p1080, ssourcecodevideourls.get("46"));
-            case p720:
-                addVideo(VideoQuality.p720, ssourcecodevideourls.get("22"));
-            case p480:
-                // 35|34
-                addVideo(VideoQuality.p480, ssourcecodevideourls.get("35"));
-            case p360:
-                addVideo(VideoQuality.p360, ssourcecodevideourls.get("34"));
-            case p240:
-                // 18|5
-                addVideo(VideoQuality.p240, ssourcecodevideourls.get("18"));
-            case p120:
-                addVideo(VideoQuality.p120, ssourcecodevideourls.get("5"));
-                break;
-            default:
-                this.sNextVideoURL = null;
-                this.sVideoURL = null;
-                break;
-            }
+            extractUrlEncodedVideos(sline);
         }
 
         // stream video
         Pattern encodStream = Pattern.compile("\"url_encoded_fmt_stream_map\": \"stream=([^\"]*)\"");
         Matcher encodStreamMatch = encodStream.matcher(html);
-        if (this.iRecursionCount == 0 && encodStreamMatch.find()) {
-            HashMap<String, String> ssourcecodevideourls = new HashMap<String, String>();
-
+        if (encodStreamMatch.find()) {
             String sline = encodStreamMatch.group(1);
 
             String[] urlStrings = sline.split("stream=");
@@ -280,43 +254,18 @@ public class YouTubeInfo implements VGetInfo {
                     String itag = linkMatch.group(2);
                     String url = linkMatch.group(3);
 
-                    url = "http" + url+ "?"+sparams;
+                    url = "http" + url + "?" + sparams;
 
                     url = URLDecoder.decode(url, "UTF-8");
 
-                    ssourcecodevideourls.put(itag, url);
+                    addVideo(Integer.decode(itag), url);
                 }
-            }
-
-            // http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
-            switch (VideoQuality.p1080) {
-            case p1080:
-                // 37|22 - better quality first
-                addVideo(VideoQuality.p1080, ssourcecodevideourls.get("37"));
-                addVideo(VideoQuality.p1080, ssourcecodevideourls.get("46"));
-            case p720:
-                addVideo(VideoQuality.p720, ssourcecodevideourls.get("22"));
-            case p480:
-                // 35|34
-                addVideo(VideoQuality.p480, ssourcecodevideourls.get("35"));
-            case p360:
-                addVideo(VideoQuality.p360, ssourcecodevideourls.get("34"));
-            case p240:
-                // 18|5
-                addVideo(VideoQuality.p240, ssourcecodevideourls.get("18"));
-            case p120:
-                addVideo(VideoQuality.p120, ssourcecodevideourls.get("5"));
-                break;
-            default:
-                this.sNextVideoURL = null;
-                this.sVideoURL = null;
-                break;
             }
         }
 
         Pattern title = Pattern.compile("<meta name=\"title\" content=(.*)");
         Matcher titleMatch = title.matcher(html);
-        if (this.iRecursionCount == 0 && titleMatch.find()) {
+        if (titleMatch.find()) {
             String sline = titleMatch.group(1);
             String name = sline.replaceFirst("<meta name=\"title\" content=", "").trim();
             name = StringUtils.strip(name, "\">");
@@ -325,10 +274,28 @@ public class YouTubeInfo implements VGetInfo {
         }
     }
 
+    void extractUrlEncodedVideos(String sline) throws Exception {
+        String[] urlStrings = sline.split("url=");
+
+        for (String urlString : urlStrings) {
+            urlString = StringEscapeUtils.unescapeJava(urlString);
+
+            Pattern link = Pattern.compile("(.*)&quality=(.*)&fallback_host=(.*)&type=(.*)itag=(\\d+)");
+            Matcher linkMatch = link.matcher(urlString);
+            if (linkMatch.find()) {
+                String url = linkMatch.group(1);
+                String itag = linkMatch.group(5);
+
+                url = URLDecoder.decode(url, "UTF-8");
+
+                addVideo(Integer.decode(itag), url);
+            }
+        }
+    }
+
     public void extract() {
         try {
             downloadone(source);
-            this.iRecursionCount = -1;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -348,8 +315,8 @@ public class YouTubeInfo implements VGetInfo {
 
     @Override
     public VideoURL getVideo() {
-        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p1080, VideoQuality.p720, VideoQuality.p480,
-                VideoQuality.p360, VideoQuality.p240, VideoQuality.p120 };
+        VideoQuality[] avail = new VideoQuality[] { VideoQuality.p2304, VideoQuality.p1080, VideoQuality.p720,
+                VideoQuality.p480, VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
 
         for (int i = 0; i < avail.length; i++) {
             if (sNextVideoURL.containsKey(avail[i]))

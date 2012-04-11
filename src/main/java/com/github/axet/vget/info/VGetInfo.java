@@ -3,7 +3,7 @@ package com.github.axet.vget.info;
 public interface VGetInfo {
 
     public enum VideoQuality {
-        p1080, p720, p480, p360, p240, p120
+        p2304, p1080, p720, p480, p360, p270, p224
     }
 
     public static class VideoURL {

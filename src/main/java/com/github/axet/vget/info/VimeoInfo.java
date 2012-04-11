@@ -127,7 +127,7 @@ public class VimeoInfo implements VGetInfo {
     @Override
     public VideoURL getVideo() {
         VideoQuality[] avail = new VideoQuality[] { VideoQuality.p1080, VideoQuality.p720, VideoQuality.p480,
-                VideoQuality.p360, VideoQuality.p240, VideoQuality.p120 };
+                VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
 
         for (int i = 0; i < avail.length; i++) {
             if (sNextVideoURL.containsKey(avail[i]))

@@ -196,9 +196,7 @@ public class VGet extends VGetBase {
         // "/Users/axet/Downloads");
 
         // age restriction test
-        // YTD2 y = new
-        // YTD2("http://www.youtube.com/watch?v=QoTWRHheshw&feature=youtube_gdata",
-        // "/Users/axet/Downloads");
+        VGet y = new VGet("http://www.youtube.com/watch?v=QoTWRHheshw&feature=youtube_gdata", "/Users/axet/Downloads");
 
         // user page test
         // YTD2 y = new YTD2(
@@ -209,7 +207,8 @@ public class VGet extends VGetBase {
         // VGet y = new VGet("http://www.youtube.com/watch?v=rRS6xL1B8ig",
         // "/Users/axet/Downloads");
 
-        VGet y = new VGet("http://vimeo.com/39289096", "/Users/axet/Downloads");
+        // VGet y = new VGet("http://vimeo.com/39289096",
+        // "/Users/axet/Downloads");
 
         y.start();
 
