@@ -19,10 +19,14 @@ public class SpeedInfo {
             this.current = current;
             now = System.currentTimeMillis();
         }
+
+        public Sample(long current, long now) {
+            this.current = current;
+            this.now = now;
+        }
     }
 
     ArrayList<Sample> samples = new ArrayList<SpeedInfo.Sample>();
-    long lastUpdate = 0;
 
     Sample start;
 
@@ -33,25 +37,38 @@ public class SpeedInfo {
     }
 
     void add(Sample s) {
+        if (start.current > s.current)
+            reset(s);
+
         samples.add(s);
 
         while (samples.size() > SAMPLE_MAX)
             samples.remove(0);
     }
 
+    void reset(Sample s) {
+        start = s;
+        samples.clear();
+    }
+
+    long getLastUpdate() {
+        if (samples.size() == 0)
+            return 0;
+
+        Sample s = samples.get(samples.size() - 1);
+        return s.now;
+    }
+
     public void start(long current) {
         add(start = new Sample(current));
-
-        long now = System.currentTimeMillis();
-        lastUpdate = now;
     }
 
     public void step(long current) {
         long now = System.currentTimeMillis();
 
+        long lastUpdate = getLastUpdate();
         if (lastUpdate + SAMPLE_LENGTH < now) {
-            lastUpdate = now;
-            add(new Sample(current));
+            add(new Sample(current, now));
         }
     }
 
