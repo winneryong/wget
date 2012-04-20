@@ -35,7 +35,7 @@ public class SpeedInfo {
     ArrayList<Sample> samples = new ArrayList<SpeedInfo.Sample>();
     long peak;
 
-    public static final int SAMPLE_LENGTH = 2000;
+    public static final int SAMPLE_LENGTH = 1000;
     public static final int SAMPLE_MAX = 20;
 
     // start sample use to calculate average speed
