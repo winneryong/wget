@@ -9,7 +9,7 @@ public class SpeedInfo {
         public long current;
         // current time
         public long now;
-
+        // start block? used to mark block after download has been altered / restarted
         public boolean start;
 
         public Sample() {
