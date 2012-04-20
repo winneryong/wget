@@ -24,14 +24,23 @@ public class SpeedInfo {
     ArrayList<Sample> samples = new ArrayList<SpeedInfo.Sample>();
     long lastUpdate = 0;
 
+    Sample start;
+
     static final int SAMPLE_LENGTH = 2000;
     static final int SAMPLE_MAX = 20;
 
     public SpeedInfo() {
     }
 
+    void add(Sample s) {
+        samples.add(s);
+
+        while (samples.size() > SAMPLE_MAX)
+            samples.remove(0);
+    }
+
     public void start(long current) {
-        samples.add(new Sample(current));
+        add(start = new Sample(current));
 
         long now = System.currentTimeMillis();
         lastUpdate = now;
@@ -42,7 +51,7 @@ public class SpeedInfo {
 
         if (lastUpdate + SAMPLE_LENGTH < now) {
             lastUpdate = now;
-            samples.add(new Sample(current));
+            add(new Sample(current));
         }
     }
 
@@ -56,7 +65,7 @@ public class SpeedInfo {
             return 0;
 
         // start block
-        Sample s = samples.get(0);
+        Sample s = start;
 
         // [s1] [s2] [end]
         Sample s1 = samples.get(samples.size() - 2);
@@ -69,7 +78,13 @@ public class SpeedInfo {
     }
 
     public int getAverageSpeed() {
-        return 0;
+        Sample s1 = start;
+        Sample s2 = samples.get(samples.size() - 1);
+
+        long current = s2.current - s1.current;
+        long time = s2.now - s1.now;
+
+        return (int) (current * 1000 / time);
     }
 
     public int getSamples() {
