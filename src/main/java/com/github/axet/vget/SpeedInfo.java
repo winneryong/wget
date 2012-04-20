@@ -33,6 +33,7 @@ public class SpeedInfo {
     }
 
     ArrayList<Sample> samples = new ArrayList<SpeedInfo.Sample>();
+    long peak;
 
     public static final int SAMPLE_LENGTH = 2000;
     public static final int SAMPLE_MAX = 20;
@@ -87,7 +88,7 @@ public class SpeedInfo {
 
         if (time == 0)
             return 0;
-        
+
         return (int) (current * 1000 / time);
     }
 
@@ -111,6 +112,10 @@ public class SpeedInfo {
 
     public Sample getSample(int index) {
         return samples.get(index);
+    }
+
+    public long getPeak() {
+        return peak;
     }
 
     //
@@ -144,6 +149,8 @@ public class SpeedInfo {
 
         while (samples.size() > SAMPLE_MAX)
             samples.remove(0);
+
+        peakUpdate();
     }
 
     /**
@@ -167,5 +174,13 @@ public class SpeedInfo {
 
         Sample s = samples.get(samples.size() - 1);
         return s.now;
+    }
+
+    void peakUpdate() {
+        peak = 0;
+        for (Sample s : samples) {
+            if (peak < s.current)
+                peak = s.current;
+        }
     }
 }
