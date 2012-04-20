@@ -75,19 +75,19 @@ public class SpeedInfo {
      * @return bytes per second
      */
     public int getCurrentSpeed() {
-        if (samples.size() < 2)
+        if (getRowSamples() < 2)
             return 0;
 
         // [s1] [s2] [EOF]
         Sample s1 = samples.get(samples.size() - 2);
         Sample s2 = samples.get(samples.size() - 1);
 
-        long current = s2.current - s1.current - start.current;
+        long current = s2.current - s1.current;
         long time = s2.now - s1.now;
 
         if (time == 0)
             return 0;
-
+        
         return (int) (current * 1000 / time);
     }
 
@@ -130,7 +130,7 @@ public class SpeedInfo {
     void add(Sample s) {
         // check if we have broken / restarted download. check if here some
         // samples
-        if (samples.size() > 1) {
+        if (samples.size() > 0) {
             Sample s1 = samples.get(samples.size() - 1);
             // check if last download 'current' stands before current 'current'
             // download
@@ -144,6 +144,21 @@ public class SpeedInfo {
 
         while (samples.size() > SAMPLE_MAX)
             samples.remove(0);
+    }
+
+    /**
+     * return number of samples in the row (before download restart)
+     * 
+     * @return
+     */
+    int getRowSamples() {
+        for (int i = samples.size() - 1; i >= 0; i--) {
+            Sample s = samples.get(i);
+            if (s.start)
+                return samples.size() - i;
+        }
+
+        return samples.size();
     }
 
     long getLastUpdate() {
