@@ -84,7 +84,7 @@ public class SpeedInfo {
         // start block
         Sample s = start;
 
-        // [s1] [s2] [end]
+        // [s1] [s2] [EOF]
         Sample s1 = samples.get(samples.size() - 2);
         Sample s2 = samples.get(samples.size() - 1);
 
