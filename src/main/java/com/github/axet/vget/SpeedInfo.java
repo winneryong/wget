@@ -74,6 +74,9 @@ public class SpeedInfo {
         long current = s2.current - s1.current - s.current;
         long time = s2.now - s1.now;
 
+        if (time == 0)
+            return 0;
+
         return (int) (current * 1000 / time);
     }
 
