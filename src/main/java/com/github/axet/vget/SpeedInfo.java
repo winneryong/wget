@@ -26,8 +26,8 @@ public class SpeedInfo {
 
     Sample start;
 
-    static final int SAMPLE_LENGTH = 2000;
-    static final int SAMPLE_MAX = 20;
+    public static final int SAMPLE_LENGTH = 2000;
+    public static final int SAMPLE_MAX = 20;
 
     public SpeedInfo() {
     }
