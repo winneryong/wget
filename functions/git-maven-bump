@@ -27,7 +27,7 @@ git_maven_bump() {
   VERSION=${TAG#*-}
   # ex: 1.0.0-SNAPSHOT
   VERSIONSNAPSHOT=$VERSION-SNAPSHOT
-  
+  echo $TAG
   if [ -z "$TAG" ]; then
     echo
     echo "type version like $0 server-1.0.0"
@@ -37,7 +37,7 @@ git_maven_bump() {
   
   MOD=$(git status --porcelain)
   
-  if [ ! -z "$MOD" ]; then
+  if [ ! -z "" ]; then
     echo "Can't bump version on modified tree:"
     git status -s
     exit 1
