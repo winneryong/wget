@@ -27,8 +27,8 @@ git_maven_bump() {
   VERSION=${TAG#*-}
   # ex: 1.0.0-SNAPSHOT
   VERSIONSNAPSHOT=$VERSION-SNAPSHOT
-  echo $TAG
-  if [ -z "$TAG" ]; then
+
+  if [[ -z "$TAG" ]] || [[ -z "$BRANCH" ]] || [[ -z "$VERSION" ]]; then
     echo
     echo "type version like $0 server-1.0.0"
     git tag | tail
