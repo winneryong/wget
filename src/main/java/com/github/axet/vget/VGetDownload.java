@@ -110,7 +110,7 @@ class VGetDownload {
 
             fos = new FileOutputStream(f);
 
-            byte[] bytes = new byte[4096];
+            byte[] bytes = new byte[4 * 1024];
             Integer iBytesRead = 1;
 
             BufferedInputStream binaryreader = null;
