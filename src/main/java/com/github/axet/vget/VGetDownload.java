@@ -10,6 +10,8 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.github.axet.vget.info.DownloadError;
+import com.github.axet.vget.info.DownloadRetry;
 import com.github.axet.vget.info.VGetInfo;
 import com.github.axet.vget.info.VGetInfo.VideoQuality;
 import com.github.axet.vget.info.VGetInfo.VideoURL;
@@ -84,7 +86,7 @@ class VGetDownload {
             String sContentType = conn.getContentType();
 
             if (sContentType == null || !sContentType.contains("video/")) {
-                throw new IOException("unable to download video, bad content");
+                throw new DownloadRetry("unable to download video, bad content");
             }
 
             File f;
@@ -130,6 +132,8 @@ class VGetDownload {
 
             fos.close();
             binaryreader.close();
+        } catch (IOException e) {
+            throw new DownloadRetry(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -152,6 +156,6 @@ class VGetDownload {
                 return new VideoURL(avail[i], sNextVideoURL.get(avail[i]));
         }
 
-        throw new RuntimeException("no video with required quality found");
+        throw new DownloadError("no video with required quality found");
     }
 }

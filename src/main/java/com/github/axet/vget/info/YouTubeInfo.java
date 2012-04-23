@@ -87,7 +87,7 @@ public class YouTubeInfo implements VGetInfo {
             textreader = new BufferedReader(new InputStreamReader(con.getInputStream(),
                     con.getContentEncoding() == null ? "UTF-8" : con.getContentEncoding()));
         } catch (IOException e1) {
-            throw new RuntimeException(e1);
+            throw new DownloadRetry(e1);
         }
 
         StringBuilder contents = new StringBuilder();
@@ -98,7 +98,7 @@ public class YouTubeInfo implements VGetInfo {
                 contents.append(line + "\n");
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new DownloadRetry(e);
         }
 
         return contents.toString();
