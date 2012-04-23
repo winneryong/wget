@@ -37,7 +37,7 @@ git_maven_bump() {
   
   MOD=$(git status --porcelain)
   
-  if [ ! -z "" ]; then
+  if [ ! -z "$MOD" ]; then
     echo "Can't bump version on modified tree:"
     git status -s
     exit 1
