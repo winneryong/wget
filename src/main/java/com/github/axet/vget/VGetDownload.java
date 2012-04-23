@@ -3,6 +3,7 @@ package com.github.axet.vget;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
@@ -82,8 +83,8 @@ class VGetDownload {
 
             String sContentType = conn.getContentType();
 
-            if (!sContentType.contains("video/")) {
-                throw new RuntimeException("unable to download video");
+            if (sContentType == null || !sContentType.contains("video/")) {
+                throw new IOException("unable to download video, bad content");
             }
 
             File f;
