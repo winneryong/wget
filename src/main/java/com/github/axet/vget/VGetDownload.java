@@ -73,71 +73,73 @@ class VGetDownload {
     }
 
     void savebinarydata() {
+        FileOutputStream fos = null;
+
         try {
-            FileOutputStream fos = null;
+            try {
+                max = getVideo();
+                URL url = new URL(max.url);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            max = getVideo();
-            URL url = new URL(max.url);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
+                conn.setReadTimeout(VGetBase.READ_TIMEOUT);
 
-            conn.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
-            conn.setReadTimeout(VGetBase.READ_TIMEOUT);
+                String sContentType = conn.getContentType();
 
-            String sContentType = conn.getContentType();
-
-            if (sContentType == null || !sContentType.contains("video/")) {
-                throw new DownloadRetry("unable to download video, bad content");
-            }
-
-            File f;
-            if (target == null) {
-                Integer idupcount = 0;
-
-                String sfilename = replaceBadChars(ei.getTitle());
-                String ext = sContentType.replaceFirst("video/", "").replaceAll("x-", "");
-
-                do {
-                    String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
-
-                    f = new File(targetDir, sfilename + add + "." + ext);
-                    idupcount += 1;
-                } while (f.exists());
-                this.target = f.getAbsolutePath();
-            } else {
-                f = new File(target);
-                f.delete();
-            }
-
-            fos = new FileOutputStream(f);
-
-            byte[] bytes = new byte[4 * 1024];
-            Integer iBytesRead = 1;
-
-            BufferedInputStream binaryreader = null;
-            binaryreader = new BufferedInputStream(conn.getInputStream());
-
-            total = conn.getContentLength();
-
-            while (!ytd2.getbQuitrequested() && iBytesRead > 0) {
-                iBytesRead = binaryreader.read(bytes);
-                if (iBytesRead > 0) {
-                    count += iBytesRead;
+                if (sContentType == null || !sContentType.contains("video/")) {
+                    throw new DownloadRetry("unable to download video, bad content");
                 }
 
-                if (iBytesRead > 0)
-                    fos.write(bytes, 0, iBytesRead);
+                File f;
+                if (target == null) {
+                    Integer idupcount = 0;
 
-                notify.run();
+                    String sfilename = replaceBadChars(ei.getTitle());
+                    String ext = sContentType.replaceFirst("video/", "").replaceAll("x-", "");
+
+                    do {
+                        String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
+
+                        f = new File(targetDir, sfilename + add + "." + ext);
+                        idupcount += 1;
+                    } while (f.exists());
+                    this.target = f.getAbsolutePath();
+                } else {
+                    f = new File(target);
+                    f.delete();
+                }
+
+                fos = new FileOutputStream(f);
+
+                byte[] bytes = new byte[4 * 1024];
+                Integer iBytesRead = 1;
+
+                BufferedInputStream binaryreader = null;
+                binaryreader = new BufferedInputStream(conn.getInputStream());
+
+                total = conn.getContentLength();
+
+                while (!ytd2.getbQuitrequested() && iBytesRead > 0) {
+                    iBytesRead = binaryreader.read(bytes);
+
+                    if (iBytesRead > 0) {
+                        count += iBytesRead;
+                        fos.write(bytes, 0, iBytesRead);
+                    }
+
+                    notify.run();
+                }
+                binaryreader.close();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                if (fos != null)
+                    fos.close();
             }
-
-            fos.close();
-            binaryreader.close();
         } catch (IOException e) {
             throw new DownloadRetry(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
