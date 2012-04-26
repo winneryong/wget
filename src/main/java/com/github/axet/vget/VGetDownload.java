@@ -130,16 +130,16 @@ class VGetDownload {
                     notify.run();
                 }
                 binaryreader.close();
-            } catch (RuntimeException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             } finally {
                 if (fos != null)
                     fos.close();
             }
         } catch (IOException e) {
             throw new DownloadRetry(e);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
