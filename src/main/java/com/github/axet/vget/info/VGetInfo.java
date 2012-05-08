@@ -10,11 +10,13 @@ public interface VGetInfo {
 
     public static class VideoURL {
         public VideoQuality vq;
+        public String ext;
         public String url;
 
-        public VideoURL(VideoQuality vq, String url) {
+        public VideoURL(VideoQuality vq, String url, String ext) {
             this.vq = vq;
             this.url = url;
+            this.ext = ext;
         }
     }
 
@@ -24,5 +26,5 @@ public interface VGetInfo {
 
     public String getTitle();
 
-    public Map<VideoQuality, String> getVideos();
+    public Map<VideoQuality, VideoURL> getVideos();
 }

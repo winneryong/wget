@@ -20,7 +20,7 @@ import com.github.axet.vget.VGetBase;
 
 public class VimeoInfo implements VGetInfo {
 
-    HashMap<VideoQuality, String> sNextVideoURL = new HashMap<VideoQuality, String>();
+    HashMap<VideoQuality, VideoURL> sNextVideoURL = new HashMap<VideoQuality, VideoURL>();
     String sTitle = null;
 
     VGetBase ytd2;
@@ -66,8 +66,8 @@ public class VimeoInfo implements VGetInfo {
         String hd = get + "hd";
         String sd = get + "sd";
 
-        sNextVideoURL.put(VideoQuality.p1080, hd);
-        sNextVideoURL.put(VideoQuality.p480, sd);
+        sNextVideoURL.put(VideoQuality.p1080, new VideoURL(VideoQuality.p1080, hd, "mp4"));
+        sNextVideoURL.put(VideoQuality.p480, new VideoURL(VideoQuality.p480, sd, "mp4"));
     }
 
     String readHtml(HttpURLConnection con) {
@@ -98,8 +98,8 @@ public class VimeoInfo implements VGetInfo {
      * @param s
      *            download source url
      */
-    void addVideo(VideoQuality vd, String s) {
-        sNextVideoURL.put(vd, s);
+    void addVideo(VideoQuality vd, String s, String ext) {
+        sNextVideoURL.put(vd, new VideoURL(vd, s, ext));
     }
 
     void extractHtmlInfo(String html) throws IOException {
@@ -126,7 +126,7 @@ public class VimeoInfo implements VGetInfo {
     }
 
     @Override
-    public Map<VideoQuality, String> getVideos() {
+    public Map<VideoQuality, VideoURL> getVideos() {
         return sNextVideoURL;
     }
 

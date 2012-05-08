@@ -1,13 +1,16 @@
 package com.github.axet.vget;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.github.axet.vget.info.DownloadError;
@@ -73,29 +76,19 @@ class VGetDownload {
     }
 
     void savebinarydata() {
-        FileOutputStream fos = null;
+        RandomAccessFile fos = null;
 
         try {
             try {
                 max = getVideo();
                 URL url = new URL(max.url);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-                conn.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
-                conn.setReadTimeout(VGetBase.READ_TIMEOUT);
-
-                String sContentType = conn.getContentType();
-
-                if (sContentType == null || !sContentType.contains("video/")) {
-                    throw new DownloadRetry("unable to download video, bad content");
-                }
 
                 File f;
                 if (target == null) {
                     Integer idupcount = 0;
 
                     String sfilename = replaceBadChars(ei.getTitle());
-                    String ext = sContentType.replaceFirst("video/", "").replaceAll("x-", "");
+                    String ext = max.ext;
 
                     do {
                         String add = idupcount > 0 ? " (".concat(idupcount.toString()).concat(")") : "";
@@ -106,18 +99,33 @@ class VGetDownload {
                     this.target = f.getAbsolutePath();
                 } else {
                     f = new File(target);
-                    f.delete();
+                    count = FileUtils.sizeOf(f);
                 }
 
-                fos = new FileOutputStream(f);
+                fos = new RandomAccessFile(f, "rw");
 
                 byte[] bytes = new byte[4 * 1024];
                 Integer iBytesRead = 1;
 
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setConnectTimeout(VGetBase.CONNECT_TIMEOUT);
+                conn.setReadTimeout(VGetBase.READ_TIMEOUT);
+                if (count > 0) {
+                    conn.setRequestProperty("Range", "bytes=" + count + "-");
+                    fos.seek(count);
+                }
+
+                String sContentType = conn.getContentType();
+
+                if (sContentType == null || !sContentType.contains("video/")) {
+                    throw new DownloadRetry("unable to download video, bad content");
+                }
+
                 BufferedInputStream binaryreader = null;
                 binaryreader = new BufferedInputStream(conn.getInputStream());
 
-                total = conn.getContentLength();
+                total = count + conn.getContentLength();
 
                 while (!ytd2.getbQuitrequested() && iBytesRead > 0) {
                     iBytesRead = binaryreader.read(bytes);
@@ -148,14 +156,14 @@ class VGetDownload {
     }
 
     public VideoURL getVideo() {
-        Map<VideoQuality, String> sNextVideoURL = ei.getVideos();
+        Map<VideoQuality, VideoURL> sNextVideoURL = ei.getVideos();
 
         VideoQuality[] avail = new VideoQuality[] { VideoQuality.p2304, VideoQuality.p1080, VideoQuality.p720,
                 VideoQuality.p480, VideoQuality.p360, VideoQuality.p270, VideoQuality.p224 };
 
         for (int i = 0; i < avail.length; i++) {
             if (sNextVideoURL.containsKey(avail[i]))
-                return new VideoURL(avail[i], sNextVideoURL.get(avail[i]));
+                return sNextVideoURL.get(avail[i]);
         }
 
         throw new DownloadError("no video with required quality found");
