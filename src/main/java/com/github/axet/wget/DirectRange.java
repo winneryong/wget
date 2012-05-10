@@ -54,6 +54,8 @@ public class DirectRange implements Direct {
                 conn.setReadTimeout(WGet.READ_TIMEOUT);
 
                 File f = target;
+                if (!f.exists())
+                    f.createNewFile();
                 info.setCount(FileUtils.sizeOf(f));
 
                 fos = new RandomAccessFile(f, "rw");
