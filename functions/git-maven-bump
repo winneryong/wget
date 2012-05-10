@@ -56,7 +56,7 @@ git_maven_bump() {
   git checkout master || exit 1
   
   # do merge with a propertly named branch
-  git merge --no-ff $TAG || exit 1
+  git merge --no-ff -m "Merge branch '$TAG'" $TAG || exit 1
   
   # do tag last master commit
   git tag $TAG || exit 1

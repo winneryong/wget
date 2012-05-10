@@ -1,4 +1,4 @@
-package com.github.axet.vget.info;
+package com.github.axet.wget.info;
 
 /**
  * We shall stop download. And only manual action (redownload) shall continue

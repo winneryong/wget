@@ -1,12 +1,7 @@
-vget library.
+wget java download library.
 
-Inspired by http://sourceforge.net/projects/ytd2/.
+support single thread, single thread with download continue / resume, and multithread download.
 
-Code taken from ytd2 and completely rewritten to support more web sites.
-
-Good examples here:
-  https://github.com/pculture/miro/blob/master/tv/lib/flashscraper.py
-  
 == Exceptions
 
 Here is a three kind of exceptions.

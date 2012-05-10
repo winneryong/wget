@@ -1,4 +1,4 @@
-package com.github.axet.vget;
+package com.github.axet.wget;
 
 import java.util.ArrayList;
 
@@ -98,6 +98,9 @@ public class SpeedInfo {
      * @return bytes per second
      */
     public int getAverageSpeed() {
+        if (getRowSamples() < 2)
+            return 0;
+
         Sample s2 = samples.get(samples.size() - 1);
 
         long current = s2.current - start.current;
