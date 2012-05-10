@@ -2,6 +2,8 @@ package com.github.axet.wget.info;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.github.axet.wget.WGet;
 
@@ -41,31 +43,39 @@ public class URLInfo {
         return range;
     }
 
-    synchronized public void extract(String source) {
+    synchronized public void extract() {
         try {
-            extractRange(source);
+            extractRange();
         } catch (RuntimeException e) {
-            extractNormal(source);
+            extractNormal();
         }
     }
 
     // if range failed - do plain download with no retrys's
-    protected void extractRange(String source) {
+    protected void extractRange() {
         try {
-            URL url = new URL(source);
+            URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
             conn.setReadTimeout(WGet.READ_TIMEOUT);
 
-            int count = 1;
+            conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
 
-            conn.setRequestProperty("Range", "bytes=" + count + "-");
+            String range = conn.getHeaderField("Content-Range");
+
+            Pattern p = Pattern.compile("bytes \\d+-\\d+/(\\d+)");
+
+            Matcher m = p.matcher(range);
+            if (m.find()) {
+                length = new Long(m.group(1));
+            } else {
+                throw new RuntimeException("not supported");
+            }
 
             contentType = conn.getContentType();
-            length = new Long(count + conn.getContentLength());
 
-            range = true;
+            this.range = true;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -74,9 +84,9 @@ public class URLInfo {
     }
 
     // if range failed - do plain download with no retrys's
-    protected void extractNormal(String source) {
+    protected void extractNormal() {
         try {
-            URL url = new URL(source);
+            URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);

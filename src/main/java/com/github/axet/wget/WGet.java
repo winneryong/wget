@@ -1,19 +1,21 @@
 package com.github.axet.wget;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 
 public class WGet {
 
-    String target = null;
+    File target = null;
 
     DownloadInfo info;
 
     Runnable notify;
 
-    Boolean stop;
+    AtomicBoolean stop;
 
     static public final int CONNECT_TIMEOUT = 5000;
 
@@ -36,7 +38,7 @@ public class WGet {
      * @param notify
      *            progress notify call
      */
-    public WGet(DownloadInfo info, String target, Boolean stop, Runnable notify) {
+    public WGet(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
         this.target = target;
         this.info = info;
         this.notify = notify;
