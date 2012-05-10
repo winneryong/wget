@@ -2,9 +2,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.axet</groupId>
-  <artifactId>vget</artifactId>
-  <version>0.0.3-SNAPSHOT</version>
-  <name>vget</name>
+  <artifactId>wget</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>wget</name>
 
   <dependencies>
     <dependency>

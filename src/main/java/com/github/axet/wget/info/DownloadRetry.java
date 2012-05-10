@@ -1,4 +1,4 @@
-package com.github.axet.vget.info;
+package com.github.axet.wget.info;
 
 /**
  * We shall retry download after application delay (10 secs?)
