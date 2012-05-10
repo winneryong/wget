@@ -41,18 +41,18 @@ public class URLInfo {
         return range;
     }
 
-    synchronized public void extract(String source) {
+    synchronized public void extract() {
         try {
-            extractRange(source);
+            extractRange();
         } catch (RuntimeException e) {
-            extractNormal(source);
+            extractNormal();
         }
     }
 
     // if range failed - do plain download with no retrys's
-    protected void extractRange(String source) {
+    protected void extractRange() {
         try {
-            URL url = new URL(source);
+            URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
@@ -74,9 +74,9 @@ public class URLInfo {
     }
 
     // if range failed - do plain download with no retrys's
-    protected void extractNormal(String source) {
+    protected void extractNormal() {
         try {
-            URL url = new URL(source);
+            URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
             conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);

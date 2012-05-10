@@ -6,21 +6,22 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadRetry;
 
-class DirectRange {
+public class DirectRange implements Direct {
 
-    String target = null;
+    File target = null;
 
     DownloadInfo info;
 
     Runnable notify;
 
-    Boolean stop;
+    AtomicBoolean stop;
 
     /**
      * 
@@ -33,20 +34,14 @@ class DirectRange {
      * @param notify
      *            progress notify call
      */
-    public DirectRange(DownloadInfo info, String target, Boolean stop, Runnable notify) {
+    public DirectRange(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
         this.target = target;
         this.info = info;
         this.notify = notify;
         this.stop = stop;
     }
 
-    boolean stop() {
-        synchronized (stop) {
-            return stop;
-        }
-    }
-
-    void download() {
+    public void download() {
         try {
             RandomAccessFile fos = null;
 
@@ -58,7 +53,7 @@ class DirectRange {
                 conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
                 conn.setReadTimeout(WGet.READ_TIMEOUT);
 
-                File f = new File(target);
+                File f = target;
                 info.setCount(FileUtils.sizeOf(f));
 
                 fos = new RandomAccessFile(f, "rw");
@@ -73,7 +68,7 @@ class DirectRange {
 
                 BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
 
-                while (!stop() && (read = binaryreader.read(bytes)) > 0) {
+                while (!stop.get() && (read = binaryreader.read(bytes)) > 0) {
 
                     info.setCount(info.getCount() + read);
                     fos.write(bytes, 0, read);
