@@ -52,6 +52,9 @@ git_maven_bump() {
   # create proper branch (server-1.0.0), helps produce nice git history
   git checkout -b $TAG || exit 1
   
+  # put version to local maven repo. tagging will not produce missing deps
+  mvn install || exit 1
+  
   # prepare to merge
   git checkout master || exit 1
   

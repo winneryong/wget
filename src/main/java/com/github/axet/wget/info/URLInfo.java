@@ -29,6 +29,9 @@ public class URLInfo {
     // null if here is no such file or other error
     private String contentType;
 
+    // come from Content-Disposition: attachment; filename="fname.ext"
+    private String contentFilename;
+
     public URLInfo(URL source) {
         this.source = source;
     }
@@ -45,15 +48,24 @@ public class URLInfo {
     }
 
     synchronized public void extract() {
+        HttpURLConnection conn;
         try {
-            extractRange();
+            conn = extractRange();
         } catch (RuntimeException e) {
-            extractNormal();
+            conn = extractNormal();
         }
+
+        contentType = conn.getContentType();
+
+        String contentDisposition = conn.getHeaderField("Content-Disposition");
+        Pattern cp = Pattern.compile("filename=\"([^\"]*)\"");
+        Matcher cm = cp.matcher(contentDisposition);
+        if (cm.find())
+            contentFilename = cm.group(1);
     }
 
     // if range failed - do plain download with no retrys's
-    protected void extractRange() {
+    protected HttpURLConnection extractRange() {
         try {
             URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -61,22 +73,22 @@ public class URLInfo {
             conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
             conn.setReadTimeout(Direct.READ_TIMEOUT);
 
+            // may raise an exception if not supported by server
             conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
 
             String range = conn.getHeaderField("Content-Range");
 
             Pattern p = Pattern.compile("bytes \\d+-\\d+/(\\d+)");
-
             Matcher m = p.matcher(range);
             if (m.find()) {
                 length = new Long(m.group(1));
             } else {
-                throw new RuntimeException("not supported");
+                throw new RuntimeException("range not supported");
             }
 
-            contentType = conn.getContentType();
-
             this.range = true;
+
+            return conn;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -85,7 +97,7 @@ public class URLInfo {
     }
 
     // if range failed - do plain download with no retrys's
-    protected void extractNormal() {
+    protected HttpURLConnection extractNormal() {
         try {
             URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -93,12 +105,14 @@ public class URLInfo {
             conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
             conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-            contentType = conn.getContentType();
+            range = false;
+
             int len = conn.getContentLength();
             if (len >= 0) {
                 length = new Long(len);
             }
-            range = false;
+
+            return conn;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -116,6 +130,10 @@ public class URLInfo {
 
     synchronized public URL getSource() {
         return source;
+    }
+
+    public String getContentFilename() {
+        return contentFilename;
     }
 
 }
