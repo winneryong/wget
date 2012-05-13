@@ -76,7 +76,7 @@ public class WGet {
     }
 
     void create(File target, AtomicBoolean stop, Runnable notify) {
-        targetFile = calcName(info.getSource(), target);
+        targetFile = calcName(info, target);
         info.setParts(calcParts());
         create(stop, notify);
     }
