@@ -6,7 +6,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.github.axet.wget.Direct;
-import com.github.axet.wget.WGet;
 
 /**
  * URLInfo - keep all information about source in one place. Thread safe.
@@ -58,10 +57,12 @@ public class URLInfo {
         contentType = conn.getContentType();
 
         String contentDisposition = conn.getHeaderField("Content-Disposition");
-        Pattern cp = Pattern.compile("filename=\"([^\"]*)\"");
-        Matcher cm = cp.matcher(contentDisposition);
-        if (cm.find())
-            contentFilename = cm.group(1);
+        if (contentDisposition != null) {
+            Pattern cp = Pattern.compile("filename=\"([^\"]*)\"");
+            Matcher cm = cp.matcher(contentDisposition);
+            if (cm.find())
+                contentFilename = cm.group(1);
+        }
     }
 
     // if range failed - do plain download with no retrys's
