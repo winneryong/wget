@@ -97,13 +97,26 @@ public class WGet {
     }
 
     public static File calcName(URL source, File target) {
+        DownloadInfo info = new DownloadInfo(source);
+        info.extract();
+
+        return calcName(info, target);
+    }
+
+    public static File calcName(DownloadInfo info, File target) {
         // target -
         // 1) can point to directory.
         // - generate exclusive (1) name.
         // 2) to exisiting file
         // 3) to non existing file
 
-        String name = new File(source.toString()).getName();
+        String name = null;
+
+        name = info.getContentFilename();
+
+        if (name == null)
+            name = new File(info.getSource().toString()).getName();
+
         String nameNoExt = FilenameUtils.removeExtension(name);
         String ext = FilenameUtils.getExtension(name);
 
