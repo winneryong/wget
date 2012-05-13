@@ -13,32 +13,10 @@ import org.apache.commons.io.FileUtils;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadRetry;
 
-public class DirectRange implements Direct {
+public class DirectRange extends Direct {
 
-    File target = null;
-
-    DownloadInfo info;
-
-    Runnable notify;
-
-    AtomicBoolean stop;
-
-    /**
-     * 
-     * @param info
-     *            download file information
-     * @param target
-     *            target file
-     * @param stop
-     *            multithread stop command
-     * @param notify
-     *            progress notify call
-     */
     public DirectRange(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        this.target = target;
-        this.info = info;
-        this.notify = notify;
-        this.stop = stop;
+        super(info, target, stop, notify);
     }
 
     public void download() {
@@ -50,8 +28,8 @@ public class DirectRange implements Direct {
 
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
-                conn.setReadTimeout(WGet.READ_TIMEOUT);
+                conn.setConnectTimeout(CONNECT_TIMEOUT);
+                conn.setReadTimeout(READ_TIMEOUT);
 
                 File f = target;
                 if (!f.exists())
@@ -65,7 +43,7 @@ public class DirectRange implements Direct {
                     fos.seek(info.getCount());
                 }
 
-                byte[] bytes = new byte[WGet.BUF_SIZE];
+                byte[] bytes = new byte[BUF_SIZE];
                 int read = 0;
 
                 BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());

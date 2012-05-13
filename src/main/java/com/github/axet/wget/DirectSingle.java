@@ -11,15 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadRetry;
 
-public class DirectSingle implements Direct {
-
-    File target = null;
-
-    DownloadInfo info;
-
-    Runnable notify;
-
-    AtomicBoolean stop;
+public class DirectSingle extends Direct {
 
     /**
      * 
@@ -33,10 +25,7 @@ public class DirectSingle implements Direct {
      *            progress notify call
      */
     public DirectSingle(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        this.target = target;
-        this.info = info;
-        this.notify = notify;
-        this.stop = stop;
+        super(info, target, stop, notify);
     }
 
     public void download() {
@@ -48,8 +37,8 @@ public class DirectSingle implements Direct {
 
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
-                conn.setReadTimeout(WGet.READ_TIMEOUT);
+                conn.setConnectTimeout(CONNECT_TIMEOUT);
+                conn.setReadTimeout(READ_TIMEOUT);
 
                 File f = target;
                 info.setCount(0);
@@ -57,7 +46,7 @@ public class DirectSingle implements Direct {
 
                 fos = new RandomAccessFile(f, "rw");
 
-                byte[] bytes = new byte[WGet.BUF_SIZE];
+                byte[] bytes = new byte[BUF_SIZE];
                 int read = 0;
 
                 BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());

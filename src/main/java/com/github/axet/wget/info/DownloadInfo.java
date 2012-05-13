@@ -29,27 +29,27 @@ public class DownloadInfo extends URLInfo {
             return getEnd() - getStart() == getCount();
         }
 
-        public long getStart() {
+        synchronized public long getStart() {
             return start;
         }
 
-        public void setStart(long start) {
+        synchronized public void setStart(long start) {
             this.start = start;
         }
 
-        public long getEnd() {
+        synchronized public long getEnd() {
             return end;
         }
 
-        public void setEnd(long end) {
+        synchronized public void setEnd(long end) {
             this.end = end;
         }
 
-        public long getCount() {
+        synchronized public long getCount() {
             return count;
         }
 
-        public void setCount(long count) {
+        synchronized public void setCount(long count) {
             this.count = count;
         }
     }

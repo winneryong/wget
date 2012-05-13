@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.github.axet.wget.Direct;
 import com.github.axet.wget.WGet;
 
 /**
@@ -57,8 +58,8 @@ public class URLInfo {
             URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
-            conn.setReadTimeout(WGet.READ_TIMEOUT);
+            conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+            conn.setReadTimeout(Direct.READ_TIMEOUT);
 
             conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
 
@@ -89,8 +90,8 @@ public class URLInfo {
             URL url = source;
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
-            conn.setReadTimeout(WGet.READ_TIMEOUT);
+            conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+            conn.setReadTimeout(Direct.READ_TIMEOUT);
 
             contentType = conn.getContentType();
             int len = conn.getContentLength();
