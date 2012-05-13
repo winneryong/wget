@@ -13,15 +13,7 @@ import org.apache.commons.io.FileUtils;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadRetry;
 
-public class DirectMultipart implements Direct {
-
-    File target = null;
-
-    DownloadInfo info;
-
-    Runnable notify;
-
-    AtomicBoolean stop;
+public class DirectMultipart extends Direct {
 
     static public final int THREAD_COUNT = 3;
 
@@ -37,10 +29,7 @@ public class DirectMultipart implements Direct {
      *            progress notify call
      */
     public DirectMultipart(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        this.target = target;
-        this.info = info;
-        this.notify = notify;
-        this.stop = stop;
+        super(info, target, stop, notify);
     }
 
     public void download() {
@@ -52,8 +41,8 @@ public class DirectMultipart implements Direct {
 
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                conn.setConnectTimeout(WGet.CONNECT_TIMEOUT);
-                conn.setReadTimeout(WGet.READ_TIMEOUT);
+                conn.setConnectTimeout(CONNECT_TIMEOUT);
+                conn.setReadTimeout(READ_TIMEOUT);
 
                 File f = target;
                 info.setCount(FileUtils.sizeOf(f));
@@ -65,7 +54,7 @@ public class DirectMultipart implements Direct {
                     fos.seek(info.getCount());
                 }
 
-                byte[] bytes = new byte[WGet.BUF_SIZE];
+                byte[] bytes = new byte[BUF_SIZE];
                 int read = 0;
 
                 BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
