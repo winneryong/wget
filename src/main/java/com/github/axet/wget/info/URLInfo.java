@@ -1,5 +1,6 @@
 package com.github.axet.wget.info;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.regex.Matcher;
@@ -50,6 +51,8 @@ public class URLInfo {
         HttpURLConnection conn;
         try {
             conn = extractRange();
+        } catch (DownloadRetry e) {
+            throw e;
         } catch (RuntimeException e) {
             conn = extractNormal();
         }
@@ -96,6 +99,8 @@ public class URLInfo {
             this.range = true;
 
             return conn;
+        } catch (IOException e) {
+            throw new DownloadRetry(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -120,6 +125,8 @@ public class URLInfo {
             }
 
             return conn;
+        } catch (IOException e) {
+            throw new DownloadRetry(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
