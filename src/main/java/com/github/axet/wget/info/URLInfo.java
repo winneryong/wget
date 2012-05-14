@@ -1,5 +1,6 @@
 package com.github.axet.wget.info;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.regex.Matcher;
@@ -50,6 +51,8 @@ public class URLInfo {
         HttpURLConnection conn;
         try {
             conn = extractRange();
+        } catch (DownloadRetry e) {
+            throw e;
         } catch (RuntimeException e) {
             conn = extractNormal();
         }
@@ -58,7 +61,11 @@ public class URLInfo {
 
         String contentDisposition = conn.getHeaderField("Content-Disposition");
         if (contentDisposition != null) {
-            Pattern cp = Pattern.compile("filename=\"([^\"]*)\"");
+            // support for two forms with and without quotes:
+            // 1) contentDisposition="attachment;filename="ap61.ram"";
+            // 2) contentDisposition="attachment;filename=ap61.ram";
+
+            Pattern cp = Pattern.compile("filename=[\"]*([^\"]*)[\"]*");
             Matcher cm = cp.matcher(contentDisposition);
             if (cm.find())
                 contentFilename = cm.group(1);
@@ -78,6 +85,8 @@ public class URLInfo {
             conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
 
             String range = conn.getHeaderField("Content-Range");
+            if (range == null)
+                throw new RuntimeException("range not supported");
 
             Pattern p = Pattern.compile("bytes \\d+-\\d+/(\\d+)");
             Matcher m = p.matcher(range);
@@ -90,6 +99,8 @@ public class URLInfo {
             this.range = true;
 
             return conn;
+        } catch (IOException e) {
+            throw new DownloadRetry(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -114,6 +125,8 @@ public class URLInfo {
             }
 
             return conn;
+        } catch (IOException e) {
+            throw new DownloadRetry(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
