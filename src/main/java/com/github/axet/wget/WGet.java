@@ -6,12 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.codec.StringEncoder;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
@@ -117,6 +122,12 @@ public class WGet {
         if (name == null)
             name = new File(info.getSource().toString()).getName();
 
+        try {
+            name = URLDecoder.decode(name, "UTF-8");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         String nameNoExt = FilenameUtils.removeExtension(name);
         String ext = FilenameUtils.getExtension(name);
 
@@ -207,5 +218,18 @@ public class WGet {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void main(String[] args) {
+        try {
+            WGet w = new WGet(
+                    new URL(
+                            "http://www.dd-wrt.com/routerdb/de/download/D-Link/DIR-300/A1/ap61.ram/2049"),
+                    new File("/Users/axet/Downloads/"));
+            w.download();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
     }
 }
