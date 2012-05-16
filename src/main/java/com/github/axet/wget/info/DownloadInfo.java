@@ -103,4 +103,43 @@ public class DownloadInfo extends URLInfo {
     synchronized public void setParts(List<Part> parts) {
         this.parts = parts;
     }
+
+    /**
+     * Check if we can continue download a file from new source. Check if new
+     * souce has the same file length, title
+     * 
+     * @param info
+     *            - new source
+     * @return true - possible to resume from new location
+     */
+    synchronized public boolean resume(DownloadInfo info) {
+        if (info.getContentFilename() != null && this.getContentFilename() != null) {
+            if (!info.getContentFilename().equals(this.getContentFilename()))
+                // one source has different name
+                return false;
+        } else if (info.getContentFilename() != null || this.getContentFilename() != null) {
+            // one source has a have old is not
+            return false;
+        }
+
+        if (info.getLength() != null && this.getLength() != null) {
+            if (!info.getLength().equals(this.getLength()))
+                // one source has different length
+                return false;
+        } else if (info.getLength() != null || this.getLength() != null) {
+            // one source has length, other is not
+            return false;
+        }
+
+        if (info.getContentType() != null && this.getContentType() != null) {
+            if (!info.getContentType().equals(this.getContentType()))
+                // one source has different getContentType
+                return false;
+        } else if (info.getContentType() != null || this.getContentType() != null) {
+            // one source has a have old is not
+            return false;
+        }
+
+        return true;
+    }
 }
