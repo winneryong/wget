@@ -78,6 +78,16 @@ public class DownloadInfo extends URLInfo {
         return getParts() != null;
     }
 
+    synchronized public void reset() {
+        setCount(0);
+
+        if (parts != null) {
+            for (Part p : parts) {
+                p.setCount(0);
+            }
+        }
+    }
+
     synchronized public long getCount() {
         return count;
     }
