@@ -106,40 +106,51 @@ public class DownloadInfo extends URLInfo {
 
     /**
      * Check if we can continue download a file from new source. Check if new
-     * souce has the same file length, title
+     * souce has the same file length, title. and supports for range
      * 
-     * @param info
-     *            - new source
+     * @param newSource
+     *            new source
      * @return true - possible to resume from new location
      */
-    synchronized public boolean resume(DownloadInfo info) {
-        if (info.getContentFilename() != null && this.getContentFilename() != null) {
-            if (!info.getContentFilename().equals(this.getContentFilename()))
+    synchronized public boolean resume(DownloadInfo newSource) {
+        if (!newSource.range())
+            return false;
+
+        if (newSource.getContentFilename() != null && this.getContentFilename() != null) {
+            if (!newSource.getContentFilename().equals(this.getContentFilename()))
                 // one source has different name
                 return false;
-        } else if (info.getContentFilename() != null || this.getContentFilename() != null) {
+        } else if (newSource.getContentFilename() != null || this.getContentFilename() != null) {
             // one source has a have old is not
             return false;
         }
 
-        if (info.getLength() != null && this.getLength() != null) {
-            if (!info.getLength().equals(this.getLength()))
+        if (newSource.getLength() != null && this.getLength() != null) {
+            if (!newSource.getLength().equals(this.getLength()))
                 // one source has different length
                 return false;
-        } else if (info.getLength() != null || this.getLength() != null) {
+        } else if (newSource.getLength() != null || this.getLength() != null) {
             // one source has length, other is not
             return false;
         }
 
-        if (info.getContentType() != null && this.getContentType() != null) {
-            if (!info.getContentType().equals(this.getContentType()))
+        if (newSource.getContentType() != null && this.getContentType() != null) {
+            if (!newSource.getContentType().equals(this.getContentType()))
                 // one source has different getContentType
                 return false;
-        } else if (info.getContentType() != null || this.getContentType() != null) {
+        } else if (newSource.getContentType() != null || this.getContentType() != null) {
             // one source has a have old is not
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * copy resume data from oldSource;
+     */
+    synchronized public void copy(DownloadInfo oldSource) {
+        count = oldSource.count;
+        parts = oldSource.parts;
     }
 }
