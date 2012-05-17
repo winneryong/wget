@@ -36,6 +36,11 @@ public class DirectRange extends Direct {
                     f.createNewFile();
                 info.setCount(FileUtils.sizeOf(f));
 
+                if (info.getCount() >= info.getLength()) {
+                    notify.run();
+                    return;
+                }
+
                 fos = new RandomAccessFile(f, "rw");
 
                 if (info.getCount() > 0) {
