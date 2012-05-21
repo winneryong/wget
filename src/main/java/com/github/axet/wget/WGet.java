@@ -120,7 +120,7 @@ public class WGet {
         name = info.getContentFilename();
 
         if (name == null)
-            name = new File(info.getSource().toString()).getName();
+            name = new File(info.getSource().getPath()).getName();
 
         try {
             name = URLDecoder.decode(name, "UTF-8");
@@ -222,9 +222,7 @@ public class WGet {
 
     public static void main(String[] args) {
         try {
-            WGet w = new WGet(
-                    new URL(
-                            "http://www.dd-wrt.com/routerdb/de/download/D-Link/DIR-300/A1/ap61.ram/2049"),
+            WGet w = new WGet(new URL("http://www.dd-wrt.com/routerdb/de/download/D-Link/DIR-300/A1/ap61.ram/2049"),
                     new File("/Users/axet/Downloads/"));
             w.download();
         } catch (MalformedURLException e) {
