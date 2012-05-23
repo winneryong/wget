@@ -19,6 +19,9 @@ public class URLInfo {
     // source url
     private URL source;
 
+    // have been extracted?
+    private boolean extract = false;
+
     // null if size is unknown, which means we unable to restore downloads or do
     // multi thread downlaods
     private Long length;
@@ -70,6 +73,12 @@ public class URLInfo {
             if (cm.find())
                 contentFilename = cm.group(1);
         }
+
+        extract = true;
+    }
+
+    synchronized public boolean empty() {
+        return extract;
     }
 
     // if range failed - do plain download with no retrys's
