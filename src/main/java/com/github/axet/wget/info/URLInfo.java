@@ -78,7 +78,7 @@ public class URLInfo {
     }
 
     synchronized public boolean empty() {
-        return extract;
+        return !extract;
     }
 
     // if range failed - do plain download with no retrys's
