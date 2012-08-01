@@ -9,6 +9,10 @@ package com.github.axet.wget.info;
 public class DownloadError extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    public DownloadError(Throwable e) {
+        super(e);
+    }
+
     public DownloadError(String msg) {
         super(msg);
     }
