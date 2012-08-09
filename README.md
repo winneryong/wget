@@ -1,8 +1,10 @@
+# wget
+
 wget java download library.
 
 support single thread, single thread with download continue / resume, and multithread download.
 
-== Exceptions
+## Exceptions
 
 Here is a three kind of exceptions.
 
@@ -15,7 +17,7 @@ Here is a three kind of exceptions.
 3) DownloadRetry (caused by IOException)
   We're having temporary problems. Shall retry download after a delay.
 
-== Examples
+## Examples
 
         // simple example. direct one call download
 
