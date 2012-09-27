@@ -223,14 +223,4 @@ public class WGet {
         }
     }
 
-    public static void main(String[] args) {
-        try {
-            WGet w = new WGet(new URL("http://www.dd-wrt.com/routerdb/de/download/D-Link/DIR-300/A1/ap61.ram/2049"),
-                    new File("/Users/axet/Downloads/"));
-            w.download();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-    }
 }
