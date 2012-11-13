@@ -7,22 +7,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.codec.StringEncoder;
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadRetry;
-import com.github.axet.wget.info.DownloadInfo.Part;
 
 public class WGet {
 
@@ -31,9 +25,6 @@ public class WGet {
     Direct d;
 
     File targetFile;
-
-    // size of part if downloaded as multipart
-    static public final int CHUNK_SIZE = 1 * 1024 * 1024;
 
     /**
      * simple download file.
@@ -62,7 +53,8 @@ public class WGet {
     }
 
     /**
-     * application controlled download / resume
+     * application controlled download / resume. you should specify targetfile
+     * name exactly. since you are choise resume / multipart download. application unable to control file name choise / creation.
      * 
      * @param info
      * @param targetFile
@@ -83,7 +75,6 @@ public class WGet {
 
     void create(File target, AtomicBoolean stop, Runnable notify) {
         targetFile = calcName(info, target);
-        info.setParts(calcParts());
         create(stop, notify);
     }
 
@@ -92,10 +83,9 @@ public class WGet {
     }
 
     Direct createDirect(AtomicBoolean stop, Runnable notify) {
-        // if (info.multipart()) {
-        // return new DirectMultipart(info, targetFile, stop, notify);
-        // } else
-        if (info.range()) {
+        if (info.multipart()) {
+            return new DirectMultipart(info, targetFile, stop, notify);
+        } else if (info.range()) {
             return new DirectRange(info, targetFile, stop, notify);
         } else {
             return new DirectSingle(info, targetFile, stop, notify);
@@ -152,30 +142,6 @@ public class WGet {
         }
 
         return targetFile;
-    }
-
-    ArrayList<DownloadInfo.Part> calcParts() {
-        if (!info.range())
-            return null;
-
-        int count = (int) (info.getLength() / CHUNK_SIZE) + 1;
-        if (count > 2) {
-            ArrayList<DownloadInfo.Part> parts = new ArrayList<DownloadInfo.Part>();
-            int start = 0;
-            for (int i = 0; i < count; i++) {
-                Part part = new Part();
-                part.setStart(start);
-                part.setEnd(start + CHUNK_SIZE);
-                if (part.getEnd() > info.getLength())
-                    part.setEnd(info.getLength());
-                parts.add(part);
-
-                start += CHUNK_SIZE;
-            }
-            return parts;
-        }
-
-        return null;
     }
 
     public void download() {
