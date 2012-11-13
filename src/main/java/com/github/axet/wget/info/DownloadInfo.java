@@ -1,6 +1,7 @@
 package com.github.axet.wget.info;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,10 +13,12 @@ import java.util.List;
  */
 public class DownloadInfo extends URLInfo {
 
+    public final static long PART_LENGTH = 1024 * 1024;
+
     public static class Part {
-        // start offset
+        // start offset [start, end]
         private long start;
-        // end offset
+        // end offset [start, end]
         private long end;
         // amount of bytes downloaded
         private long count;
@@ -26,7 +29,7 @@ public class DownloadInfo extends URLInfo {
          * @return true. part fully downloaded
          */
         synchronized public boolean done() {
-            return getEnd() - getStart() == getCount();
+            return getCount() == getLength();
         }
 
         synchronized public long getStart() {
@@ -43,6 +46,10 @@ public class DownloadInfo extends URLInfo {
 
         synchronized public void setEnd(long end) {
             this.end = end;
+        }
+
+        synchronized public long getLength() {
+            return end - start + 1;
         }
 
         synchronized public long getCount() {
@@ -100,8 +107,30 @@ public class DownloadInfo extends URLInfo {
         return parts;
     }
 
-    synchronized public void setParts(List<Part> parts) {
-        this.parts = parts;
+    synchronized public void enableMultipart() {
+        if (empty())
+            throw new RuntimeException("Empty Download info, cant set multipart");
+
+        if (!range())
+            throw new RuntimeException("Server does not support RANGE, cant set multipart");
+
+        parts = new ArrayList<Part>();
+
+        long count = getLength() / PART_LENGTH + 1;
+
+        if (count > 2) {
+            int start = 0;
+            for (int i = 0; i < count; i++) {
+                Part part = new Part();
+                part.setStart(start);
+                part.setEnd(part.getStart() + PART_LENGTH - 1);
+                if (part.getEnd() > getLength() - 1)
+                    part.setEnd(getLength() - 1);
+                parts.add(part);
+
+                start += PART_LENGTH;
+            }
+        }
     }
 
     /**
