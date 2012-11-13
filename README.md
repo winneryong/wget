@@ -1,8 +1,8 @@
 # wget
 
-wget java download library.
+wget direct / multithread / singlethread java download library.
 
-support single thread, single thread with download continue / resume, and multithread download.
+Support single thread, single thread with download continue / resume, and multithread downloads.
 
 ## Exceptions
 
@@ -17,7 +17,7 @@ Here is a three kind of exceptions.
 3) DownloadRetry (caused by IOException)
   We're having temporary problems. Shall retry download after a delay.
 
-## Example
+## Example direct download
 
         // simple example. direct one call download
 
@@ -47,6 +47,7 @@ Here is a three kind of exceptions.
             info.extract();
             info.enableMultipart();
             WGet w = new WGet(info, new File("/Users/axet/Downloads/VirtualBox-4.2.4-81684-OSX.dmg"), stop, notify);
+            // will blocks until download finishes (use threads if you want other logic)
             w.download();
         } catch (Exception e) {
             throw new RuntimeException(e);
