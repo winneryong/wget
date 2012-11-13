@@ -54,7 +54,8 @@ public class WGet {
 
     /**
      * application controlled download / resume. you should specify targetfile
-     * name exactly. since you are choise resume / multipart download. application unable to control file name choise / creation.
+     * name exactly. since you are choise resume / multipart download.
+     * application unable to control file name choise / creation.
      * 
      * @param info
      * @param targetFile
@@ -176,7 +177,7 @@ public class WGet {
                 if (stop.get())
                     return null;
             }
-
+            
             return contents.toString();
         } catch (FileNotFoundException e) {
             throw new DownloadError(e);
