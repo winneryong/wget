@@ -12,7 +12,8 @@ git_maven_version() {
 
 git_maven_push() {
   git checkout dev || exit 1
-  git push || exit 1
+  git push origin dev || exit 1
+  git push origin master || exit 1
   git push --tags || exit 1
 }
 
