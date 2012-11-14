@@ -11,10 +11,10 @@ git_maven_version() {
 }
 
 git_maven_push() {
-  git checkout dev || exit 1
   git push origin dev || exit 1
   git push origin master || exit 1
   git push --tags || exit 1
+  git checkout dev || exit 1
 }
 
 git_maven_bump() {
@@ -67,6 +67,9 @@ git_maven_bump() {
   
   # drop perpared branch
   git branch -d $TAG || exit 1
+  
+  # deploy
+  mvn deploy || exit 1
   
   # switch back to the dev
   git checkout dev || exit 1
