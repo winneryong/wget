@@ -20,6 +20,19 @@
     <connection>scm:git:https://github.com/axet/wget</connection>
   </scm>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Staging Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <developers>
     <developer>
       <id>axet</id>
@@ -27,7 +40,7 @@
       <email>ak@axet.ru</email>
     </developer>
   </developers>
-  
+
   <dependencies>
     <dependency>
       <groupId>org.apache.commons</groupId>
