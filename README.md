@@ -53,7 +53,3 @@ Here is a three kind of exceptions.
             throw new RuntimeException(e);
         }
     }
-
-## More examples
-
-Go to the examples source folder.
