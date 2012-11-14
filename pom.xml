@@ -4,7 +4,7 @@
   <groupId>com.github.axet</groupId>
   <artifactId>wget</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.8</version>
+  <version>0.1.9</version>
   <name>wget</name>
   <description>wget java single / multithread download library</description>
   <url>https://github.com/axet/wget</url>
@@ -94,6 +94,19 @@
             <phase>deploy</phase>
             <goals>
               <goal>deploy</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+            <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
             </goals>
           </execution>
         </executions>
