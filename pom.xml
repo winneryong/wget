@@ -3,8 +3,43 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.axet</groupId>
   <artifactId>wget</artifactId>
-  <version>0.1.3</version>
+  <packaging>jar</packaging>
+  <version>0.1.4</version>
   <name>wget</name>
+  <description>wget java single / multithread download library</description>
+  <url>https://github.com/axet/wget</url>
+  <licenses>
+    <license>
+      <name>GNU LESSER GENERAL PUBLIC LICENSE 3.0</name>
+      <url>http://www.gnu.org/copyleft/lesser.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <url>https://github.com/axet/wget</url>
+    <connection>scm:git:https://github.com/axet/wget</connection>
+  </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Staging Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
+  <developers>
+    <developer>
+      <id>axet</id>
+      <name>Alexey Kuznetsov</name>
+      <email>ak@axet.ru</email>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
