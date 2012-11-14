@@ -10,13 +10,6 @@ git_maven_version() {
   git commit -m "bump version $BRANCH $VERSION" . || exit 1
 }
 
-git_maven_push() {
-  git push origin dev || exit 1
-  git push origin master || exit 1
-  git push --tags || exit 1
-  git checkout dev || exit 1
-}
-
 git_maven_bump() {
   # ex: server-1.0.0
   TAG=$1
@@ -67,16 +60,20 @@ git_maven_bump() {
   
   # drop perpared branch
   git branch -d $TAG || exit 1
-  
+
+  # put all online  
+  git push origin master || exit 1
+  git push --tags || exit 1
+
   # deploy
   mvn deploy || exit 1
-  
+
   # switch back to the dev
   git checkout dev || exit 1
   
   # update version with -SNAPSHOT postfix
   git_maven_version $BRANCH $VERSIONSNAPSHOT "$DIRS" || exit 1
   
-  # push all back to the central repo
-  git_maven_push || exit 1
+  # push snapshot back
+  git push origin dev || exit 1
 }
