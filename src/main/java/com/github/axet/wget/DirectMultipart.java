@@ -192,8 +192,10 @@ public class DirectMultipart extends Direct {
                     part(p);
                 } catch (DownloadRetry e) {
                     // just ignore it. later we can provide some logging
-                    // mechanism. so App can show all logs to specified thread.
-                    // now we just have to retry speciied part
+                    // mechanism. so App can show all logs about specified
+                    // thread and inform user about termporarly problems.
+                    // for now we just have to retry speciied part and keep wget
+                    // library api simple
                 } finally {
                     downloads.remove(p);
                 }
