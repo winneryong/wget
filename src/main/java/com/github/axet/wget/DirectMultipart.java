@@ -3,15 +3,21 @@ package com.github.axet.wget;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.RandomAccessFile;
+import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
+import java.net.SocketException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadRetry;
@@ -160,8 +166,20 @@ public class DirectMultipart extends Direct {
                 if (fos != null)
                     fos.close();
             }
-        } catch (IOException e) {
+        } catch (SocketException e) {
             throw new DownloadRetry(e);
+        } catch (ProtocolException e) {
+            throw new DownloadRetry(e);
+        } catch (HttpRetryException e) {
+            throw new DownloadRetry(e);
+        } catch (InterruptedIOException e) {
+            throw new DownloadRetry(e);
+        } catch (UnknownHostException e) {
+            throw new DownloadRetry(e);
+        } catch (IOException e) {
+            // all other io excetption including FileNotFoundException should
+            // stop downloading.
+            throw new DownloadError(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
