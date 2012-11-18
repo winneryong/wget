@@ -133,6 +133,8 @@ public class DirectMultipart extends Direct {
                     fos.write(bytes, 0, read);
                     part.setCount(part.getCount() + read);
 
+                    info.calculate();
+
                     notify.run();
                 }
 
@@ -187,6 +189,8 @@ public class DirectMultipart extends Direct {
      * @return true - done. false - not done yet
      */
     boolean done() {
+        if (stop.get())
+            return true;
         if (worker.active())
             return false;
         if (getPart() != null)
@@ -198,9 +202,9 @@ public class DirectMultipart extends Direct {
     public void download() {
         while (!done()) {
             Part p = getPart();
-            if (p != null)
+            if (p != null) {
                 download(p);
-            else {
+            } else {
                 worker.waitUntilNextTaskEnds();
             }
         }
