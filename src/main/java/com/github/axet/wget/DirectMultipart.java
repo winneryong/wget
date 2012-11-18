@@ -26,6 +26,8 @@ public class DirectMultipart extends Direct {
 
         Object lock = new Object();
 
+        Throwable t;
+
         public LimitDownloader() {
             super(THREAD_COUNT, THREAD_COUNT, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         }
@@ -35,6 +37,9 @@ public class DirectMultipart extends Direct {
             super.afterExecute(r, t);
 
             synchronized (lock) {
+                if (this.t != null)
+                    this.t = t;
+
                 lock.notifyAll();
             }
         }
@@ -74,6 +79,16 @@ public class DirectMultipart extends Direct {
             }
 
             super.execute(command);
+        }
+
+        public void check() {
+            synchronized (lock) {
+                if (this.t != null) {
+                    // must me RuntimeException. Since our download() method has
+                    // no other exceptions to throw.
+                    throw (RuntimeException) t;
+                }
+            }
         }
     }
 
@@ -175,6 +190,10 @@ public class DirectMultipart extends Direct {
             public void run() {
                 try {
                     part(p);
+                } catch (DownloadRetry e) {
+                    // just ignore it. later we can provide some logging
+                    // mechanism. so App can show all logs to specified thread.
+                    // now we just have to retry speciied part
                 } finally {
                     downloads.remove(p);
                 }
@@ -202,14 +221,18 @@ public class DirectMultipart extends Direct {
     }
 
     public void download() {
-        while (!done()) {
-            Part p = getPart();
-            if (p != null) {
-                download(p);
-            } else {
-                worker.waitUntilNextTaskEnds();
+        try {
+            while (!done()) {
+                Part p = getPart();
+                if (p != null) {
+                    download(p);
+                } else {
+                    worker.waitUntilNextTaskEnds();
+                }
+                worker.check();
             }
+        } finally {
+            worker.shutdown();
         }
-        worker.shutdown();
     }
 }
