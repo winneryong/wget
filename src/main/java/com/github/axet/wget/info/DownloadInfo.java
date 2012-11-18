@@ -4,6 +4,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+
 /**
  * DownloadInfo class. Keep part information. We need to serialize this class
  * bettwen application restart. Thread safe.
@@ -11,10 +13,12 @@ import java.util.List;
  * @author axet
  * 
  */
+@XStreamAlias("DownloadInfo")
 public class DownloadInfo extends URLInfo {
 
-    public final static long PART_LENGTH = 1024 * 1024;
+    public final static long PART_LENGTH = 10 * 1024 * 1024;
 
+    @XStreamAlias("DownloadInfoPart")
     public static class Part {
         // start offset [start, end]
         private long start;
@@ -22,6 +26,8 @@ public class DownloadInfo extends URLInfo {
         private long end;
         // amount of bytes downloaded
         private long count;
+        // part number
+        private long number;
 
         /**
          * is done?
@@ -59,6 +65,14 @@ public class DownloadInfo extends URLInfo {
         synchronized public void setCount(long count) {
             this.count = count;
         }
+
+        public long getNumber() {
+            return number;
+        }
+
+        public void setNumber(long number) {
+            this.number = number;
+        }
     }
 
     // part we are going to download. partList == null. we are doing one thread
@@ -95,6 +109,17 @@ public class DownloadInfo extends URLInfo {
         }
     }
 
+    /**
+     * for multi part download, call every time when we need to know totol
+     * download progress
+     */
+    synchronized public void calculate() {
+        count = 0;
+
+        for (Part p : getParts())
+            count += p.getCount();
+    }
+
     synchronized public long getCount() {
         return count;
     }
@@ -122,6 +147,7 @@ public class DownloadInfo extends URLInfo {
             int start = 0;
             for (int i = 0; i < count; i++) {
                 Part part = new Part();
+                part.setNumber(i);
                 part.setStart(start);
                 part.setEnd(part.getStart() + PART_LENGTH - 1);
                 if (part.getEnd() > getLength() - 1)
