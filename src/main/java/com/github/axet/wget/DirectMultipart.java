@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +47,6 @@ public class DirectMultipart extends Direct {
             super.afterExecute(r, t);
 
             synchronized (lock) {
-                if (t != null)
-                    this.t.add(t);
-
                 lock.notifyAll();
             }
         }
@@ -207,6 +205,10 @@ public class DirectMultipart extends Direct {
             public void run() {
                 try {
                     part(p);
+                } catch (RuntimeException e) {
+                    synchronized (worker.lock) {
+                        worker.t.add(e);
+                    }
                 } finally {
                     downloads.remove(p);
                 }
