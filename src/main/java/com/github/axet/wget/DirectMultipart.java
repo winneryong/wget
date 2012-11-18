@@ -11,6 +11,8 @@ import java.net.ProtocolException;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -20,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
+import com.github.axet.wget.info.DownloadMultipartError;
 import com.github.axet.wget.info.DownloadRetry;
 
 public class DirectMultipart extends Direct {
@@ -32,7 +35,7 @@ public class DirectMultipart extends Direct {
 
         Object lock = new Object();
 
-        Throwable t;
+        List<Throwable> t = new LinkedList<Throwable>();
 
         public LimitDownloader() {
             super(THREAD_COUNT, THREAD_COUNT, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
@@ -43,8 +46,8 @@ public class DirectMultipart extends Direct {
             super.afterExecute(r, t);
 
             synchronized (lock) {
-                if (this.t != null)
-                    this.t = t;
+                if (t != null)
+                    this.t.add(t);
 
                 lock.notifyAll();
             }
@@ -87,13 +90,9 @@ public class DirectMultipart extends Direct {
             super.execute(command);
         }
 
-        public void check() {
+        public List<Throwable> errors() {
             synchronized (lock) {
-                if (this.t != null) {
-                    // must me RuntimeException. Since our download() method has
-                    // no other exceptions to throw.
-                    throw (RuntimeException) t;
-                }
+                return t;
             }
         }
     }
@@ -208,12 +207,6 @@ public class DirectMultipart extends Direct {
             public void run() {
                 try {
                     part(p);
-                } catch (DownloadRetry e) {
-                    // just ignore it. later we can provide some logging
-                    // mechanism. so App can show all logs about specified
-                    // thread and inform user about termporarly problems.
-                    // for now we just have to retry speciied part and keep wget
-                    // library api simple
                 } finally {
                     downloads.remove(p);
                 }
@@ -249,7 +242,18 @@ public class DirectMultipart extends Direct {
                 } else {
                     worker.waitUntilNextTaskEnds();
                 }
-                worker.check();
+
+                // if we start to receive errors. stop add new tasks and wait
+                // until all active tasks && queue will be emptyied
+                if (!worker.errors().isEmpty()) {
+                    while (worker.getTasks() > 0) {
+                        worker.waitUntilNextTaskEnds();
+                    }
+
+                    // ok all thread stoped. now throw the exception and let app
+                    // deal with the errors
+                    throw new DownloadMultipartError(worker.errors());
+                }
             }
         } finally {
             worker.shutdown();
