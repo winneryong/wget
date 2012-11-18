@@ -53,3 +53,11 @@ Here is a three kind of exceptions.
             throw new RuntimeException(e);
         }
     }
+
+## Cetral Maven Repo
+
+    <dependency>
+      <groupId>com.github.axet</groupId>
+      <artifactId>wget</artifactId>
+      <version>0.1.9</version>
+    </dependency>
