@@ -121,13 +121,15 @@ public class DirectMultipart extends Direct {
 
                 BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
 
-                while (!stop.get() && (read = binaryreader.read(bytes)) > 0) {
+                boolean localStop = false;
+
+                while (!stop.get() && !localStop && (read = binaryreader.read(bytes)) > 0) {
                     // ensure we do not download more then part size.
                     // if so cut bytes and stop download
                     long partEnd = part.getLength() - part.getCount();
                     if (read > partEnd) {
                         read = (int) partEnd;
-                        stop.set(true);
+                        localStop = true;
                     }
 
                     fos.write(bytes, 0, read);
