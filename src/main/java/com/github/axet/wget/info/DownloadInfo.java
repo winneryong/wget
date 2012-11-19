@@ -139,11 +139,11 @@ public class DownloadInfo extends URLInfo {
         if (!range())
             throw new RuntimeException("Server does not support RANGE, cant set multipart");
 
-        parts = new ArrayList<Part>();
-
         long count = getLength() / PART_LENGTH + 1;
 
         if (count > 2) {
+            parts = new ArrayList<Part>();
+
             int start = 0;
             for (int i = 0; i < count; i++) {
                 Part part = new Part();
