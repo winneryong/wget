@@ -59,5 +59,5 @@ Here is a three kind of exceptions.
     <dependency>
       <groupId>com.github.axet</groupId>
       <artifactId>wget</artifactId>
-      <version>0.2.3</version>
+      <version>0.2.4</version>
     </dependency>
