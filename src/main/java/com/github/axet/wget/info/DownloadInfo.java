@@ -18,6 +18,10 @@ public class DownloadInfo extends URLInfo {
 
     public final static long PART_LENGTH = 10 * 1024 * 1024;
 
+    public enum PartState {
+        QUEUED, DOWNLOADING, RETRYING, ERROR, DONE;
+    }
+
     @XStreamAlias("DownloadInfoPart")
     public static class Part {
         // start offset [start, end]
@@ -28,15 +32,12 @@ public class DownloadInfo extends URLInfo {
         private long count;
         // part number
         private long number;
-
-        /**
-         * is done?
-         * 
-         * @return true. part fully downloaded
-         */
-        synchronized public boolean done() {
-            return getCount() == getLength();
-        }
+        // downloading error / retry error
+        private Throwable e;
+        // state
+        private PartState state;
+        // retrying delay;
+        private int delay;
 
         synchronized public long getStart() {
             return start;
@@ -66,12 +67,52 @@ public class DownloadInfo extends URLInfo {
             this.count = count;
         }
 
-        public long getNumber() {
+        synchronized public long getNumber() {
             return number;
         }
 
-        public void setNumber(long number) {
+        synchronized public void setNumber(long number) {
             this.number = number;
+        }
+
+        synchronized public Throwable getE() {
+            return e;
+        }
+
+        synchronized public void setE(Throwable e) {
+            this.e = e;
+        }
+
+        synchronized public PartState getState() {
+            return state;
+        }
+
+        /**
+         * set new part state. clear last error.
+         * 
+         * @param state
+         */
+        synchronized public void setState(PartState state) {
+            this.state = state;
+            this.e = null;
+        }
+
+        synchronized public void setState(PartState state, Throwable e) {
+            this.state = state;
+            this.e = e;
+        }
+
+        synchronized public int getDelay() {
+            return delay;
+        }
+
+        /**
+         * for part in the RETRYING state shows amount of seconds.
+         * 
+         * @param delay
+         */
+        synchronized public void setDelay(int delay) {
+            this.delay = delay;
         }
     }
 

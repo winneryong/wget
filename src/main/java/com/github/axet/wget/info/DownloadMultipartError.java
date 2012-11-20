@@ -1,7 +1,5 @@
 package com.github.axet.wget.info;
 
-import java.util.List;
-
 /**
  * Multithread downloads can (and will) receive multiple IOExceptions such as
  * UnknownHostException, Socket Timeout and others. If it happens to the one
@@ -18,20 +16,13 @@ import java.util.List;
 public class DownloadMultipartError extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    List<Throwable> e;
+    DownloadInfo info;
 
-    public DownloadMultipartError(List<Throwable> e) {
-        this.e = e;
+    public DownloadMultipartError(DownloadInfo info) {
+        this.info = info;
     }
 
-    /**
-     * List of multipart threads errors. Can be one of the following types:
-     * DownloadError, DownloadRetry, RuntimeException
-     * 
-     * @return
-     */
-    public List<Throwable> getList() {
-        return e;
+    public DownloadInfo getInfo() {
+        return info;
     }
-
 }
