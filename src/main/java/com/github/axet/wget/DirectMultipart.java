@@ -11,10 +11,9 @@ import java.net.ProtocolException;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
-import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -23,20 +22,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
+import com.github.axet.wget.info.DownloadInfo.PartState;
 import com.github.axet.wget.info.DownloadMultipartError;
 import com.github.axet.wget.info.DownloadRetry;
 
 public class DirectMultipart extends Direct {
 
     static public final int THREAD_COUNT = 3;
+    static public final int RETRY_DELAY = 10;
 
-    Vector<Part> downloads = new Vector<Part>();
-
-    static class LimitDownloader extends ThreadPoolExecutor {
+    class LimitDownloader extends ThreadPoolExecutor {
 
         Object lock = new Object();
 
-        List<Throwable> t = new LinkedList<Throwable>();
+        boolean fatal = false;
 
         public LimitDownloader() {
             super(THREAD_COUNT, THREAD_COUNT, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
@@ -51,10 +50,19 @@ public class DirectMultipart extends Direct {
             }
         }
 
+        /**
+         * downloader working if here any getTasks() > 0
+         * 
+         * @return
+         */
         public boolean active() {
             return getTasks() > 0;
         }
 
+        /**
+         * wait until current task ends. if here is no tasks exit immidiatly.
+         * 
+         */
         public void waitUntilNextTaskEnds() {
             synchronized (lock) {
                 if (getActiveCount() > 0) {
@@ -67,10 +75,19 @@ public class DirectMultipart extends Direct {
             }
         }
 
+        /**
+         * get active threads and queue size as current tasks count
+         * 
+         * @return
+         */
         int getTasks() {
             return getActiveCount() + getQueue().size();
         }
 
+        /**
+         * blocks if here is too many working thread active
+         * 
+         */
         @Override
         public void execute(Runnable command) {
             // do not allow to put more tasks then threads.
@@ -83,14 +100,22 @@ public class DirectMultipart extends Direct {
                         throw new RuntimeException(e);
                     }
                 }
+                if (stop.get())
+                    return;
             }
 
             super.execute(command);
         }
 
-        public List<Throwable> errors() {
+        /**
+         * returns true if here was a DownloadError or RuntimeException in one
+         * of the downloading threads
+         * 
+         * @return
+         */
+        public boolean fatal() {
             synchronized (lock) {
-                return t;
+                return fatal;
             }
         }
     }
@@ -112,14 +137,28 @@ public class DirectMultipart extends Direct {
         super(info, target, stop, notify);
     }
 
-    void part(Part part) {
+    /**
+     * download part.
+     * 
+     * if returns normally - part is fully donwloaded. other wise - it throws
+     * RuntimeException or DownloadRetry or DownloadError
+     * 
+     * @param part
+     */
+    void download(Part part) {
+        part.setState(PartState.DOWNLOADING);
+        part.setE(null);
+        notify.run();
+
         try {
             RandomAccessFile fos = null;
+            BufferedInputStream binaryreader = null;
 
             try {
                 URL url = info.getSource();
 
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                HttpURLConnection conn;
+                conn = (HttpURLConnection) url.openConnection();
 
                 conn.setConnectTimeout(CONNECT_TIMEOUT);
                 conn.setReadTimeout(READ_TIMEOUT);
@@ -137,11 +176,11 @@ public class DirectMultipart extends Direct {
                 byte[] bytes = new byte[BUF_SIZE];
                 int read = 0;
 
-                BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
+                binaryreader = new BufferedInputStream(conn.getInputStream());
 
                 boolean localStop = false;
 
-                while (!stop.get() && !localStop && (read = binaryreader.read(bytes)) > 0) {
+                while ((read = binaryreader.read(bytes)) > 0) {
                     // ensure we do not download more then part size.
                     // if so cut bytes and stop download
                     long partEnd = part.getLength() - part.getCount();
@@ -152,26 +191,37 @@ public class DirectMultipart extends Direct {
 
                     fos.write(bytes, 0, read);
                     part.setCount(part.getCount() + read);
-
                     info.calculate();
-
                     notify.run();
+
+                    if (stop.get())
+                        return;
+                    if (localStop)
+                        return;
                 }
 
-                binaryreader.close();
+                if (part.getCount() != part.getLength())
+                    throw new DownloadRetry("EOF before end of part");
             } finally {
                 if (fos != null)
                     fos.close();
+                if (binaryreader != null)
+                    binaryreader.close();
             }
         } catch (SocketException e) {
+            // enumerate all retry exceptions
             throw new DownloadRetry(e);
         } catch (ProtocolException e) {
+            // enumerate all retry exceptions
             throw new DownloadRetry(e);
         } catch (HttpRetryException e) {
+            // enumerate all retry exceptions
             throw new DownloadRetry(e);
         } catch (InterruptedIOException e) {
+            // enumerate all retry exceptions
             throw new DownloadRetry(e);
         } catch (UnknownHostException e) {
+            // enumerate all retry exceptions
             throw new DownloadRetry(e);
         } catch (IOException e) {
             // all other io excetption including FileNotFoundException should
@@ -184,38 +234,69 @@ public class DirectMultipart extends Direct {
         }
     }
 
-    // return next part to download. ensure this part is not done() and not
-    // currently downloading
+    void retry(Part p, RuntimeException e) {
+        p.setState(PartState.RETRYING);
+        p.setE(e);
+
+        for (int i = RETRY_DELAY; i > 0; i--) {
+            p.setDelay(i);
+            notify.run();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e1) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    void downloadRetry(Part p) {
+        // retry download part until it returns without an exception
+        while (!stop.get()) {
+            try {
+                download(p);
+
+                p.setState(PartState.DONE);
+                notify.run();
+
+                return;
+            } catch (DownloadRetry e) {
+                retry(p, e);
+            }
+        }
+    }
+
+    void downloadWorker(final Part p) {
+        worker.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    downloadRetry(p);
+                } catch (RuntimeException e) {
+                    p.setState(PartState.ERROR, e);
+                    notify.run();
+                    synchronized (worker.lock) {
+                        worker.fatal = true;
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * return next part to download. ensure this part is not done() and not
+     * currently downloading
+     * 
+     * @return
+     */
     Part getPart() {
         for (Part p : info.getParts()) {
-            if (p.done())
-                continue;
-            if (downloads.contains(p))
+            if (!p.getState().equals(PartState.QUEUED))
                 continue;
 
             return p;
         }
 
         return null;
-    }
-
-    void download(final Part p) {
-        worker.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    part(p);
-                } catch (RuntimeException e) {
-                    synchronized (worker.lock) {
-                        worker.t.add(e);
-                    }
-                } finally {
-                    downloads.remove(p);
-                }
-            }
-        });
-
-        downloads.add(p);
     }
 
     /**
@@ -236,25 +317,30 @@ public class DirectMultipart extends Direct {
     }
 
     public void download() {
+        for (Part p : info.getParts()) {
+            p.setState(PartState.QUEUED);
+        }
+        notify.run();
+
         try {
             while (!done()) {
                 Part p = getPart();
                 if (p != null) {
-                    download(p);
+                    downloadWorker(p);
                 } else {
                     worker.waitUntilNextTaskEnds();
                 }
 
                 // if we start to receive errors. stop add new tasks and wait
-                // until all active tasks && queue will be emptyied
-                if (!worker.errors().isEmpty()) {
-                    while (worker.getTasks() > 0) {
+                // until all active tasks && queue will be emptied
+                if (worker.fatal()) {
+                    while (worker.active()) {
                         worker.waitUntilNextTaskEnds();
                     }
 
-                    // ok all thread stoped. now throw the exception and let app
-                    // deal with the errors
-                    throw new DownloadMultipartError(worker.errors());
+                    // ok all thread stopped. now throw the exception and let
+                    // app deal with the errors
+                    throw new DownloadMultipartError(info);
                 }
             }
         } finally {
