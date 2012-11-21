@@ -3,28 +3,21 @@ package com.github.axet.wget;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.RandomAccessFile;
-import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.SocketException;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
-import com.github.axet.wget.info.DownloadInfo.PartState;
-import com.github.axet.wget.info.DownloadMultipartError;
-import com.github.axet.wget.info.DownloadRetry;
+import com.github.axet.wget.info.DownloadInfo.Part.States;
+import com.github.axet.wget.info.URLInfo;
+import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadMultipartError;
+import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class DirectMultipart extends Direct {
 
@@ -145,124 +138,65 @@ public class DirectMultipart extends Direct {
      * 
      * @param part
      */
-    void download(Part part) {
-        part.setState(PartState.DOWNLOADING);
-        part.setE(null);
-        notify.run();
+    void download(Part part) throws IOException {
+        RandomAccessFile fos = null;
+        BufferedInputStream binaryreader = null;
 
         try {
-            RandomAccessFile fos = null;
-            BufferedInputStream binaryreader = null;
+            URL url = info.getSource();
 
-            try {
-                URL url = info.getSource();
+            HttpURLConnection conn;
+            conn = (HttpURLConnection) url.openConnection();
 
-                HttpURLConnection conn;
-                conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(CONNECT_TIMEOUT);
+            conn.setReadTimeout(READ_TIMEOUT);
 
-                conn.setConnectTimeout(CONNECT_TIMEOUT);
-                conn.setReadTimeout(READ_TIMEOUT);
+            File f = target;
 
-                File f = target;
+            fos = new RandomAccessFile(f, "rw");
 
-                fos = new RandomAccessFile(f, "rw");
+            long start = part.getStart() + part.getCount();
+            long end = part.getEnd();
 
-                long start = part.getStart() + part.getCount();
-                long end = part.getEnd();
+            conn.setRequestProperty("Range", "bytes=" + start + "-" + end);
+            fos.seek(start);
 
-                conn.setRequestProperty("Range", "bytes=" + start + "-" + end);
-                fos.seek(start);
+            byte[] bytes = new byte[BUF_SIZE];
+            int read = 0;
 
-                byte[] bytes = new byte[BUF_SIZE];
-                int read = 0;
+            binaryreader = new BufferedInputStream(conn.getInputStream());
 
-                binaryreader = new BufferedInputStream(conn.getInputStream());
+            boolean localStop = false;
 
-                boolean localStop = false;
-
-                while ((read = binaryreader.read(bytes)) > 0) {
-                    // ensure we do not download more then part size.
-                    // if so cut bytes and stop download
-                    long partEnd = part.getLength() - part.getCount();
-                    if (read > partEnd) {
-                        read = (int) partEnd;
-                        localStop = true;
-                    }
-
-                    fos.write(bytes, 0, read);
-                    part.setCount(part.getCount() + read);
-                    info.calculate();
-                    notify.run();
-
-                    if (stop.get())
-                        return;
-                    if (localStop)
-                        return;
+            while ((read = binaryreader.read(bytes)) > 0) {
+                // ensure we do not download more then part size.
+                // if so cut bytes and stop download
+                long partEnd = part.getLength() - part.getCount();
+                if (read > partEnd) {
+                    read = (int) partEnd;
+                    localStop = true;
                 }
 
-                if (part.getCount() != part.getLength())
-                    throw new DownloadRetry("EOF before end of part");
-            } finally {
-                if (fos != null)
-                    fos.close();
-                if (binaryreader != null)
-                    binaryreader.close();
-            }
-        } catch (SocketException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (ProtocolException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (HttpRetryException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (InterruptedIOException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (UnknownHostException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (IOException e) {
-            // all other io excetption including FileNotFoundException should
-            // stop downloading.
-            throw new DownloadError(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    void retry(Part p, RuntimeException e) {
-        p.setState(PartState.RETRYING);
-        p.setE(e);
-
-        for (int i = RETRY_DELAY; i > 0; i--) {
-            p.setDelay(i);
-            notify.run();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e1) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    void downloadRetry(Part p) {
-        // retry download part until it returns without an exception
-        while (!stop.get()) {
-            try {
-                download(p);
-
-                p.setState(PartState.DONE);
+                fos.write(bytes, 0, read);
+                part.setCount(part.getCount() + read);
+                info.calculate();
                 notify.run();
 
-                return;
-            } catch (DownloadRetry e) {
-                retry(p, e);
+                if (stop.get())
+                    return;
+                if (localStop)
+                    return;
             }
+
+            if (part.getCount() != part.getLength())
+                throw new DownloadRetry("EOF before end of part");
+        } finally {
+            if (fos != null)
+                fos.close();
+            if (binaryreader != null)
+                binaryreader.close();
         }
+
     }
 
     void downloadWorker(final Part p) {
@@ -270,9 +204,26 @@ public class DirectMultipart extends Direct {
             @Override
             public void run() {
                 try {
-                    downloadRetry(p);
+                    RetryFactory.wrap(stop, new RetryFactory.RetryWrapper() {
+
+                        @Override
+                        public void run() throws IOException {
+                            download(p);
+                        }
+
+                        @Override
+                        public void notifyRetry(int delay, Throwable e) {
+                            p.setState(States.RETRYING, e);
+                            p.setDelay(delay);
+                        }
+
+                        @Override
+                        public void notifyDownloading() {
+                            p.setState(States.DOWNLOADING);
+                        }
+                    });
                 } catch (RuntimeException e) {
-                    p.setState(PartState.ERROR, e);
+                    p.setState(States.ERROR, e);
                     notify.run();
                     synchronized (worker.lock) {
                         worker.fatal = true;
@@ -290,7 +241,7 @@ public class DirectMultipart extends Direct {
      */
     Part getPart() {
         for (Part p : info.getParts()) {
-            if (!p.getState().equals(PartState.QUEUED))
+            if (!p.getState().equals(States.QUEUED))
                 continue;
 
             return p;
@@ -318,9 +269,11 @@ public class DirectMultipart extends Direct {
 
     public void download() {
         for (Part p : info.getParts()) {
-            p.setState(PartState.QUEUED);
+            p.setState(States.QUEUED);
         }
         notify.run();
+
+        info.setState(URLInfo.States.DOWNLOADING);
 
         try {
             while (!done()) {
@@ -343,6 +296,8 @@ public class DirectMultipart extends Direct {
                     throw new DownloadMultipartError(info);
                 }
             }
+
+            info.setState(URLInfo.States.DONE);
         } finally {
             worker.shutdown();
         }
