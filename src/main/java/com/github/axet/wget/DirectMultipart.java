@@ -37,8 +37,8 @@ public class DirectMultipart extends Direct {
      * @param notify
      *            progress notify call
      */
-    public DirectMultipart(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        super(info, target, stop, notify);
+    public DirectMultipart(DownloadInfo info, File target) {
+        super(info, target);
     }
 
     /**
@@ -49,7 +49,7 @@ public class DirectMultipart extends Direct {
      * 
      * @param part
      */
-    void download(Part part) throws IOException {
+    void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
         BufferedInputStream binaryreader = null;
 
@@ -122,8 +122,8 @@ public class DirectMultipart extends Direct {
         }
     }
 
-    void downloadWorker(final Part p) {
-        worker.execute(new Runnable() {
+    void downloadWorker(final Part p, final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+        worker.blockExecute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -131,7 +131,7 @@ public class DirectMultipart extends Direct {
 
                         @Override
                         public void run() throws IOException {
-                            download(p);
+                            download(p, stop, notify);
                         }
 
                         @Override
@@ -154,6 +154,8 @@ public class DirectMultipart extends Direct {
                     notify.run();
 
                     fatal(true);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
         });
@@ -182,10 +184,13 @@ public class DirectMultipart extends Direct {
      * download
      * 
      * @return true - done. false - not done yet
+     * @throws InterruptedException
      */
-    boolean done() {
+    boolean done(AtomicBoolean stop) throws InterruptedException {
         if (stop.get())
-            return true;
+            throw new InterruptedException();
+        if (Thread.interrupted())
+            throw new InterruptedException();
         if (worker.active())
             return false;
         if (getPart() != null)
@@ -194,7 +199,8 @@ public class DirectMultipart extends Direct {
         return true;
     }
 
-    public void download() {
+    @Override
+    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
         for (Part p : info.getParts()) {
             p.setState(States.QUEUED);
         }
@@ -202,10 +208,10 @@ public class DirectMultipart extends Direct {
         notify.run();
 
         try {
-            while (!done()) {
+            while (!done(stop)) {
                 Part p = getPart();
                 if (p != null) {
-                    downloadWorker(p);
+                    downloadWorker(p, stop, notify);
                 } else {
                     // we have no parts left.
                     //
@@ -228,10 +234,6 @@ public class DirectMultipart extends Direct {
 
             info.setState(URLInfo.States.DONE);
             notify.run();
-        } catch (RuntimeException e) {
-            info.setState(URLInfo.States.ERROR);
-            notify.run();
-            throw e;
         } finally {
             worker.shutdown();
         }

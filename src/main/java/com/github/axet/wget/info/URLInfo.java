@@ -54,7 +54,7 @@ public class URLInfo {
      * Notify States
      */
     public enum States {
-        EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, ERROR, DONE;
+        EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, STOPPED, ERROR, DONE;
     }
 
     /**
@@ -69,23 +69,8 @@ public class URLInfo {
      * retrying delay;
      */
     private int delay;
-    /**
-     * global sotp
-     */
-    private AtomicBoolean stop;
-    /**
-     * notify exe
-     */
-    private Runnable notify;
 
     public URLInfo(URL source) {
-        this.source = source;
-    }
-
-    public URLInfo(URL source, AtomicBoolean stop, Runnable notify) {
-        this.stop = stop;
-        this.notify = notify;
-
         this.source = source;
     }
 
@@ -101,6 +86,18 @@ public class URLInfo {
     }
 
     synchronized public void extract() {
+        try {
+            extract(new AtomicBoolean(false), new Runnable() {
+                @Override
+                public void run() {
+                }
+            });
+        } catch (InterruptedException e) {
+            throw new DownloadError(e);
+        }
+    }
+
+    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
         HttpURLConnection conn;
 
         conn = RetryFactory.wrap(stop, new RetryFactory.RetryWrapperReturn<HttpURLConnection>() {

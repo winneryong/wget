@@ -11,10 +11,6 @@ public class Direct {
 
     DownloadInfo info;
 
-    Runnable notify;
-
-    AtomicBoolean stop;
-
     /**
      * connect socket timeout
      */
@@ -41,14 +37,12 @@ public class Direct {
      * @param notify
      *            progress notify call
      */
-    public Direct(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
+    public Direct(DownloadInfo info, File target) {
         this.target = target;
         this.info = info;
-        this.notify = notify;
-        this.stop = stop;
     }
 
-    public void download() {
+    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
     }
 
 }

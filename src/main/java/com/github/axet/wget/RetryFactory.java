@@ -9,7 +9,6 @@ import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.ex.DownloadError;
-import com.github.axet.wget.info.ex.DownloadInterrupted;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class RetryFactory {
@@ -32,30 +31,26 @@ public class RetryFactory {
 
     public static final int RETRY_DELAY = 10;
 
-    static <T> void retry(AtomicBoolean stop, RetryWrapperReturn<T> r, RuntimeException e) {
+    static <T> void retry(AtomicBoolean stop, RetryWrapperReturn<T> r, RuntimeException e) throws InterruptedException {
         for (int i = RETRY_DELAY; i > 0; i--) {
             r.notifyRetry(i, e);
 
             if (stop.get())
-                throw new DownloadInterrupted("stop");
+                throw new InterruptedException("stop");
 
             if (Thread.currentThread().isInterrupted())
-                throw new DownloadInterrupted("interrrupted");
+                throw new InterruptedException("interrrupted");
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ee) {
-                throw new DownloadInterrupted(ee);
-            }
+            Thread.sleep(1000);
         }
     }
 
-    public static <T> T run(AtomicBoolean stop, RetryWrapperReturn<T> r) {
+    public static <T> T run(AtomicBoolean stop, RetryWrapperReturn<T> r) throws InterruptedException {
         while (true) {
             if (stop.get())
-                throw new DownloadInterrupted("stop");
+                throw new InterruptedException("stop");
             if (Thread.currentThread().isInterrupted())
-                throw new DownloadInterrupted("interrupted");
+                throw new InterruptedException("interrupted");
 
             try {
                 try {
@@ -94,11 +89,11 @@ public class RetryFactory {
         }
     }
 
-    public static <T> T wrap(AtomicBoolean stop, RetryWrapperReturn<T> r) {
+    public static <T> T wrap(AtomicBoolean stop, RetryWrapperReturn<T> r) throws InterruptedException {
         return RetryFactory.run(stop, r);
     }
 
-    public static void wrap(AtomicBoolean stop, final RetryWrapper r) {
+    public static void wrap(AtomicBoolean stop, final RetryWrapper r) throws InterruptedException {
         RetryWrapperReturn<Object> rr = new RetryWrapperReturn<Object>() {
 
             @Override

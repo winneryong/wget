@@ -139,10 +139,6 @@ public class DownloadInfo extends URLInfo {
         super(source);
     }
 
-    public DownloadInfo(URL source, AtomicBoolean stop, Runnable notify) {
-        super(source, stop, notify);
-    }
-
     /**
      * is it a multipart download?
      * 
