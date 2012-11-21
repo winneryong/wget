@@ -257,7 +257,7 @@ public class URLInfo {
         return delay;
     }
 
-    synchronized protected void setDelay(int delay) {
+    synchronized public void setDelay(int delay) {
         this.delay = delay;
     }
 
