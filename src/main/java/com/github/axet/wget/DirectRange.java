@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
+import com.github.axet.wget.info.URLInfo;
 
 public class DirectRange extends Direct {
 
@@ -73,6 +74,9 @@ public class DirectRange extends Direct {
 
     @Override
     public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+        info.setState(URLInfo.States.DOWNLOADING);
+        notify.run();
+
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
@@ -86,6 +90,8 @@ public class DirectRange extends Direct {
             @Override
             public void notifyRetry(int delay, Throwable e) {
                 p.setState(States.RETRYING, e);
+                info.setState(URLInfo.States.RETRYING, e);
+                info.setDelay(delay);
                 p.setDelay(delay);
                 notify.run();
             }
@@ -93,11 +99,13 @@ public class DirectRange extends Direct {
             @Override
             public void notifyDownloading() {
                 p.setState(States.DOWNLOADING);
+                info.setState(URLInfo.States.DOWNLOADING);
                 notify.run();
             }
         });
 
         p.setState(States.DONE);
+        info.setState(URLInfo.States.DONE);
         notify.run();
     }
 

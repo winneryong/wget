@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.DownloadInfo;
+import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
 
@@ -69,6 +70,9 @@ public class DirectSingle extends Direct {
 
     @Override
     public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+        info.setState(URLInfo.States.DOWNLOADING);
+        notify.run();
+
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
@@ -83,17 +87,21 @@ public class DirectSingle extends Direct {
             public void notifyRetry(int delay, Throwable e) {
                 p.setState(States.RETRYING, e);
                 p.setDelay(delay);
+                info.setState(URLInfo.States.RETRYING, e);
+                info.setDelay(delay);
                 notify.run();
             }
 
             @Override
             public void notifyDownloading() {
                 p.setState(States.DOWNLOADING);
+                info.setState(URLInfo.States.DOWNLOADING);
                 notify.run();
             }
         });
 
         p.setState(States.DONE);
+        info.setState(URLInfo.States.DOWNLOADING);
         notify.run();
     }
 }
