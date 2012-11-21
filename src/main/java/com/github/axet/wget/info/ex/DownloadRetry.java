@@ -1,6 +1,4 @@
-package com.github.axet.wget.info;
-
-import java.util.List;
+package com.github.axet.wget.info.ex;
 
 /**
  * Multithread downloads can (and will) receive multiple IOExceptions such as
@@ -15,23 +13,20 @@ import java.util.List;
  * @author axet
  * 
  */
-public class DownloadMultipartError extends RuntimeException {
+public class DownloadRetry extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    List<Throwable> e;
+    Throwable e;
 
-    public DownloadMultipartError(List<Throwable> e) {
+    public DownloadRetry(Throwable e) {
         this.e = e;
     }
 
-    /**
-     * List of multipart threads errors. Can be one of the following types:
-     * DownloadError, DownloadRetry, RuntimeException
-     * 
-     * @return
-     */
-    public List<Throwable> getList() {
-        return e;
+    public DownloadRetry(String msg) {
+        super(msg);
     }
 
+    public Throwable getE() {
+        return e;
+    }
 }

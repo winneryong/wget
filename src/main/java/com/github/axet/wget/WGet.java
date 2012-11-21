@@ -2,7 +2,6 @@ package com.github.axet.wget;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -14,9 +13,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
-import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.DownloadRetry;
+import com.github.axet.wget.info.URLInfo;
+import com.github.axet.wget.info.ex.DownloadError;
 
 public class WGet {
 
@@ -26,18 +25,10 @@ public class WGet {
 
     File targetFile;
 
-    /**
-     * simple download file.
-     * 
-     * @param source
-     * @param target
-     */
-    public WGet(URL source, File target) {
-        create(source, target, new AtomicBoolean(false), new Runnable() {
-            @Override
-            public void run() {
-            }
-        });
+    public interface HtmlLoader {
+        public void notifyRetry(int delay, Throwable e);
+
+        public void notifyDownloading();
     }
 
     /**
@@ -45,11 +36,9 @@ public class WGet {
      * 
      * @param source
      * @param target
-     * @param stop
-     * @param notify
      */
-    public WGet(URL source, File target, AtomicBoolean stop, Runnable notify) {
-        create(source, target, stop, notify);
+    public WGet(URL source, File target) {
+        create(source, target);
     }
 
     /**
@@ -62,34 +51,34 @@ public class WGet {
      * @param stop
      * @param notify
      */
-    public WGet(DownloadInfo info, File targetFile, AtomicBoolean stop, Runnable notify) {
+    public WGet(DownloadInfo info, File targetFile) {
         this.info = info;
         this.targetFile = targetFile;
-        create(stop, notify);
+        create();
     }
 
-    void create(URL source, File target, AtomicBoolean stop, Runnable notify) {
+    void create(URL source, File target) {
         info = new DownloadInfo(source);
         info.extract();
-        create(target, stop, notify);
+        create(target);
     }
 
-    void create(File target, AtomicBoolean stop, Runnable notify) {
+    void create(File target) {
         targetFile = calcName(info, target);
-        create(stop, notify);
+        create();
     }
 
-    void create(AtomicBoolean stop, Runnable notify) {
-        d = createDirect(stop, notify);
+    void create() {
+        d = createDirect();
     }
 
-    Direct createDirect(AtomicBoolean stop, Runnable notify) {
+    Direct createDirect() {
         if (info.multipart()) {
-            return new DirectMultipart(info, targetFile, stop, notify);
+            return new DirectMultipart(info, targetFile);
         } else if (info.range()) {
-            return new DirectRange(info, targetFile, stop, notify);
+            return new DirectRange(info, targetFile);
         } else {
-            return new DirectSingle(info, targetFile, stop, notify);
+            return new DirectSingle(info, targetFile);
         }
     }
 
@@ -146,7 +135,29 @@ public class WGet {
     }
 
     public void download() {
-        d.download();
+        try {
+            download(new AtomicBoolean(false), new Runnable() {
+                @Override
+                public void run() {
+                }
+            });
+        } catch (InterruptedException e) {
+            throw new DownloadError(e);
+        }
+    }
+
+    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
+        try {
+            d.download(stop, notify);
+        } catch (InterruptedException e) {
+            info.setState(URLInfo.States.STOPPED);
+            notify.run();
+            throw e;
+        } catch (RuntimeException e) {
+            info.setState(URLInfo.States.ERROR);
+            notify.run();
+            throw e;
+        }
     }
 
     public DownloadInfo getInfo() {
@@ -154,40 +165,60 @@ public class WGet {
     }
 
     public static String getHtml(URL source) {
-        return getHtml(source, new AtomicBoolean(false));
-    }
-
-    public static String getHtml(URL source, AtomicBoolean stop) {
         try {
-            URL u = source;
-            HttpURLConnection con = (HttpURLConnection) u.openConnection();
-            con.setConnectTimeout(Direct.CONNECT_TIMEOUT);
-            con.setReadTimeout(Direct.READ_TIMEOUT);
-            InputStream is = con.getInputStream();
+            return getHtml(source, new HtmlLoader() {
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                @Override
+                public void notifyRetry(int delay, Throwable e) {
+                }
 
-            String line = null;
-
-            StringBuilder contents = new StringBuilder();
-            while ((line = br.readLine()) != null) {
-                contents.append(line);
-                contents.append("\n");
-
-                if (stop.get())
-                    return null;
-            }
-            
-            return contents.toString();
-        } catch (FileNotFoundException e) {
+                @Override
+                public void notifyDownloading() {
+                }
+            }, new AtomicBoolean(false));
+        } catch (InterruptedException e) {
             throw new DownloadError(e);
-        } catch (IOException e) {
-            throw new DownloadRetry(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
+    public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop)
+            throws InterruptedException {
+        String html = RetryFactory.wrap(stop, new RetryFactory.RetryWrapperReturn<String>() {
+            @Override
+            public void notifyRetry(int delay, Throwable e) {
+                load.notifyRetry(delay, e);
+            }
+
+            @Override
+            public void notifyDownloading() {
+                load.notifyDownloading();
+            }
+
+            @Override
+            public String run() throws IOException {
+                URL u = source;
+                HttpURLConnection con = (HttpURLConnection) u.openConnection();
+                con.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+                con.setReadTimeout(Direct.READ_TIMEOUT);
+                InputStream is = con.getInputStream();
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+                String line = null;
+
+                StringBuilder contents = new StringBuilder();
+                while ((line = br.readLine()) != null) {
+                    contents.append(line);
+                    contents.append("\n");
+
+                    if (stop.get())
+                        return null;
+                }
+
+                return contents.toString();
+            }
+        });
+
+        return html;
+    }
 }

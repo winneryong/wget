@@ -3,19 +3,16 @@ package com.github.axet.wget;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.RandomAccessFile;
-import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.SocketException;
 import java.net.URL;
-import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.DownloadRetry;
+import com.github.axet.wget.info.URLInfo;
+import com.github.axet.wget.info.DownloadInfo.Part;
+import com.github.axet.wget.info.DownloadInfo.Part.States;
 
 public class DirectSingle extends Direct {
 
@@ -30,64 +27,81 @@ public class DirectSingle extends Direct {
      * @param notify
      *            progress notify call
      */
-    public DirectSingle(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        super(info, target, stop, notify);
+    public DirectSingle(DownloadInfo info, File target) {
+        super(info, target);
     }
 
-    public void download() {
+    void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
+        RandomAccessFile fos = null;
+
         try {
-            RandomAccessFile fos = null;
+            URL url = info.getSource();
 
-            try {
-                URL url = info.getSource();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(CONNECT_TIMEOUT);
+            conn.setReadTimeout(READ_TIMEOUT);
 
-                conn.setConnectTimeout(CONNECT_TIMEOUT);
-                conn.setReadTimeout(READ_TIMEOUT);
+            File f = target;
+            info.setCount(0);
+            f.createNewFile();
 
-                File f = target;
-                info.setCount(0);
-                f.createNewFile();
+            fos = new RandomAccessFile(f, "rw");
 
-                fos = new RandomAccessFile(f, "rw");
+            byte[] bytes = new byte[BUF_SIZE];
+            int read = 0;
 
-                byte[] bytes = new byte[BUF_SIZE];
-                int read = 0;
+            BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
 
-                BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
+            while (!stop.get() && (read = binaryreader.read(bytes)) > 0) {
+                fos.write(bytes, 0, read);
 
-                while (!stop.get() && (read = binaryreader.read(bytes)) > 0) {
-                    info.setCount(info.getCount() + read);
-                    fos.write(bytes, 0, read);
-
-                    notify.run();
-                }
-
-                binaryreader.close();
-            } finally {
-                if (fos != null)
-                    fos.close();
+                part.setCount(part.getCount() + read);
+                info.calculate();
+                notify.run();
             }
-        } catch (SocketException e) {
-            throw new DownloadRetry(e);
-        } catch (ProtocolException e) {
-            throw new DownloadRetry(e);
-        } catch (HttpRetryException e) {
-            throw new DownloadRetry(e);
-        } catch (InterruptedIOException e) {
-            throw new DownloadRetry(e);
-        } catch (UnknownHostException e) {
-            throw new DownloadRetry(e);
-        } catch (IOException e) {
-            // all other io excetption including FileNotFoundException should
-            // stop downloading.
-            throw new DownloadError(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+
+            binaryreader.close();
+        } finally {
+            if (fos != null)
+                fos.close();
         }
     }
 
+    @Override
+    public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+        info.setState(URLInfo.States.DOWNLOADING);
+        notify.run();
+
+        List<Part> list = info.getParts();
+        final Part p = list.get(0);
+
+        RetryFactory.wrap(stop, new RetryFactory.RetryWrapper() {
+
+            @Override
+            public void run() throws IOException {
+                download(p, stop, notify);
+            }
+
+            @Override
+            public void notifyRetry(int delay, Throwable e) {
+                p.setState(States.RETRYING, e);
+                p.setDelay(delay);
+                info.setState(URLInfo.States.RETRYING, e);
+                info.setDelay(delay);
+                notify.run();
+            }
+
+            @Override
+            public void notifyDownloading() {
+                p.setState(States.DOWNLOADING);
+                info.setState(URLInfo.States.DOWNLOADING);
+                notify.run();
+            }
+        });
+
+        p.setState(States.DONE);
+        info.setState(URLInfo.States.DOWNLOADING);
+        notify.run();
+    }
 }

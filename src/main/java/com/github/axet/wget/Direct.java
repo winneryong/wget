@@ -11,15 +11,19 @@ public class Direct {
 
     DownloadInfo info;
 
-    Runnable notify;
-
-    AtomicBoolean stop;
-
+    /**
+     * connect socket timeout
+     */
     static public final int CONNECT_TIMEOUT = 5000;
 
+    /**
+     * read socket timeout
+     */
     static public final int READ_TIMEOUT = 5000;
 
-    // size of read buffer
+    /**
+     * size of read buffer
+     */
     static public final int BUF_SIZE = 4 * 1024;
 
     /**
@@ -33,14 +37,12 @@ public class Direct {
      * @param notify
      *            progress notify call
      */
-    public Direct(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
+    public Direct(DownloadInfo info, File target) {
         this.target = target;
         this.info = info;
-        this.notify = notify;
-        this.stop = stop;
     }
 
-    public void download() {
+    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
     }
 
 }
