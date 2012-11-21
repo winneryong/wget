@@ -20,7 +20,7 @@ Here is a three kind of exceptions.
 4) DownloadInterrupted (extends RuntimeException)
   App or Library interrupted the downloading thread
 
-## Example direct download
+## Example Direct Download
 
     package com.github.axet.wget;
     
@@ -51,7 +51,7 @@ Here is a three kind of exceptions.
         }
     }
 
-## Application Managed Download
+## Application Managed Multithread Download
 
     package com.github.axet.wget;
     
@@ -61,6 +61,7 @@ Here is a three kind of exceptions.
     
     import com.github.axet.wget.info.DownloadInfo;
     import com.github.axet.wget.info.DownloadInfo.Part;
+    import com.github.axet.wget.info.DownloadInfo.Part.States;
     import com.github.axet.wget.info.ex.DownloadMultipartError;
     
     public class Example {
@@ -83,13 +84,24 @@ Here is a three kind of exceptions.
                             System.out.println(info.getState());
                             break;
                         case RETRYING:
-                            System.out.println(info.getDelay());
+                            System.out.println(info.getState() + " " + info.getDelay());
                             break;
                         case DOWNLOADING:
                             long now = System.currentTimeMillis();
                             if (now - 1000 > last) {
                                 last = now;
-                                System.out.println(String.format("%.2f", info.getCount() / (float) info.getLength()));
+    
+                                String parts = "";
+    
+                                for (Part p : info.getParts()) {
+                                    if (p.getState().equals(States.DOWNLOADING)) {
+                                        parts += String.format("Part#%d(%.2f) ", p.getNumber(),
+                                                p.getCount() / (float) p.getLength());
+                                    }
+                                }
+    
+                                System.out.println(String.format("%.2f %s", info.getCount() / (float) info.getLength(),
+                                        parts));
                             }
                             break;
                         default:
@@ -128,52 +140,6 @@ Here is a three kind of exceptions.
         public static void main(String[] args) {
             Example e = new Example();
             e.run();
-        }
-    
-    }
-
-## Example Multithread Download
-
-    package com.github.axet.wget;
-    
-    import java.io.File;
-    import java.net.URL;
-    import java.util.concurrent.atomic.AtomicBoolean;
-    
-    import com.github.axet.wget.info.DownloadInfo;
-    
-    public class Example {
-    
-        public static void main(String[] args) {
-            try {
-                AtomicBoolean stop = new AtomicBoolean(false);
-                Runnable notify = new Runnable() {
-    
-                    @Override
-                    public void run() {
-                        // notify app or save download state
-                        // you can extract information from DownloadInfo info;
-                        System.out.print(".");
-                    }
-                };
-    
-                // choise file
-                URL url = new URL("http://download.virtualbox.org/virtualbox/4.2.4/VirtualBox-4.2.4-81684-OSX.dmg");
-                // initialize url information object
-                DownloadInfo info = new DownloadInfo(url);
-                // extract infromation from the web
-                info.extract();
-                // enable multipart donwload
-                info.enableMultipart();
-                // Choise target file
-                File target = new File("/Users/axet/Downloads/VirtualBox-4.2.4-81684-OSX.dmg");
-                // create wget downloader
-                WGet w = new WGet(info, target, stop, notify);
-                // will blocks until download finishes
-                w.download();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
     
     }

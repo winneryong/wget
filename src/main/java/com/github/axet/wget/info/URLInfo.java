@@ -147,6 +147,7 @@ public class URLInfo {
         extract = true;
 
         setState(States.EXTRACTING_DONE);
+        notify.run();
     }
 
     synchronized public boolean empty() {

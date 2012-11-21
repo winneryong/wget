@@ -6,7 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,7 +16,7 @@ import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.github.axet.wget.info.URLInfo;
-import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadInterrupted;
 import com.github.axet.wget.info.ex.DownloadMultipartError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -24,14 +25,25 @@ public class DirectMultipart extends Direct {
     static public final int THREAD_COUNT = 3;
     static public final int RETRY_DELAY = 10;
 
-    class LimitDownloader extends ThreadPoolExecutor {
+    static class BlockUntilFree implements RejectedExecutionHandler {
+        @Override
+        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            try {
+                executor.getQueue().put(r);
+            } catch (InterruptedException e) {
+                throw new DownloadInterrupted(e);
+            }
+        }
+    }
+
+    static class LimitDownloader extends ThreadPoolExecutor {
+        boolean fatal = false;
 
         Object lock = new Object();
 
-        boolean fatal = false;
-
         public LimitDownloader() {
-            super(THREAD_COUNT, THREAD_COUNT, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+            super(THREAD_COUNT, THREAD_COUNT, 0, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(),
+                    new BlockUntilFree());
         }
 
         @Override
@@ -49,7 +61,7 @@ public class DirectMultipart extends Direct {
          * @return
          */
         public boolean active() {
-            return getTasks() > 0;
+            return getActiveCount() > 0;
         }
 
         /**
@@ -66,38 +78,6 @@ public class DirectMultipart extends Direct {
                     }
                 }
             }
-        }
-
-        /**
-         * get active threads and queue size as current tasks count
-         * 
-         * @return
-         */
-        int getTasks() {
-            return getActiveCount() + getQueue().size();
-        }
-
-        /**
-         * blocks if here is too many working thread active
-         * 
-         */
-        @Override
-        public void execute(Runnable command) {
-            // do not allow to put more tasks then threads.
-            // if happens - wait until thread ends.
-            synchronized (lock) {
-                if (getTasks() >= THREAD_COUNT) {
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                if (stop.get())
-                    return;
-            }
-
-            super.execute(command);
         }
 
         /**
@@ -215,13 +195,17 @@ public class DirectMultipart extends Direct {
                         public void notifyRetry(int delay, Throwable e) {
                             p.setState(States.RETRYING, e);
                             p.setDelay(delay);
+                            notify.run();
                         }
 
                         @Override
                         public void notifyDownloading() {
                             p.setState(States.DOWNLOADING);
+                            notify.run();
                         }
                     });
+                    p.setState(States.DONE);
+                    notify.run();
                 } catch (RuntimeException e) {
                     p.setState(States.ERROR, e);
                     notify.run();
@@ -231,6 +215,8 @@ public class DirectMultipart extends Direct {
                 }
             }
         });
+        
+        p.setState(States.DOWNLOADING);
     }
 
     /**
@@ -243,7 +229,6 @@ public class DirectMultipart extends Direct {
         for (Part p : info.getParts()) {
             if (!p.getState().equals(States.QUEUED))
                 continue;
-
             return p;
         }
 
@@ -271,9 +256,8 @@ public class DirectMultipart extends Direct {
         for (Part p : info.getParts()) {
             p.setState(States.QUEUED);
         }
-        notify.run();
-
         info.setState(URLInfo.States.DOWNLOADING);
+        notify.run();
 
         try {
             while (!done()) {
@@ -298,6 +282,7 @@ public class DirectMultipart extends Direct {
             }
 
             info.setState(URLInfo.States.DONE);
+            notify.run();
         } finally {
             worker.shutdown();
         }
