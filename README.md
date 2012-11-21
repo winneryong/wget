@@ -113,17 +113,17 @@ Here is a three kind of exceptions.
                 // choise file
                 URL url = new URL("http://download.virtualbox.org/virtualbox/4.2.4/VirtualBox-4.2.4-81684-OSX.dmg");
                 // initialize url information object
-                info = new DownloadInfo(url, stop, notify);
+                info = new DownloadInfo(url);
                 // extract infromation from the web
-                info.extract();
+                info.extract(stop, notify);
                 // enable multipart donwload
                 info.enableMultipart();
                 // Choise target file
                 File target = new File("/Users/axet/Downloads/VirtualBox-4.2.4-81684-OSX.dmg");
                 // create wget downloader
-                WGet w = new WGet(info, target, stop, notify);
+                WGet w = new WGet(info, target);
                 // will blocks until download finishes
-                w.download();
+                w.download(stop, notify);
             } catch (DownloadMultipartError e) {
                 for (Part p : e.getInfo().getParts()) {
                     Throwable ee = p.getException();
