@@ -186,6 +186,8 @@ public class DownloadInfo extends URLInfo {
         long count = getLength() / PART_LENGTH + 1;
 
         if (count > 2) {
+            parts.clear();
+
             int start = 0;
             for (int i = 0; i < count; i++) {
                 Part part = new Part();
@@ -198,13 +200,19 @@ public class DownloadInfo extends URLInfo {
 
                 start += PART_LENGTH;
             }
-        } else {
-            singlePart();
         }
     }
 
     void singlePart() {
+        parts.clear();
 
+        Part part = new Part();
+        part.setNumber(0);
+        part.setStart(0);
+        part.setEnd(getLength());
+        part.setState(Part.States.QUEUED);
+
+        parts.add(part);
     }
 
     /**
@@ -263,5 +271,12 @@ public class DownloadInfo extends URLInfo {
 
     public void setCount(long count) {
         this.count = count;
+    }
+
+    @Override
+    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+        super.extract(stop, notify);
+
+        singlePart();
     }
 }
