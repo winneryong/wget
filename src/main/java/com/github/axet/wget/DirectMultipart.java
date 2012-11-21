@@ -6,17 +6,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.github.axet.wget.info.URLInfo;
-import com.github.axet.wget.info.ex.DownloadInterrupted;
 import com.github.axet.wget.info.ex.DownloadMultipartError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -25,75 +20,11 @@ public class DirectMultipart extends Direct {
     static public final int THREAD_COUNT = 3;
     static public final int RETRY_DELAY = 10;
 
-    static class BlockUntilFree implements RejectedExecutionHandler {
-        @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            try {
-                executor.getQueue().put(r);
-            } catch (InterruptedException e) {
-                throw new DownloadInterrupted(e);
-            }
-        }
-    }
+    LimitThreadPool worker = new LimitThreadPool(THREAD_COUNT);
 
-    static class LimitDownloader extends ThreadPoolExecutor {
-        boolean fatal = false;
+    boolean fatal = false;
 
-        Object lock = new Object();
-
-        public LimitDownloader() {
-            super(THREAD_COUNT, THREAD_COUNT, 0, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(),
-                    new BlockUntilFree());
-        }
-
-        @Override
-        protected void afterExecute(Runnable r, Throwable t) {
-            super.afterExecute(r, t);
-
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-        }
-
-        /**
-         * downloader working if here any getTasks() > 0
-         * 
-         * @return
-         */
-        public boolean active() {
-            return getActiveCount() > 0;
-        }
-
-        /**
-         * wait until current task ends. if here is no tasks exit immidiatly.
-         * 
-         */
-        public void waitUntilNextTaskEnds() {
-            synchronized (lock) {
-                if (getActiveCount() > 0) {
-                    try {
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-
-        /**
-         * returns true if here was a DownloadError or RuntimeException in one
-         * of the downloading threads
-         * 
-         * @return
-         */
-        public boolean fatal() {
-            synchronized (lock) {
-                return fatal;
-            }
-        }
-    }
-
-    LimitDownloader worker = new LimitDownloader();
+    Object lock = new Object();
 
     /**
      * 
@@ -179,6 +110,18 @@ public class DirectMultipart extends Direct {
 
     }
 
+    boolean fatal() {
+        synchronized (lock) {
+            return fatal;
+        }
+    }
+
+    void fatal(boolean b) {
+        synchronized (lock) {
+            fatal = b;
+        }
+    }
+
     void downloadWorker(final Part p) {
         worker.execute(new Runnable() {
             @Override
@@ -209,13 +152,12 @@ public class DirectMultipart extends Direct {
                 } catch (RuntimeException e) {
                     p.setState(States.ERROR, e);
                     notify.run();
-                    synchronized (worker.lock) {
-                        worker.fatal = true;
-                    }
+
+                    fatal(true);
                 }
             }
         });
-        
+
         p.setState(States.DOWNLOADING);
     }
 
@@ -265,15 +207,18 @@ public class DirectMultipart extends Direct {
                 if (p != null) {
                     downloadWorker(p);
                 } else {
+                    // we have no parts left.
+                    //
+                    // wait until task ends and check again if we have to retry.
+                    // we have to check if last part back to queue in case of
+                    // RETRY state
                     worker.waitUntilNextTaskEnds();
                 }
 
                 // if we start to receive errors. stop add new tasks and wait
-                // until all active tasks && queue will be emptied
-                if (worker.fatal()) {
-                    while (worker.active()) {
-                        worker.waitUntilNextTaskEnds();
-                    }
+                // until all active tasks be emptied
+                if (fatal()) {
+                    worker.waitUntilTermination();
 
                     // ok all thread stopped. now throw the exception and let
                     // app deal with the errors
@@ -283,6 +228,10 @@ public class DirectMultipart extends Direct {
 
             info.setState(URLInfo.States.DONE);
             notify.run();
+        } catch (RuntimeException e) {
+            info.setState(URLInfo.States.ERROR);
+            notify.run();
+            throw e;
         } finally {
             worker.shutdown();
         }
