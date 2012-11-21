@@ -15,11 +15,19 @@ public class Direct {
 
     AtomicBoolean stop;
 
+    /**
+     * connect socket timeout
+     */
     static public final int CONNECT_TIMEOUT = 5000;
 
+    /**
+     * read socket timeout
+     */
     static public final int READ_TIMEOUT = 5000;
 
-    // size of read buffer
+    /**
+     * size of read buffer
+     */
     static public final int BUF_SIZE = 4 * 1024;
 
     /**

@@ -3,12 +3,13 @@ package com.github.axet.wget.info;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
  * DownloadInfo class. Keep part information. We need to serialize this class
- * bettwen application restart. Thread safe.
+ * between application restart. Thread safe.
  * 
  * @author axet
  * 
@@ -18,25 +19,43 @@ public class DownloadInfo extends URLInfo {
 
     public final static long PART_LENGTH = 10 * 1024 * 1024;
 
-    public enum PartState {
-        QUEUED, DOWNLOADING, RETRYING, ERROR, DONE;
-    }
-
     @XStreamAlias("DownloadInfoPart")
     public static class Part {
-        // start offset [start, end]
+        /**
+         * Notify States
+         */
+        public enum States {
+            QUEUED, DOWNLOADING, RETRYING, ERROR, DONE;
+        }
+
+        /**
+         * start offset [start, end]
+         */
         private long start;
-        // end offset [start, end]
+        /**
+         * end offset [start, end]
+         */
         private long end;
-        // amount of bytes downloaded
-        private long count;
-        // part number
+        /**
+         * part number
+         */
         private long number;
-        // downloading error / retry error
-        private Throwable e;
-        // state
-        private PartState state;
-        // retrying delay;
+        /**
+         * number of bytes we are downloaded
+         */
+        private long count;
+
+        /**
+         * download state
+         */
+        private States state;
+        /**
+         * downloading error / retry error
+         */
+        private Throwable exception;
+        /**
+         * retrying delay;
+         */
         private int delay;
 
         synchronized public long getStart() {
@@ -55,6 +74,14 @@ public class DownloadInfo extends URLInfo {
             this.end = end;
         }
 
+        synchronized public long getNumber() {
+            return number;
+        }
+
+        synchronized public void setNumber(long number) {
+            this.number = number;
+        }
+
         synchronized public long getLength() {
             return end - start + 1;
         }
@@ -67,65 +94,53 @@ public class DownloadInfo extends URLInfo {
             this.count = count;
         }
 
-        synchronized public long getNumber() {
-            return number;
-        }
-
-        synchronized public void setNumber(long number) {
-            this.number = number;
-        }
-
-        synchronized public Throwable getE() {
-            return e;
-        }
-
-        synchronized public void setE(Throwable e) {
-            this.e = e;
-        }
-
-        synchronized public PartState getState() {
+        synchronized public States getState() {
             return state;
         }
 
-        /**
-         * set new part state. clear last error.
-         * 
-         * @param state
-         */
-        synchronized public void setState(PartState state) {
+        synchronized public void setState(States state) {
             this.state = state;
-            this.e = null;
         }
 
-        synchronized public void setState(PartState state, Throwable e) {
+        synchronized public void setState(States state, Throwable e) {
             this.state = state;
-            this.e = e;
+            this.exception = e;
+        }
+
+        synchronized public Throwable getException() {
+            return exception;
+        }
+
+        synchronized public void setException(Throwable exception) {
+            this.exception = exception;
         }
 
         synchronized public int getDelay() {
             return delay;
         }
 
-        /**
-         * for part in the RETRYING state shows amount of seconds.
-         * 
-         * @param delay
-         */
         synchronized public void setDelay(int delay) {
             this.delay = delay;
         }
     }
 
-    // part we are going to download. partList == null. we are doing one thread
-    // download
-    private List<Part> parts;
+    /**
+     * part we are going to download.
+     */
+    private List<Part> parts = new ArrayList<Part>();
 
-    // total bytes downloaded. for chunk download progress info. for one thread
-    // count - also local file size;
+    /**
+     * total bytes downloaded. for chunk download progress info. for one thread
+     * count - also local file size;
+     */
     private long count;
 
     public DownloadInfo(URL source) {
         super(source);
+    }
+
+    public DownloadInfo(URL source, AtomicBoolean stop, Runnable notify) {
+        super(source, stop, notify);
     }
 
     /**
@@ -137,7 +152,7 @@ public class DownloadInfo extends URLInfo {
         if (!range())
             return false;
 
-        return getParts() != null;
+        return getParts().size() > 1;
     }
 
     synchronized public void reset() {
@@ -155,18 +170,10 @@ public class DownloadInfo extends URLInfo {
      * download progress
      */
     synchronized public void calculate() {
-        count = 0;
+        setCount(0);
 
         for (Part p : getParts())
-            count += p.getCount();
-    }
-
-    synchronized public long getCount() {
-        return count;
-    }
-
-    synchronized public void setCount(long count) {
-        this.count = count;
+            setCount(getCount() + p.getCount());
     }
 
     synchronized public List<Part> getParts() {
@@ -183,8 +190,6 @@ public class DownloadInfo extends URLInfo {
         long count = getLength() / PART_LENGTH + 1;
 
         if (count > 2) {
-            parts = new ArrayList<Part>();
-
             int start = 0;
             for (int i = 0; i < count; i++) {
                 Part part = new Part();
@@ -197,7 +202,13 @@ public class DownloadInfo extends URLInfo {
 
                 start += PART_LENGTH;
             }
+        } else {
+            singlePart();
         }
+    }
+
+    void singlePart() {
+
     }
 
     /**
@@ -246,7 +257,15 @@ public class DownloadInfo extends URLInfo {
      * copy resume data from oldSource;
      */
     synchronized public void copy(DownloadInfo oldSource) {
-        count = oldSource.count;
+        setCount(oldSource.getCount());
         parts = oldSource.parts;
+    }
+
+    public long getCount() {
+        return count;
+    }
+
+    public void setCount(long count) {
+        this.count = count;
     }
 }

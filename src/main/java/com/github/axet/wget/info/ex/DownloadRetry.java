@@ -1,4 +1,4 @@
-package com.github.axet.wget.info;
+package com.github.axet.wget.info.ex;
 
 /**
  * Multithread downloads can (and will) receive multiple IOExceptions such as
@@ -13,16 +13,20 @@ package com.github.axet.wget.info;
  * @author axet
  * 
  */
-public class DownloadMultipartError extends RuntimeException {
+public class DownloadRetry extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    DownloadInfo info;
+    Throwable e;
 
-    public DownloadMultipartError(DownloadInfo info) {
-        this.info = info;
+    public DownloadRetry(Throwable e) {
+        this.e = e;
     }
 
-    public DownloadInfo getInfo() {
-        return info;
+    public DownloadRetry(String msg) {
+        super(msg);
+    }
+
+    public Throwable getE() {
+        return e;
     }
 }

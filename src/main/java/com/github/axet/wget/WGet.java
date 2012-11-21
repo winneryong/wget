@@ -2,21 +2,25 @@ package com.github.axet.wget;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
+import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
+import java.net.SocketException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
-import com.github.axet.wget.info.DownloadError;
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.DownloadRetry;
+import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class WGet {
 
@@ -179,10 +183,25 @@ public class WGet {
             }
             
             return contents.toString();
-        } catch (FileNotFoundException e) {
-            throw new DownloadError(e);
-        } catch (IOException e) {
+        } catch (SocketException e) {
+            // enumerate all retry exceptions
             throw new DownloadRetry(e);
+        } catch (ProtocolException e) {
+            // enumerate all retry exceptions
+            throw new DownloadRetry(e);
+        } catch (HttpRetryException e) {
+            // enumerate all retry exceptions
+            throw new DownloadRetry(e);
+        } catch (InterruptedIOException e) {
+            // enumerate all retry exceptions
+            throw new DownloadRetry(e);
+        } catch (UnknownHostException e) {
+            // enumerate all retry exceptions
+            throw new DownloadRetry(e);
+        } catch (IOException e) {
+            // all other io excetption including FileNotFoundException should
+            // stop downloading.
+            throw new DownloadError(e);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
