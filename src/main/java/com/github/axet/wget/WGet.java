@@ -19,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
+import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -31,29 +32,13 @@ public class WGet {
     File targetFile;
 
     /**
-     * simple download file.
+     * download with events control.
      * 
      * @param source
      * @param target
      */
     public WGet(URL source, File target) {
-        create(source, target, new AtomicBoolean(false), new Runnable() {
-            @Override
-            public void run() {
-            }
-        });
-    }
-
-    /**
-     * download with events control.
-     * 
-     * @param source
-     * @param target
-     * @param stop
-     * @param notify
-     */
-    public WGet(URL source, File target, AtomicBoolean stop, Runnable notify) {
-        create(source, target, stop, notify);
+        create(source, target);
     }
 
     /**
@@ -66,34 +51,34 @@ public class WGet {
      * @param stop
      * @param notify
      */
-    public WGet(DownloadInfo info, File targetFile, AtomicBoolean stop, Runnable notify) {
+    public WGet(DownloadInfo info, File targetFile) {
         this.info = info;
         this.targetFile = targetFile;
-        create(stop, notify);
+        create();
     }
 
-    void create(URL source, File target, AtomicBoolean stop, Runnable notify) {
+    void create(URL source, File target) {
         info = new DownloadInfo(source);
         info.extract();
-        create(target, stop, notify);
+        create(target);
     }
 
-    void create(File target, AtomicBoolean stop, Runnable notify) {
+    void create(File target) {
         targetFile = calcName(info, target);
-        create(stop, notify);
+        create();
     }
 
-    void create(AtomicBoolean stop, Runnable notify) {
-        d = createDirect(stop, notify);
+    void create() {
+        d = createDirect();
     }
 
-    Direct createDirect(AtomicBoolean stop, Runnable notify) {
+    Direct createDirect() {
         if (info.multipart()) {
-            return new DirectMultipart(info, targetFile, stop, notify);
+            return new DirectMultipart(info, targetFile);
         } else if (info.range()) {
-            return new DirectRange(info, targetFile, stop, notify);
+            return new DirectRange(info, targetFile);
         } else {
-            return new DirectSingle(info, targetFile, stop, notify);
+            return new DirectSingle(info, targetFile);
         }
     }
 
@@ -150,7 +135,29 @@ public class WGet {
     }
 
     public void download() {
-        d.download();
+        try {
+            download(new AtomicBoolean(false), new Runnable() {
+                @Override
+                public void run() {
+                }
+            });
+        } catch (InterruptedException e) {
+            throw new DownloadError(e);
+        }
+    }
+
+    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
+        try {
+            d.download(stop, notify);
+        } catch (InterruptedException e) {
+            info.setState(URLInfo.States.STOPPED);
+            notify.run();
+            throw e;
+        } catch (RuntimeException e) {
+            info.setState(URLInfo.States.ERROR);
+            notify.run();
+            throw e;
+        }
     }
 
     public DownloadInfo getInfo() {
@@ -181,7 +188,7 @@ public class WGet {
                 if (stop.get())
                     return null;
             }
-            
+
             return contents.toString();
         } catch (SocketException e) {
             // enumerate all retry exceptions

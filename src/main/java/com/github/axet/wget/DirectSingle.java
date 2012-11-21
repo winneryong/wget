@@ -26,11 +26,11 @@ public class DirectSingle extends Direct {
      * @param notify
      *            progress notify call
      */
-    public DirectSingle(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        super(info, target, stop, notify);
+    public DirectSingle(DownloadInfo info, File target) {
+        super(info, target);
     }
 
-    void download(Part part) throws IOException {
+    void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
 
         try {
@@ -67,7 +67,8 @@ public class DirectSingle extends Direct {
         }
     }
 
-    public void download() {
+    @Override
+    public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
@@ -75,7 +76,7 @@ public class DirectSingle extends Direct {
 
             @Override
             public void run() throws IOException {
-                download(p);
+                download(p, stop, notify);
             }
 
             @Override

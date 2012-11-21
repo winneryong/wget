@@ -17,11 +17,11 @@ import com.github.axet.wget.info.DownloadInfo.Part.States;
 
 public class DirectRange extends Direct {
 
-    public DirectRange(DownloadInfo info, File target, AtomicBoolean stop, Runnable notify) {
-        super(info, target, stop, notify);
+    public DirectRange(DownloadInfo info, File target) {
+        super(info, target);
     }
 
-    public void download(Part part) throws IOException {
+    public void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
         BufferedInputStream binaryreader = null;
 
@@ -71,7 +71,8 @@ public class DirectRange extends Direct {
         }
     }
 
-    public void download() {
+    @Override
+    public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
@@ -79,7 +80,7 @@ public class DirectRange extends Direct {
 
             @Override
             public void run() throws IOException {
-                download(p);
+                download(p, stop, notify);
             }
 
             @Override
