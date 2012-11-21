@@ -5,14 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
-import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
-import java.net.SocketException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
@@ -21,7 +16,6 @@ import org.apache.commons.io.FilenameUtils;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.ex.DownloadError;
-import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class WGet {
 
@@ -30,6 +24,12 @@ public class WGet {
     Direct d;
 
     File targetFile;
+
+    public interface HtmlLoader {
+        public void notifyRetry(int delay, Throwable e);
+
+        public void notifyDownloading();
+    }
 
     /**
      * download with events control.
@@ -165,55 +165,60 @@ public class WGet {
     }
 
     public static String getHtml(URL source) {
-        return getHtml(source, new AtomicBoolean(false));
-    }
-
-    public static String getHtml(URL source, AtomicBoolean stop) {
         try {
-            URL u = source;
-            HttpURLConnection con = (HttpURLConnection) u.openConnection();
-            con.setConnectTimeout(Direct.CONNECT_TIMEOUT);
-            con.setReadTimeout(Direct.READ_TIMEOUT);
-            InputStream is = con.getInputStream();
+            return getHtml(source, new HtmlLoader() {
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                @Override
+                public void notifyRetry(int delay, Throwable e) {
+                }
 
-            String line = null;
-
-            StringBuilder contents = new StringBuilder();
-            while ((line = br.readLine()) != null) {
-                contents.append(line);
-                contents.append("\n");
-
-                if (stop.get())
-                    return null;
-            }
-
-            return contents.toString();
-        } catch (SocketException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (ProtocolException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (HttpRetryException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (InterruptedIOException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (UnknownHostException e) {
-            // enumerate all retry exceptions
-            throw new DownloadRetry(e);
-        } catch (IOException e) {
-            // all other io excetption including FileNotFoundException should
-            // stop downloading.
+                @Override
+                public void notifyDownloading() {
+                }
+            }, new AtomicBoolean(false));
+        } catch (InterruptedException e) {
             throw new DownloadError(e);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 
+    public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop)
+            throws InterruptedException {
+        String html = RetryFactory.wrap(stop, new RetryFactory.RetryWrapperReturn<String>() {
+            @Override
+            public void notifyRetry(int delay, Throwable e) {
+                load.notifyRetry(delay, e);
+            }
+
+            @Override
+            public void notifyDownloading() {
+                load.notifyDownloading();
+            }
+
+            @Override
+            public String run() throws IOException {
+                URL u = source;
+                HttpURLConnection con = (HttpURLConnection) u.openConnection();
+                con.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+                con.setReadTimeout(Direct.READ_TIMEOUT);
+                InputStream is = con.getInputStream();
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+                String line = null;
+
+                StringBuilder contents = new StringBuilder();
+                while ((line = br.readLine()) != null) {
+                    contents.append(line);
+                    contents.append("\n");
+
+                    if (stop.get())
+                        return null;
+                }
+
+                return contents.toString();
+            }
+        });
+
+        return html;
+    }
 }
