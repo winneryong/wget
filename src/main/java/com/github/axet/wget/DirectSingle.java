@@ -69,7 +69,7 @@ public class DirectSingle extends Direct {
     }
 
     @Override
-    public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+    public void download(final AtomicBoolean stop, final Runnable notify) {
         info.setState(URLInfo.States.DOWNLOADING);
         notify.run();
 

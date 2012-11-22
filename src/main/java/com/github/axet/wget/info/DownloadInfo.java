@@ -1,5 +1,6 @@
 package com.github.axet.wget.info;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -274,7 +275,7 @@ public class DownloadInfo extends URLInfo {
     }
 
     @Override
-    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
         super.extract(stop, notify);
 
         singlePart();

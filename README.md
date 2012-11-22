@@ -16,6 +16,14 @@ Here is a three kind of exceptions.
 
 3) DownloadMultipartError (extends DownloadError)
   We unable to download multhread source. Shall stop downloading and parse each Parts exceptions.
+  
+4) DownloadInterrceptedError (extends DownloadError)
+  Current thread was interrcepted by main app (you). So handle it your self ;)
+  
+5) DownloadIOError (extends DownloadError)
+  Some simple exceptoins, like Timeout exceptions we handle internaly, and retry part / download automaticaly without
+  user interrraction. But some hudge errors, like problems with file on server (HTTP 403) we pass to the App.
+  It may stop download, or auto update download URL and automaticaly retry the download without any user interaction.
 
 ## Example Direct Download
 

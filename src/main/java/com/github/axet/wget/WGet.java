@@ -16,6 +16,7 @@ import org.apache.commons.io.FilenameUtils;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class WGet {
 
@@ -135,21 +136,17 @@ public class WGet {
     }
 
     public void download() {
-        try {
-            download(new AtomicBoolean(false), new Runnable() {
-                @Override
-                public void run() {
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new DownloadError(e);
-        }
+        download(new AtomicBoolean(false), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
     }
 
-    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
+    public void download(AtomicBoolean stop, Runnable notify) {
         try {
             d.download(stop, notify);
-        } catch (InterruptedException e) {
+        } catch (DownloadInterruptedError e) {
             info.setState(URLInfo.States.STOPPED);
             notify.run();
             throw e;
@@ -167,7 +164,6 @@ public class WGet {
     public static String getHtml(URL source) {
         try {
             return getHtml(source, new HtmlLoader() {
-
                 @Override
                 public void notifyRetry(int delay, Throwable e) {
                 }
@@ -178,11 +174,13 @@ public class WGet {
             }, new AtomicBoolean(false));
         } catch (InterruptedException e) {
             throw new DownloadError(e);
+        } catch (IOException e) {
+            throw new DownloadError(e);
         }
     }
 
     public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
         String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
             @Override
             public void notifyRetry(int delay, Throwable e) {

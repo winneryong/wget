@@ -1,11 +1,12 @@
 package com.github.axet.wget;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.DownloadInfo;
 
-public class Direct {
+public abstract class Direct {
 
     File target = null;
 
@@ -42,7 +43,6 @@ public class Direct {
         this.info = info;
     }
 
-    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
-    }
+    abstract public void download(AtomicBoolean stop, Runnable notify);
 
 }

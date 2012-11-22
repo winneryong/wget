@@ -12,6 +12,7 @@ import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.github.axet.wget.info.URLInfo;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.ex.DownloadMultipartError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -154,8 +155,6 @@ public class DirectMultipart extends Direct {
                     notify.run();
 
                     fatal(true);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
             }
         });
@@ -186,11 +185,11 @@ public class DirectMultipart extends Direct {
      * @return true - done. false - not done yet
      * @throws InterruptedException
      */
-    boolean done(AtomicBoolean stop) throws InterruptedException {
+    boolean done(AtomicBoolean stop) {
         if (stop.get())
-            throw new InterruptedException();
+            throw new DownloadInterruptedError("stop");
         if (Thread.interrupted())
-            throw new InterruptedException();
+            throw new DownloadInterruptedError("interupted");
         if (worker.active())
             return false;
         if (getPart() != null)
@@ -200,7 +199,7 @@ public class DirectMultipart extends Direct {
     }
 
     @Override
-    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
+    public void download(AtomicBoolean stop, Runnable notify) {
         for (Part p : info.getParts()) {
             p.setState(States.QUEUED);
         }
@@ -234,6 +233,8 @@ public class DirectMultipart extends Direct {
 
             info.setState(URLInfo.States.DONE);
             notify.run();
+        } catch (InterruptedException e) {
+            throw new DownloadInterruptedError(e);
         } finally {
             worker.shutdown();
         }

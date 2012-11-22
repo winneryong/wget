@@ -86,18 +86,14 @@ public class URLInfo {
     }
 
     synchronized public void extract() {
-        try {
-            extract(new AtomicBoolean(false), new Runnable() {
-                @Override
-                public void run() {
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new DownloadError(e);
-        }
+        extract(new AtomicBoolean(false), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
     }
 
-    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
         HttpURLConnection conn;
 
         conn = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<HttpURLConnection>() {

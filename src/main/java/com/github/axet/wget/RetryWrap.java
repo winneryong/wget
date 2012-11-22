@@ -1,5 +1,6 @@
 package com.github.axet.wget;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.HttpRetryException;
@@ -9,9 +10,13 @@ import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadIOError;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class RetryWrap {
+
+    public static final int RETRY_DELAY = 10;
 
     public interface WrapReturn<T> {
         public void notifyRetry(int delay, Throwable e);
@@ -29,28 +34,30 @@ public class RetryWrap {
         public void run() throws IOException;
     }
 
-    public static final int RETRY_DELAY = 10;
-
-    static <T> void retry(AtomicBoolean stop, WrapReturn<T> r, RuntimeException e) throws InterruptedException {
+    static <T> void retry(AtomicBoolean stop, WrapReturn<T> r, RuntimeException e) {
         for (int i = RETRY_DELAY; i > 0; i--) {
             r.notifyRetry(i, e);
 
             if (stop.get())
-                throw new InterruptedException("stop");
+                throw new DownloadInterruptedError("stop");
 
             if (Thread.currentThread().isInterrupted())
-                throw new InterruptedException("interrrupted");
+                throw new DownloadInterruptedError("interrrupted");
 
-            Thread.sleep(1000);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e1) {
+                throw new DownloadInterruptedError(e1);
+            }
         }
     }
 
-    public static <T> T run(AtomicBoolean stop, WrapReturn<T> r) throws InterruptedException {
+    public static <T> T run(AtomicBoolean stop, WrapReturn<T> r) {
         while (true) {
             if (stop.get())
-                throw new InterruptedException("stop");
+                throw new DownloadInterruptedError("stop");
             if (Thread.currentThread().isInterrupted())
-                throw new InterruptedException("interrupted");
+                throw new DownloadInterruptedError("interrupted");
 
             try {
                 try {
@@ -74,14 +81,12 @@ public class RetryWrap {
                 } catch (UnknownHostException e) {
                     // enumerate all retry exceptions
                     throw new DownloadRetry(e);
-                } catch (IOException e) {
-                    // all other io excetption including FileNotFoundException
-                    // should stop downloading.
+                } catch (FileNotFoundException e) {
                     throw new DownloadError(e);
                 } catch (RuntimeException e) {
                     throw e;
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new DownloadIOError(e);
                 }
             } catch (DownloadRetry e) {
                 retry(stop, r, e);
@@ -89,11 +94,11 @@ public class RetryWrap {
         }
     }
 
-    public static <T> T wrap(AtomicBoolean stop, WrapReturn<T> r) throws InterruptedException {
+    public static <T> T wrap(AtomicBoolean stop, WrapReturn<T> r) {
         return RetryWrap.run(stop, r);
     }
 
-    public static void wrap(AtomicBoolean stop, final Wrap r) throws InterruptedException {
+    public static void wrap(AtomicBoolean stop, final Wrap r) {
         WrapReturn<Object> rr = new WrapReturn<Object>() {
 
             @Override
