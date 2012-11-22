@@ -14,11 +14,8 @@ Here is a three kind of exceptions.
 2) DownloadError (extends RuntimeException)
   We unable to process following url and shall stop to download it. It may be rised by problem with local file.
 
-3) ExtractError (extends RuntimeException)
-  We unable to extract information from the source URL. Shall stop downloading.
-  
-4) DownloadInterrupted (extends RuntimeException)
-  App or Library interrupted the downloading thread
+3) DownloadMultipartError (extends DownloadError)
+  We unable to download multhread source. Shall stop downloading and parse each Parts exceptions.
 
 ## Example Direct Download
 

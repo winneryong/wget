@@ -100,7 +100,7 @@ public class URLInfo {
     synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
         HttpURLConnection conn;
 
-        conn = RetryFactory.wrap(stop, new RetryFactory.RetryWrapperReturn<HttpURLConnection>() {
+        conn = RetryFactory.wrap(stop, new RetryFactory.WrapReturn<HttpURLConnection>() {
             @Override
             public HttpURLConnection run() throws IOException {
                 try {

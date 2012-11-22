@@ -76,7 +76,7 @@ public class DirectSingle extends Direct {
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
-        RetryFactory.wrap(stop, new RetryFactory.RetryWrapper() {
+        RetryFactory.wrap(stop, new RetryFactory.Wrap() {
 
             @Override
             public void run() throws IOException {

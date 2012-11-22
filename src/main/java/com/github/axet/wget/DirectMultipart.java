@@ -127,7 +127,7 @@ public class DirectMultipart extends Direct {
             @Override
             public void run() {
                 try {
-                    RetryFactory.wrap(stop, new RetryFactory.RetryWrapper() {
+                    RetryFactory.wrap(stop, new RetryFactory.Wrap() {
 
                         @Override
                         public void run() throws IOException {

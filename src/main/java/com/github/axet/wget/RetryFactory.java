@@ -13,7 +13,7 @@ import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class RetryFactory {
 
-    public interface RetryWrapperReturn<T> {
+    public interface WrapReturn<T> {
         public void notifyRetry(int delay, Throwable e);
 
         public void notifyDownloading();
@@ -21,7 +21,7 @@ public class RetryFactory {
         public T run() throws IOException;
     }
 
-    public interface RetryWrapper {
+    public interface Wrap {
         public void notifyRetry(int delay, Throwable e);
 
         public void notifyDownloading();
@@ -31,7 +31,7 @@ public class RetryFactory {
 
     public static final int RETRY_DELAY = 10;
 
-    static <T> void retry(AtomicBoolean stop, RetryWrapperReturn<T> r, RuntimeException e) throws InterruptedException {
+    static <T> void retry(AtomicBoolean stop, WrapReturn<T> r, RuntimeException e) throws InterruptedException {
         for (int i = RETRY_DELAY; i > 0; i--) {
             r.notifyRetry(i, e);
 
@@ -45,7 +45,7 @@ public class RetryFactory {
         }
     }
 
-    public static <T> T run(AtomicBoolean stop, RetryWrapperReturn<T> r) throws InterruptedException {
+    public static <T> T run(AtomicBoolean stop, WrapReturn<T> r) throws InterruptedException {
         while (true) {
             if (stop.get())
                 throw new InterruptedException("stop");
@@ -89,12 +89,12 @@ public class RetryFactory {
         }
     }
 
-    public static <T> T wrap(AtomicBoolean stop, RetryWrapperReturn<T> r) throws InterruptedException {
+    public static <T> T wrap(AtomicBoolean stop, WrapReturn<T> r) throws InterruptedException {
         return RetryFactory.run(stop, r);
     }
 
-    public static void wrap(AtomicBoolean stop, final RetryWrapper r) throws InterruptedException {
-        RetryWrapperReturn<Object> rr = new RetryWrapperReturn<Object>() {
+    public static void wrap(AtomicBoolean stop, final Wrap r) throws InterruptedException {
+        WrapReturn<Object> rr = new WrapReturn<Object>() {
 
             @Override
             public Object run() throws IOException {
