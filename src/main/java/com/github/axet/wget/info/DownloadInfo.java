@@ -129,7 +129,7 @@ public class DownloadInfo extends URLInfo {
     /**
      * part we are going to download.
      */
-    private List<Part> parts = new ArrayList<Part>();
+    private List<Part> parts;
 
     /**
      * total bytes downloaded. for chunk download progress info. for one thread
@@ -150,7 +150,7 @@ public class DownloadInfo extends URLInfo {
         if (!range())
             return false;
 
-        return getParts().size() > 1;
+        return parts != null;
     }
 
     synchronized public void reset() {
@@ -188,7 +188,7 @@ public class DownloadInfo extends URLInfo {
         long count = getLength() / PART_LENGTH + 1;
 
         if (count > 2) {
-            parts.clear();
+            parts = new ArrayList<Part>();
 
             int start = 0;
             for (int i = 0; i < count; i++) {
@@ -203,18 +203,6 @@ public class DownloadInfo extends URLInfo {
                 start += PART_LENGTH;
             }
         }
-    }
-
-    void singlePart() {
-        parts.clear();
-
-        Part part = new Part();
-        part.setNumber(0);
-        part.setStart(0);
-        part.setEnd(getLength());
-        part.setState(Part.States.QUEUED);
-
-        parts.add(part);
     }
 
     /**
@@ -278,7 +266,5 @@ public class DownloadInfo extends URLInfo {
     @Override
     synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
         super.extract(stop, notify);
-
-        singlePart();
     }
 }
