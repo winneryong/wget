@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 public class SpeedInfo {
 
+    public static final int SAMPLE_LENGTH = 1000;
+    public static final int SAMPLE_MAX = 20;
+
     public class Sample {
         // bytes downloaded
         public long current;
@@ -32,14 +35,11 @@ public class SpeedInfo {
         }
     }
 
-    ArrayList<Sample> samples = new ArrayList<SpeedInfo.Sample>();
-    long peak;
-
-    public static final int SAMPLE_LENGTH = 1000;
-    public static final int SAMPLE_MAX = 20;
+    protected ArrayList<Sample> samples = new ArrayList<SpeedInfo.Sample>();
+    protected long peak;
 
     // start sample use to calculate average speed
-    Sample start = null;
+    protected Sample start = null;
 
     public SpeedInfo() {
     }
@@ -49,7 +49,7 @@ public class SpeedInfo {
      * 
      * @param current
      */
-    public void start(long current) {
+    synchronized public void start(long current) {
         Sample s = new Sample(current);
         s.start = true;
         start = s;
@@ -61,7 +61,7 @@ public class SpeedInfo {
      * 
      * @param current
      */
-    public void step(long current) {
+    synchronized public void step(long current) {
         long now = System.currentTimeMillis();
 
         long lastUpdate = getLastUpdate();
@@ -75,7 +75,7 @@ public class SpeedInfo {
      * 
      * @return bytes per second
      */
-    public int getCurrentSpeed() {
+    synchronized public int getCurrentSpeed() {
         if (getRowSamples() < 2)
             return 0;
 
@@ -97,7 +97,7 @@ public class SpeedInfo {
      * 
      * @return bytes per second
      */
-    public int getAverageSpeed() {
+    synchronized public int getAverageSpeed() {
         if (getRowSamples() < 2)
             return 0;
 
@@ -109,15 +109,15 @@ public class SpeedInfo {
         return (int) (current * 1000 / time);
     }
 
-    public int getSamples() {
+    synchronized public int getSamples() {
         return samples.size();
     }
 
-    public Sample getSample(int index) {
+    synchronized public Sample getSample(int index) {
         return samples.get(index);
     }
 
-    public long getPeak() {
+    synchronized public long getPeak() {
         return peak;
     }
 
@@ -125,7 +125,7 @@ public class SpeedInfo {
     // protected
     //
 
-    Sample getStart() {
+    protected Sample getStart() {
         for (int i = samples.size() - 1; i >= 0; i--) {
             Sample s = samples.get(i);
             if (s.start)
@@ -135,7 +135,7 @@ public class SpeedInfo {
         return null;
     }
 
-    void add(Sample s) {
+    protected void add(Sample s) {
         // check if we have broken / restarted download. check if here some
         // samples
         if (samples.size() > 0) {
@@ -161,7 +161,7 @@ public class SpeedInfo {
      * 
      * @return
      */
-    int getRowSamples() {
+    protected int getRowSamples() {
         for (int i = samples.size() - 1; i >= 0; i--) {
             Sample s = samples.get(i);
             if (s.start)
@@ -171,7 +171,7 @@ public class SpeedInfo {
         return samples.size();
     }
 
-    long getLastUpdate() {
+    protected long getLastUpdate() {
         if (samples.size() == 0)
             return 0;
 
@@ -179,7 +179,7 @@ public class SpeedInfo {
         return s.now;
     }
 
-    void peakUpdate() {
+    protected void peakUpdate() {
         peak = 0;
         for (Sample s : samples) {
             if (peak < s.current)
