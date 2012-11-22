@@ -183,7 +183,7 @@ public class WGet {
 
     public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop)
             throws InterruptedException {
-        String html = RetryFactory.wrap(stop, new RetryFactory.WrapReturn<String>() {
+        String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
             @Override
             public void notifyRetry(int delay, Throwable e) {
                 load.notifyRetry(delay, e);

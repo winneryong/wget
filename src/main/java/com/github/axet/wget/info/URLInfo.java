@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.github.axet.wget.Direct;
-import com.github.axet.wget.RetryFactory;
+import com.github.axet.wget.RetryWrap;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -100,7 +100,7 @@ public class URLInfo {
     synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
         HttpURLConnection conn;
 
-        conn = RetryFactory.wrap(stop, new RetryFactory.WrapReturn<HttpURLConnection>() {
+        conn = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<HttpURLConnection>() {
             @Override
             public HttpURLConnection run() throws IOException {
                 try {

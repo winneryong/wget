@@ -80,7 +80,7 @@ public class DirectRange extends Direct {
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
-        RetryFactory.wrap(stop, new RetryFactory.Wrap() {
+        RetryWrap.wrap(stop, new RetryWrap.Wrap() {
 
             @Override
             public void run() throws IOException {

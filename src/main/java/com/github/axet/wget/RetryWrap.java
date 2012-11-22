@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
-public class RetryFactory {
+public class RetryWrap {
 
     public interface WrapReturn<T> {
         public void notifyRetry(int delay, Throwable e);
@@ -90,7 +90,7 @@ public class RetryFactory {
     }
 
     public static <T> T wrap(AtomicBoolean stop, WrapReturn<T> r) throws InterruptedException {
-        return RetryFactory.run(stop, r);
+        return RetryWrap.run(stop, r);
     }
 
     public static void wrap(AtomicBoolean stop, final Wrap r) throws InterruptedException {
@@ -114,6 +114,6 @@ public class RetryFactory {
             }
         };
 
-        RetryFactory.run(stop, rr);
+        RetryWrap.run(stop, rr);
     }
 }
