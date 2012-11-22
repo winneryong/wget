@@ -14,7 +14,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.ex.DownloadError;
 
 public class WGet {
@@ -135,29 +134,15 @@ public class WGet {
     }
 
     public void download() {
-        try {
-            download(new AtomicBoolean(false), new Runnable() {
-                @Override
-                public void run() {
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new DownloadError(e);
-        }
+        download(new AtomicBoolean(false), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
     }
 
-    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
-        try {
-            d.download(stop, notify);
-        } catch (InterruptedException e) {
-            info.setState(URLInfo.States.STOPPED);
-            notify.run();
-            throw e;
-        } catch (RuntimeException e) {
-            info.setState(URLInfo.States.ERROR);
-            notify.run();
-            throw e;
-        }
+    public void download(AtomicBoolean stop, Runnable notify) {
+        d.download(stop, notify);
     }
 
     public DownloadInfo getInfo() {
@@ -167,7 +152,6 @@ public class WGet {
     public static String getHtml(URL source) {
         try {
             return getHtml(source, new HtmlLoader() {
-
                 @Override
                 public void notifyRetry(int delay, Throwable e) {
                 }
@@ -178,24 +162,21 @@ public class WGet {
             }, new AtomicBoolean(false));
         } catch (InterruptedException e) {
             throw new DownloadError(e);
+        } catch (IOException e) {
+            throw new DownloadError(e);
         }
     }
 
     public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop)
-            throws InterruptedException {
-        String html = RetryFactory.wrap(stop, new RetryFactory.RetryWrapperReturn<String>() {
+            throws InterruptedException, IOException {
+        String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
             @Override
-            public void notifyRetry(int delay, Throwable e) {
+            public void retry(int delay, Throwable e) {
                 load.notifyRetry(delay, e);
             }
 
             @Override
-            public void notifyDownloading() {
-                load.notifyDownloading();
-            }
-
-            @Override
-            public String run() throws IOException {
+            public String download() throws IOException {
                 URL u = source;
                 HttpURLConnection con = (HttpURLConnection) u.openConnection();
                 con.setConnectTimeout(Direct.CONNECT_TIMEOUT);

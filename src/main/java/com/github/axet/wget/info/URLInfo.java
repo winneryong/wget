@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.github.axet.wget.Direct;
-import com.github.axet.wget.RetryFactory;
+import com.github.axet.wget.RetryWrap;
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -54,7 +54,7 @@ public class URLInfo {
      * Notify States
      */
     public enum States {
-        EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, STOPPED, ERROR, DONE;
+        EXTRACTING, EXTRACTING_DONE, DOWNLOADING, RETRYING, STOP, ERROR, DONE;
     }
 
     /**
@@ -86,23 +86,22 @@ public class URLInfo {
     }
 
     synchronized public void extract() {
-        try {
-            extract(new AtomicBoolean(false), new Runnable() {
-                @Override
-                public void run() {
-                }
-            });
-        } catch (InterruptedException e) {
-            throw new DownloadError(e);
-        }
+        extract(new AtomicBoolean(false), new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
     }
 
-    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
         HttpURLConnection conn;
 
-        conn = RetryFactory.wrap(stop, new RetryFactory.RetryWrapperReturn<HttpURLConnection>() {
+        conn = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<HttpURLConnection>() {
             @Override
-            public HttpURLConnection run() throws IOException {
+            public HttpURLConnection download() throws IOException {
+                setState(States.EXTRACTING);
+                notify.run();
+
                 try {
                     return extractRange();
                 } catch (DownloadRetry e) {
@@ -113,15 +112,8 @@ public class URLInfo {
             }
 
             @Override
-            public void notifyRetry(int d, Throwable ee) {
-                setState(States.RETRYING, ee);
-                setDelay(d);
-                notify.run();
-            }
-
-            @Override
-            public void notifyDownloading() {
-                setState(States.EXTRACTING);
+            public void retry(int d, Throwable ee) {
+                setDelay(d, ee);
                 notify.run();
             }
         });
@@ -257,8 +249,10 @@ public class URLInfo {
         return delay;
     }
 
-    synchronized public void setDelay(int delay) {
+    synchronized public void setDelay(int delay, Throwable e) {
         this.delay = delay;
+        this.exception = e;
+        this.state = URLInfo.States.RETRYING;
     }
 
 }

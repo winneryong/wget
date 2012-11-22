@@ -9,9 +9,11 @@ public class DownloadMultipartError extends DownloadError {
     DownloadInfo info;
 
     public DownloadMultipartError(DownloadInfo info) {
+        super("Multipart error");
+
         this.info = info;
     }
-    
+
     public DownloadInfo getInfo() {
         return info;
     }

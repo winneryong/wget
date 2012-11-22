@@ -14,6 +14,7 @@ import org.apache.commons.io.FileUtils;
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.URLInfo;
 
 public class DirectRange extends Direct {
@@ -22,7 +23,7 @@ public class DirectRange extends Direct {
         super(info, target);
     }
 
-    public void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
+    public void downloadPart(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
         BufferedInputStream binaryreader = null;
 
@@ -56,12 +57,17 @@ public class DirectRange extends Direct {
 
             binaryreader = new BufferedInputStream(conn.getInputStream());
 
-            while (!stop.get() && (read = binaryreader.read(bytes)) > 0) {
+            while ((read = binaryreader.read(bytes)) > 0) {
                 fos.write(bytes, 0, read);
 
                 part.setCount(part.getCount() + read);
                 info.calculate();
                 notify.run();
+                
+                if (stop.get())
+                    throw new DownloadInterruptedError("stop");
+                if (Thread.interrupted())
+                    throw new DownloadInterruptedError("interrupted");
             }
 
         } finally {
@@ -73,40 +79,48 @@ public class DirectRange extends Direct {
     }
 
     @Override
-    public void download(final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
+    public void download(final AtomicBoolean stop, final Runnable notify) {
         info.setState(URLInfo.States.DOWNLOADING);
         notify.run();
 
         List<Part> list = info.getParts();
         final Part p = list.get(0);
 
-        RetryFactory.wrap(stop, new RetryFactory.RetryWrapper() {
+        try {
+            RetryWrap.wrap(stop, new RetryWrap.Wrap() {
+                @Override
+                public void download() throws IOException {
+                    p.setState(States.DOWNLOADING);
+                    info.setState(URLInfo.States.DOWNLOADING);
+                    notify.run();
 
-            @Override
-            public void run() throws IOException {
-                download(p, stop, notify);
-            }
+                    downloadPart(p, stop, notify);
+                }
 
-            @Override
-            public void notifyRetry(int delay, Throwable e) {
-                p.setState(States.RETRYING, e);
-                info.setState(URLInfo.States.RETRYING, e);
-                info.setDelay(delay);
-                p.setDelay(delay);
-                notify.run();
-            }
+                @Override
+                public void retry(int delay, Throwable e) {
+                    p.setDelay(delay, e);
+                    info.setDelay(delay, e);
+                    notify.run();
+                }
+            });
 
-            @Override
-            public void notifyDownloading() {
-                p.setState(States.DOWNLOADING);
-                info.setState(URLInfo.States.DOWNLOADING);
-                notify.run();
-            }
-        });
+            p.setState(States.DONE);
+            info.setState(URLInfo.States.DONE);
+            notify.run();
+        } catch (DownloadInterruptedError e) {
+            p.setState(States.STOP);
+            info.setState(URLInfo.States.STOP);
+            notify.run();
 
-        p.setState(States.DONE);
-        info.setState(URLInfo.States.DONE);
-        notify.run();
+            throw e;
+        } catch (RuntimeException e) {
+            p.setState(States.ERROR);
+            info.setState(URLInfo.States.ERROR);
+            notify.run();
+
+            throw e;
+        }
     }
 
 }

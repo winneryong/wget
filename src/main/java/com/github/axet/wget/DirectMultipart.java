@@ -12,6 +12,7 @@ import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.DownloadInfo.Part;
 import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.github.axet.wget.info.URLInfo;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.ex.DownloadMultipartError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
@@ -49,7 +50,7 @@ public class DirectMultipart extends Direct {
      * 
      * @param part
      */
-    void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
+    void downloadPart(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
         BufferedInputStream binaryreader = null;
 
@@ -94,7 +95,12 @@ public class DirectMultipart extends Direct {
                 notify.run();
 
                 if (stop.get())
-                    return;
+                    throw new DownloadInterruptedError("stop");
+                if (Thread.interrupted())
+                    throw new DownloadInterruptedError("interrupted");
+
+                // do not throw exception here. we normally done downloading.
+                // just took a littlbe bit more
                 if (localStop)
                     return;
             }
@@ -127,35 +133,35 @@ public class DirectMultipart extends Direct {
             @Override
             public void run() {
                 try {
-                    RetryFactory.wrap(stop, new RetryFactory.RetryWrapper() {
+                    RetryWrap.wrap(stop, new RetryWrap.Wrap() {
 
                         @Override
-                        public void run() throws IOException {
-                            download(p, stop, notify);
-                        }
-
-                        @Override
-                        public void notifyRetry(int delay, Throwable e) {
-                            p.setState(States.RETRYING, e);
-                            p.setDelay(delay);
-                            notify.run();
-                        }
-
-                        @Override
-                        public void notifyDownloading() {
+                        public void download() throws IOException {
                             p.setState(States.DOWNLOADING);
                             notify.run();
+
+                            downloadPart(p, stop, notify);
                         }
+
+                        @Override
+                        public void retry(int delay, Throwable e) {
+                            p.setDelay(delay, e);
+                            notify.run();
+                        }
+
                     });
                     p.setState(States.DONE);
                     notify.run();
+                } catch (DownloadInterruptedError e) {
+                    p.setState(States.STOP, e);
+                    notify.run();
+
+                    fatal(true);
                 } catch (RuntimeException e) {
                     p.setState(States.ERROR, e);
                     notify.run();
 
                     fatal(true);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 }
             }
         });
@@ -186,11 +192,11 @@ public class DirectMultipart extends Direct {
      * @return true - done. false - not done yet
      * @throws InterruptedException
      */
-    boolean done(AtomicBoolean stop) throws InterruptedException {
+    boolean done(AtomicBoolean stop) {
         if (stop.get())
-            throw new InterruptedException();
+            throw new DownloadInterruptedError("stop");
         if (Thread.interrupted())
-            throw new InterruptedException();
+            throw new DownloadInterruptedError("interupted");
         if (worker.active())
             return false;
         if (getPart() != null)
@@ -200,7 +206,7 @@ public class DirectMultipart extends Direct {
     }
 
     @Override
-    public void download(AtomicBoolean stop, Runnable notify) throws InterruptedException {
+    public void download(AtomicBoolean stop, Runnable notify) {
         for (Part p : info.getParts()) {
             p.setState(States.QUEUED);
         }
@@ -234,6 +240,16 @@ public class DirectMultipart extends Direct {
 
             info.setState(URLInfo.States.DONE);
             notify.run();
+        } catch (InterruptedException e) {
+            info.setState(URLInfo.States.STOP);
+            notify.run();
+
+            throw new DownloadInterruptedError(e);
+        } catch (RuntimeException e) {
+            info.setState(URLInfo.States.ERROR);
+            notify.run();
+
+            throw e;
         } finally {
             worker.shutdown();
         }
