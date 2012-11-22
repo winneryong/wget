@@ -1,12 +1,10 @@
 package com.github.axet.wget.info;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
