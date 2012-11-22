@@ -38,7 +38,7 @@ public class URLInfo {
     /**
      * does server support for the range param?
      */
-    protected boolean range;
+    private boolean range;
 
     /**
      * null if here is no such file or other error
@@ -72,17 +72,6 @@ public class URLInfo {
 
     public URLInfo(URL source) {
         this.source = source;
-    }
-
-    /**
-     * does range supported?
-     * 
-     * @return
-     */
-    synchronized public boolean range() {
-        if (getLength() == null)
-            return false;
-        return range;
     }
 
     synchronized public void extract() {
@@ -151,6 +140,8 @@ public class URLInfo {
         conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
         conn.setReadTimeout(Direct.READ_TIMEOUT);
 
+        conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+
         // may raise an exception if not supported by server
         conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
 
@@ -175,7 +166,7 @@ public class URLInfo {
             throw new RuntimeException("range not supported");
         }
 
-        this.range = true;
+        this.setRange(true);
 
         return conn;
     }
@@ -188,7 +179,9 @@ public class URLInfo {
         conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
         conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-        range = false;
+        conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+
+        setRange(false);
 
         int code = conn.getResponseCode();
         switch (code) {
@@ -253,6 +246,14 @@ public class URLInfo {
         this.delay = delay;
         this.exception = e;
         this.state = URLInfo.States.RETRYING;
+    }
+
+    public boolean getRange() {
+        return range;
+    }
+
+    public void setRange(boolean range) {
+        this.range = range;
     }
 
 }

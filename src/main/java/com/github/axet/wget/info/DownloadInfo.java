@@ -147,7 +147,7 @@ public class DownloadInfo extends URLInfo {
      * @return
      */
     synchronized public boolean multipart() {
-        if (!range())
+        if (!getRange())
             return false;
 
         return parts != null;
@@ -182,7 +182,7 @@ public class DownloadInfo extends URLInfo {
         if (empty())
             throw new RuntimeException("Empty Download info, cant set multipart");
 
-        if (!range())
+        if (!getRange())
             throw new RuntimeException("Server does not support RANGE, cant set multipart");
 
         long count = getLength() / PART_LENGTH + 1;
@@ -214,7 +214,7 @@ public class DownloadInfo extends URLInfo {
      * @return true - possible to resume from new location
      */
     synchronized public boolean resume(DownloadInfo newSource) {
-        if (!newSource.range())
+        if (!newSource.getRange())
             return false;
 
         if (newSource.getContentFilename() != null && this.getContentFilename() != null) {

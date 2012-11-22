@@ -63,6 +63,8 @@ public class DirectMultipart extends Direct {
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
 
+            conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+
             File f = target;
 
             fos = new RandomAccessFile(f, "rw");

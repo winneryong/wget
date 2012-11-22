@@ -43,6 +43,8 @@ public class DirectSingle extends Direct {
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
 
+            conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+
             File f = target;
             info.setCount(0);
             f.createNewFile();

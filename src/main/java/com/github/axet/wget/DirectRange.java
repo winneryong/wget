@@ -6,16 +6,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.DownloadInfo.Part;
-import com.github.axet.wget.info.DownloadInfo.Part.States;
-import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.URLInfo;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class DirectRange extends Direct {
 
@@ -34,6 +31,8 @@ public class DirectRange extends Direct {
 
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
+
+            conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
 
             File f = target;
             if (!f.exists())

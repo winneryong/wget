@@ -14,7 +14,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.ex.DownloadError;
 
 public class WGet {
 
@@ -74,7 +73,7 @@ public class WGet {
     Direct createDirect() {
         if (info.multipart()) {
             return new DirectMultipart(info, targetFile);
-        } else if (info.range()) {
+        } else if (info.getRange()) {
             return new DirectRange(info, targetFile);
         } else {
             return new DirectSingle(info, targetFile);
@@ -150,25 +149,18 @@ public class WGet {
     }
 
     public static String getHtml(URL source) {
-        try {
-            return getHtml(source, new HtmlLoader() {
-                @Override
-                public void notifyRetry(int delay, Throwable e) {
-                }
+        return getHtml(source, new HtmlLoader() {
+            @Override
+            public void notifyRetry(int delay, Throwable e) {
+            }
 
-                @Override
-                public void notifyDownloading() {
-                }
-            }, new AtomicBoolean(false));
-        } catch (InterruptedException e) {
-            throw new DownloadError(e);
-        } catch (IOException e) {
-            throw new DownloadError(e);
-        }
+            @Override
+            public void notifyDownloading() {
+            }
+        }, new AtomicBoolean(false));
     }
 
-    public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop)
-            throws InterruptedException, IOException {
+    public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop) {
         String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
             @Override
             public void retry(int delay, Throwable e) {
@@ -178,10 +170,14 @@ public class WGet {
             @Override
             public String download() throws IOException {
                 URL u = source;
-                HttpURLConnection con = (HttpURLConnection) u.openConnection();
-                con.setConnectTimeout(Direct.CONNECT_TIMEOUT);
-                con.setReadTimeout(Direct.READ_TIMEOUT);
-                InputStream is = con.getInputStream();
+                HttpURLConnection conn = (HttpURLConnection) u.openConnection();
+
+                conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+                conn.setReadTimeout(Direct.READ_TIMEOUT);
+
+                conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+
+                InputStream is = conn.getInputStream();
 
                 BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
