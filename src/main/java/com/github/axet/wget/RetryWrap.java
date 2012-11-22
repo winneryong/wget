@@ -19,24 +19,20 @@ public class RetryWrap {
     public static final int RETRY_DELAY = 10;
 
     public interface WrapReturn<T> {
-        public void notifyRetry(int delay, Throwable e);
+        public void retry(int delay, Throwable e);
 
-        public void notifyDownloading();
-
-        public T run() throws IOException;
+        public T download() throws IOException;
     }
 
     public interface Wrap {
-        public void notifyRetry(int delay, Throwable e);
+        public void retry(int delay, Throwable e);
 
-        public void notifyDownloading();
-
-        public void run() throws IOException;
+        public void download() throws IOException;
     }
 
     static <T> void retry(AtomicBoolean stop, WrapReturn<T> r, RuntimeException e) {
-        for (int i = RETRY_DELAY; i > 0; i--) {
-            r.notifyRetry(i, e);
+        for (int i = RETRY_DELAY; i >= 0; i--) {
+            r.retry(i, e);
 
             if (stop.get())
                 throw new DownloadInterruptedError("stop");
@@ -61,9 +57,7 @@ public class RetryWrap {
 
             try {
                 try {
-                    r.notifyDownloading();
-
-                    T t = r.run();
+                    T t = r.download();
 
                     return t;
                 } catch (SocketException e) {
@@ -102,20 +96,15 @@ public class RetryWrap {
         WrapReturn<Object> rr = new WrapReturn<Object>() {
 
             @Override
-            public Object run() throws IOException {
-                r.run();
+            public Object download() throws IOException {
+                r.download();
 
                 return null;
             }
 
             @Override
-            public void notifyRetry(int delay, Throwable e) {
-                r.notifyRetry(delay, e);
-            }
-
-            @Override
-            public void notifyDownloading() {
-                r.notifyDownloading();
+            public void retry(int delay, Throwable e) {
+                r.retry(delay, e);
             }
         };
 

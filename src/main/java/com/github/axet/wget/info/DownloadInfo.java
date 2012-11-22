@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 /**
@@ -26,7 +27,7 @@ public class DownloadInfo extends URLInfo {
          * Notify States
          */
         public enum States {
-            QUEUED, DOWNLOADING, RETRYING, ERROR, DONE;
+            QUEUED, DOWNLOADING, RETRYING, ERROR, STOP, DONE;
         }
 
         /**
@@ -120,8 +121,10 @@ public class DownloadInfo extends URLInfo {
             return delay;
         }
 
-        synchronized public void setDelay(int delay) {
+        synchronized public void setDelay(int delay, Throwable e) {
+            this.state = States.RETRYING;
             this.delay = delay;
+            this.exception = e;
         }
     }
 

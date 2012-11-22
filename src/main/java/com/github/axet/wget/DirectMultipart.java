@@ -50,7 +50,7 @@ public class DirectMultipart extends Direct {
      * 
      * @param part
      */
-    void download(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
+    void downloadPart(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
         BufferedInputStream binaryreader = null;
 
@@ -95,7 +95,12 @@ public class DirectMultipart extends Direct {
                 notify.run();
 
                 if (stop.get())
-                    return;
+                    throw new DownloadInterruptedError("stop");
+                if (Thread.interrupted())
+                    throw new DownloadInterruptedError("interrupted");
+
+                // do not throw exception here. we normally done downloading.
+                // just took a littlbe bit more
                 if (localStop)
                     return;
             }
@@ -131,25 +136,27 @@ public class DirectMultipart extends Direct {
                     RetryWrap.wrap(stop, new RetryWrap.Wrap() {
 
                         @Override
-                        public void run() throws IOException {
-                            download(p, stop, notify);
-                        }
-
-                        @Override
-                        public void notifyRetry(int delay, Throwable e) {
-                            p.setState(States.RETRYING, e);
-                            p.setDelay(delay);
-                            notify.run();
-                        }
-
-                        @Override
-                        public void notifyDownloading() {
+                        public void download() throws IOException {
                             p.setState(States.DOWNLOADING);
                             notify.run();
+
+                            downloadPart(p, stop, notify);
                         }
+
+                        @Override
+                        public void retry(int delay, Throwable e) {
+                            p.setDelay(delay, e);
+                            notify.run();
+                        }
+
                     });
                     p.setState(States.DONE);
                     notify.run();
+                } catch (DownloadInterruptedError e) {
+                    p.setState(States.STOP, e);
+                    notify.run();
+
+                    fatal(true);
                 } catch (RuntimeException e) {
                     p.setState(States.ERROR, e);
                     notify.run();
@@ -234,7 +241,15 @@ public class DirectMultipart extends Direct {
             info.setState(URLInfo.States.DONE);
             notify.run();
         } catch (InterruptedException e) {
+            info.setState(URLInfo.States.STOP);
+            notify.run();
+
             throw new DownloadInterruptedError(e);
+        } catch (RuntimeException e) {
+            info.setState(URLInfo.States.ERROR);
+            notify.run();
+
+            throw e;
         } finally {
             worker.shutdown();
         }

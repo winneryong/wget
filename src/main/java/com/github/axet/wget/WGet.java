@@ -14,9 +14,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.ex.DownloadError;
-import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class WGet {
 
@@ -144,17 +142,7 @@ public class WGet {
     }
 
     public void download(AtomicBoolean stop, Runnable notify) {
-        try {
-            d.download(stop, notify);
-        } catch (DownloadInterruptedError e) {
-            info.setState(URLInfo.States.STOPPED);
-            notify.run();
-            throw e;
-        } catch (RuntimeException e) {
-            info.setState(URLInfo.States.ERROR);
-            notify.run();
-            throw e;
-        }
+        d.download(stop, notify);
     }
 
     public DownloadInfo getInfo() {
@@ -183,17 +171,12 @@ public class WGet {
             throws InterruptedException, IOException {
         String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
             @Override
-            public void notifyRetry(int delay, Throwable e) {
+            public void retry(int delay, Throwable e) {
                 load.notifyRetry(delay, e);
             }
 
             @Override
-            public void notifyDownloading() {
-                load.notifyDownloading();
-            }
-
-            @Override
-            public String run() throws IOException {
+            public String download() throws IOException {
                 URL u = source;
                 HttpURLConnection con = (HttpURLConnection) u.openConnection();
                 con.setConnectTimeout(Direct.CONNECT_TIMEOUT);
