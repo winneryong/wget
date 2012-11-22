@@ -23,7 +23,7 @@ public class DirectRange extends Direct {
         super(info, target);
     }
 
-    public void downloadPart(Part part, AtomicBoolean stop, Runnable notify) throws IOException {
+    public void downloadPart(DownloadInfo info, AtomicBoolean stop, Runnable notify) throws IOException {
         RandomAccessFile fos = null;
         BufferedInputStream binaryreader = null;
 
@@ -60,10 +60,9 @@ public class DirectRange extends Direct {
             while ((read = binaryreader.read(bytes)) > 0) {
                 fos.write(bytes, 0, read);
 
-                part.setCount(part.getCount() + read);
-                info.calculate();
+                info.setCount(info.getCount() + read);
                 notify.run();
-                
+
                 if (stop.get())
                     throw new DownloadInterruptedError("stop");
                 if (Thread.interrupted())
@@ -83,39 +82,31 @@ public class DirectRange extends Direct {
         info.setState(URLInfo.States.DOWNLOADING);
         notify.run();
 
-        List<Part> list = info.getParts();
-        final Part p = list.get(0);
-
         try {
             RetryWrap.wrap(stop, new RetryWrap.Wrap() {
                 @Override
                 public void download() throws IOException {
-                    p.setState(States.DOWNLOADING);
                     info.setState(URLInfo.States.DOWNLOADING);
                     notify.run();
 
-                    downloadPart(p, stop, notify);
+                    downloadPart(info, stop, notify);
                 }
 
                 @Override
                 public void retry(int delay, Throwable e) {
-                    p.setDelay(delay, e);
                     info.setDelay(delay, e);
                     notify.run();
                 }
             });
 
-            p.setState(States.DONE);
             info.setState(URLInfo.States.DONE);
             notify.run();
         } catch (DownloadInterruptedError e) {
-            p.setState(States.STOP);
             info.setState(URLInfo.States.STOP);
             notify.run();
 
             throw e;
         } catch (RuntimeException e) {
-            p.setState(States.ERROR);
             info.setState(URLInfo.States.ERROR);
             notify.run();
 
