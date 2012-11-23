@@ -179,7 +179,11 @@ public class WGet {
 
                 InputStream is = conn.getInputStream();
 
-                BufferedReader br = new BufferedReader(new InputStreamReader(is));
+                String enc = conn.getContentEncoding();
+                if (enc == null)
+                    enc = "UTF-8";
+
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, enc));
 
                 String line = null;
 
