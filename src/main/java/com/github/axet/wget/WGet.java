@@ -9,6 +9,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -180,6 +182,15 @@ public class WGet {
                 InputStream is = conn.getInputStream();
 
                 String enc = conn.getContentEncoding();
+
+                if (enc == null) {
+                    Pattern p = Pattern.compile("charset=(.*)");
+                    Matcher m = p.matcher(conn.getHeaderField("Content-Type"));
+                    if (m.find()) {
+                        enc = m.group(1);
+                    }
+                }
+
                 if (enc == null)
                     enc = "UTF-8";
 
