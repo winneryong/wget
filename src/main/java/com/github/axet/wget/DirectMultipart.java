@@ -100,6 +100,8 @@ public class DirectMultipart extends Direct {
                     throw new DownloadInterruptedError("stop");
                 if (Thread.interrupted())
                     throw new DownloadInterruptedError("interrupted");
+                if (fatal())
+                    throw new DownloadInterruptedError("fatal");
 
                 // do not throw exception here. we normally done downloading.
                 // just took a littlbe bit more
@@ -110,10 +112,10 @@ public class DirectMultipart extends Direct {
             if (part.getCount() != part.getLength())
                 throw new DownloadRetry("EOF before end of part");
         } finally {
-            if (fos != null)
-                fos.close();
             if (binaryreader != null)
                 binaryreader.close();
+            if (fos != null)
+                fos.close();
         }
 
     }
@@ -234,6 +236,22 @@ public class DirectMultipart extends Direct {
                 if (fatal()) {
                     worker.waitUntilTermination();
 
+                    // check if all parts finished with interrupted, throw one
+                    // interrupted
+                    {
+                        boolean interrupted = true;
+                        for (Part pp : info.getParts()) {
+                            Throwable e = pp.getException();
+                            if (e == null)
+                                continue;
+                            if (e instanceof DownloadInterruptedError)
+                                continue;
+                            interrupted = false;
+                        }
+                        if (interrupted)
+                            throw new DownloadInterruptedError("multipart all interrupted");
+                    }
+
                     // ok all thread stopped. now throw the exception and let
                     // app deal with the errors
                     throw new DownloadMultipartError(info);
@@ -255,5 +273,23 @@ public class DirectMultipart extends Direct {
         } finally {
             worker.shutdown();
         }
+    }
+
+    /**
+     * check existing file for download resume. for multipart download it may
+     * check all parts CRC
+     * 
+     * @param info
+     * @param targetFile
+     * @return return true - if all ok, false - if download can not be restored.
+     */
+    public static boolean canResume(DownloadInfo info, File targetFile) {
+        if (!targetFile.exists())
+            return false;
+
+        if (targetFile.length() < info.getCount())
+            return false;
+
+        return true;
     }
 }
