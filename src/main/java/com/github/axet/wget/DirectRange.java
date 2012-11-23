@@ -113,4 +113,19 @@ public class DirectRange extends Direct {
         }
     }
 
+    /**
+     * check existing file for download resume. for range download it will check
+     * file size and inside state. they sould be equal.
+     * 
+     * @param info
+     * @param targetFile
+     * @return return true - if all ok, false - if download can not be restored.
+     */
+    public static boolean canResume(DownloadInfo info, File targetFile) {
+        if (targetFile.exists()) {
+            if (info.getCount() != targetFile.length())
+                return false;
+        }
+        return true;
+    }
 }

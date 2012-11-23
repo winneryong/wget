@@ -111,4 +111,24 @@ public class DirectSingle extends Direct {
             throw e;
         }
     }
+
+    /**
+     * check existing file for download resume. for single download it will
+     * check file dose not exist or zero size. so we can resume download.
+     * 
+     * @param info
+     * @param targetFile
+     * @return return true - if all ok, false - if download can not be restored.
+     */
+    public static boolean canResume(DownloadInfo info, File targetFile) {
+        if (info.getCount() != 0)
+            return false;
+
+        if (targetFile.exists()) {
+            if (targetFile.length() != 0)
+                return false;
+        }
+
+        return true;
+    }
 }
