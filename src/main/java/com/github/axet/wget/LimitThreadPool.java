@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class LimitThreadPool extends ThreadPoolExecutor {
     Object lock = new Object();
+    int count = 0;
 
     protected static class BlockUntilFree implements RejectedExecutionHandler {
         @Override
@@ -48,11 +49,23 @@ public class LimitThreadPool extends ThreadPoolExecutor {
         super(0, maxThreadCount, 0, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new BlockUntilFree());
     }
 
+    protected void beforeExecute(Thread t, Runnable r) {
+        synchronized (lock) {
+            count++;
+
+            lock.notifyAll();
+        }
+
+        super.beforeExecute(t, r);
+    }
+
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
         super.afterExecute(r, t);
 
         synchronized (lock) {
+            count--;
+
             lock.notifyAll();
         }
     }
@@ -61,7 +74,9 @@ public class LimitThreadPool extends ThreadPoolExecutor {
      * downloader working if here any getTasks() > 0
      */
     public boolean active() {
-        return getActiveCount() > 0;
+        synchronized (lock) {
+            return count > 0;
+        }
     }
 
     /**
