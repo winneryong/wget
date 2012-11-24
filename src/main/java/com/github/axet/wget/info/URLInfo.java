@@ -83,49 +83,55 @@ public class URLInfo {
     }
 
     synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
-        HttpURLConnection conn;
+        try {
+            HttpURLConnection conn;
 
-        conn = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<HttpURLConnection>() {
-            @Override
-            public HttpURLConnection download() throws IOException {
-                setState(States.EXTRACTING);
-                notify.run();
+            conn = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<HttpURLConnection>() {
+                @Override
+                public HttpURLConnection download() throws IOException {
+                    setState(States.EXTRACTING);
+                    notify.run();
 
-                try {
-                    return extractRange();
-                } catch (DownloadRetry e) {
-                    throw e;
-                } catch (RuntimeException e) {
-                    return extractNormal();
+                    try {
+                        return extractRange();
+                    } catch (DownloadRetry e) {
+                        throw e;
+                    } catch (RuntimeException e) {
+                        return extractNormal();
+                    }
                 }
+
+                @Override
+                public void retry(int d, Throwable ee) {
+                    setDelay(d, ee);
+                    notify.run();
+                }
+            });
+
+            contentType = conn.getContentType();
+
+            String contentDisposition = conn.getHeaderField("Content-Disposition");
+            if (contentDisposition != null) {
+                // i support for two forms with and without quotes:
+                //
+                // 1) contentDisposition="attachment;filename="ap61.ram"";
+                // 2) contentDisposition="attachment;filename=ap61.ram";
+
+                Pattern cp = Pattern.compile("filename=[\"]*([^\"]*)[\"]*");
+                Matcher cm = cp.matcher(contentDisposition);
+                if (cm.find())
+                    contentFilename = cm.group(1);
             }
 
-            @Override
-            public void retry(int d, Throwable ee) {
-                setDelay(d, ee);
-                notify.run();
-            }
-        });
+            extract = true;
 
-        contentType = conn.getContentType();
+            setState(States.EXTRACTING_DONE);
+            notify.run();
+        } catch (RuntimeException e) {
+            setState(States.ERROR, e);
 
-        String contentDisposition = conn.getHeaderField("Content-Disposition");
-        if (contentDisposition != null) {
-            // i support for two forms with and without quotes:
-            //
-            // 1) contentDisposition="attachment;filename="ap61.ram"";
-            // 2) contentDisposition="attachment;filename=ap61.ram";
-
-            Pattern cp = Pattern.compile("filename=[\"]*([^\"]*)[\"]*");
-            Matcher cm = cp.matcher(contentDisposition);
-            if (cm.find())
-                contentFilename = cm.group(1);
+            throw e;
         }
-
-        extract = true;
-
-        setState(States.EXTRACTING_DONE);
-        notify.run();
     }
 
     synchronized public boolean empty() {
