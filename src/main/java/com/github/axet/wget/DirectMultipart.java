@@ -132,10 +132,23 @@ public class DirectMultipart extends Direct {
         }
     }
 
+    String trimLen(String str, int len) {
+        if (str.length() > len)
+            return str.substring(0, len / 2) + "..." + str.substring(str.length() - len / 2, str.length());
+        else
+            return str;
+    }
+
     void downloadWorker(final Part p, final AtomicBoolean stop, final Runnable notify) throws InterruptedException {
         worker.blockExecute(new Runnable() {
             @Override
             public void run() {
+                {
+                    String f = "%s - Part: %d";
+                    Thread t = Thread.currentThread();
+                    t.setName(String.format(f, trimLen(info.getSource().toString(), 64), p.getNumber()));
+                }
+
                 try {
                     RetryWrap.wrap(stop, new RetryWrap.Wrap() {
 
