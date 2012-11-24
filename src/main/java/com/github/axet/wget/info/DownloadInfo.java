@@ -100,6 +100,7 @@ public class DownloadInfo extends URLInfo {
 
         synchronized public void setState(States state) {
             this.state = state;
+            this.exception = null;
         }
 
         synchronized public void setState(States state, Throwable e) {
