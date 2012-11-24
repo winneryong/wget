@@ -278,6 +278,11 @@ public class DirectMultipart extends Direct {
             notify.run();
 
             throw new DownloadInterruptedError(e);
+        } catch (DownloadInterruptedError e) {
+            info.setState(URLInfo.States.STOP);
+            notify.run();
+
+            throw e;
         } catch (RuntimeException e) {
             info.setState(URLInfo.States.ERROR);
             notify.run();
