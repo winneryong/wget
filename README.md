@@ -154,5 +154,5 @@ Here is a three kind of exceptions.
     <dependency>
       <groupId>com.github.axet</groupId>
       <artifactId>wget</artifactId>
-      <version>1.0.6</version>
+      <version>1.0.10</version>
     </dependency>
