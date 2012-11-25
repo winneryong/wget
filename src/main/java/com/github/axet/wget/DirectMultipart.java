@@ -57,6 +57,13 @@ public class DirectMultipart extends Direct {
         try {
             URL url = info.getSource();
 
+            long start = part.getStart() + part.getCount();
+            long end = part.getEnd();
+
+            // fully downloaded already?
+            if (end - start + 1 == 0)
+                return;
+
             HttpURLConnection conn;
             conn = (HttpURLConnection) url.openConnection();
 
@@ -68,9 +75,6 @@ public class DirectMultipart extends Direct {
             File f = target;
 
             fos = new RandomAccessFile(f, "rw");
-
-            long start = part.getStart() + part.getCount();
-            long end = part.getEnd();
 
             conn.setRequestProperty("Range", "bytes=" + start + "-" + end);
             fos.seek(start);
@@ -225,6 +229,8 @@ public class DirectMultipart extends Direct {
     @Override
     public void download(AtomicBoolean stop, Runnable notify) {
         for (Part p : info.getParts()) {
+            if (p.getState().equals(States.DONE))
+                continue;
             p.setState(States.QUEUED);
         }
         info.setState(URLInfo.States.DOWNLOADING);
