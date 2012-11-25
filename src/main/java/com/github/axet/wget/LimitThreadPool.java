@@ -52,8 +52,6 @@ public class LimitThreadPool extends ThreadPoolExecutor {
     protected void beforeExecute(Thread t, Runnable r) {
         synchronized (lock) {
             count++;
-
-            lock.notifyAll();
         }
 
         super.beforeExecute(t, r);
