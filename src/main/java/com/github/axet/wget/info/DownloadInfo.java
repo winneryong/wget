@@ -199,6 +199,7 @@ public class DownloadInfo extends URLInfo {
                 part.setEnd(part.getStart() + PART_LENGTH - 1);
                 if (part.getEnd() > getLength() - 1)
                     part.setEnd(getLength() - 1);
+                part.setState(DownloadInfo.Part.States.QUEUED);
                 parts.add(part);
 
                 start += PART_LENGTH;
