@@ -160,6 +160,7 @@ public class DownloadInfo extends URLInfo {
         if (parts != null) {
             for (Part p : parts) {
                 p.setCount(0);
+                p.setState(DownloadInfo.Part.States.QUEUED);
             }
         }
     }
