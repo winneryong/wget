@@ -125,6 +125,9 @@ public class DirectRange extends Direct {
         if (targetFile.exists()) {
             if (info.getCount() != targetFile.length())
                 return false;
+        } else {
+            if (info.getCount() > 0)
+                return false;
         }
         return true;
     }
