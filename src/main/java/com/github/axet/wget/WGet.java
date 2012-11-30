@@ -16,6 +16,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
+import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
 public class WGet {
 
@@ -172,12 +174,28 @@ public class WGet {
             @Override
             public String download() throws IOException {
                 URL u = source;
-                HttpURLConnection conn = (HttpURLConnection) u.openConnection();
+                boolean moved = true;
+                HttpURLConnection conn = null;
+                while (moved) {
+                    conn = (HttpURLConnection) u.openConnection();
 
-                conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
-                conn.setReadTimeout(Direct.READ_TIMEOUT);
+                    conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+                    conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-                conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+                    conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+
+                    int code = conn.getResponseCode();
+                    switch (code) {
+                    case HttpURLConnection.HTTP_MOVED_TEMP:
+                        u = new URL(conn.getHeaderField("Location"));
+                        continue;
+                    case HttpURLConnection.HTTP_OK:
+                        moved = false;
+                        break;
+                    default:
+                        throw new DownloadError(conn.getResponseMessage());
+                    }
+                }
 
                 InputStream is = conn.getInputStream();
 
@@ -204,11 +222,12 @@ public class WGet {
                     contents.append("\n");
 
                     if (stop.get())
-                        return null;
+                        throw new DownloadInterruptedError("stop");
                 }
 
                 return contents.toString();
             }
+
         });
 
         return html;
