@@ -28,9 +28,23 @@ public class WGet {
     File targetFile;
 
     public interface HtmlLoader {
+        /**
+         * some socket problem, retyring
+         * 
+         * @param delay
+         * @param e
+         */
         public void notifyRetry(int delay, Throwable e);
 
+        /**
+         * start downloading
+         */
         public void notifyDownloading();
+
+        /**
+         * document moved, relocating
+         */
+        public void notifyMoved();
     }
 
     /**
@@ -161,6 +175,10 @@ public class WGet {
             @Override
             public void notifyDownloading() {
             }
+
+            @Override
+            public void notifyMoved() {
+            }
         }, new AtomicBoolean(false));
     }
 
@@ -177,6 +195,11 @@ public class WGet {
                 boolean moved = true;
                 HttpURLConnection conn = null;
                 while (moved) {
+                    if (stop.get())
+                        throw new DownloadInterruptedError("stop");
+
+                    load.notifyDownloading();
+
                     conn = (HttpURLConnection) u.openConnection();
 
                     conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
@@ -188,6 +211,7 @@ public class WGet {
                     switch (code) {
                     case HttpURLConnection.HTTP_MOVED_TEMP:
                         u = new URL(conn.getHeaderField("Location"));
+                        load.notifyMoved();
                         continue;
                     case HttpURLConnection.HTTP_OK:
                         moved = false;
