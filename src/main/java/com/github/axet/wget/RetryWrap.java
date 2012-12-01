@@ -6,12 +6,14 @@ import java.io.InterruptedIOException;
 import java.net.HttpRetryException;
 import java.net.ProtocolException;
 import java.net.SocketException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadIOError;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
+import com.github.axet.wget.info.ex.DownloadMoved;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 public class RetryWrap {
@@ -21,13 +23,27 @@ public class RetryWrap {
     public interface WrapReturn<T> {
         public void retry(int delay, Throwable e);
 
+        public void moved(URL url);
+
         public T download() throws IOException;
     }
 
     public interface Wrap {
         public void retry(int delay, Throwable e);
 
+        public void moved(URL url);
+
         public void download() throws IOException;
+    }
+
+    static <T> void moved(AtomicBoolean stop, WrapReturn<T> r, DownloadMoved e) {
+        if (stop.get())
+            throw new DownloadInterruptedError("stop");
+
+        if (Thread.currentThread().isInterrupted())
+            throw new DownloadInterruptedError("interrrupted");
+
+        r.moved(e.getMoved());
     }
 
     static <T> void retry(AtomicBoolean stop, WrapReturn<T> r, RuntimeException e) {
@@ -82,6 +98,8 @@ public class RetryWrap {
                 } catch (IOException e) {
                     throw new DownloadIOError(e);
                 }
+            } catch (DownloadMoved e) {
+                moved(stop, r, e);
             } catch (DownloadRetry e) {
                 retry(stop, r, e);
             }
@@ -105,6 +123,11 @@ public class RetryWrap {
             @Override
             public void retry(int delay, Throwable e) {
                 r.retry(delay, e);
+            }
+
+            @Override
+            public void moved(URL url) {
+                r.moved(url);
             }
         };
 

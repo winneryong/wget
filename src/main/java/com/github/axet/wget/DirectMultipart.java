@@ -170,6 +170,12 @@ public class DirectMultipart extends Direct {
                             notify.run();
                         }
 
+                        @Override
+                        public void moved(URL url) {
+                            p.setState(States.RETRYING);
+                            notify.run();
+                        }
+
                     });
                     p.setState(States.DONE);
                     notify.run();

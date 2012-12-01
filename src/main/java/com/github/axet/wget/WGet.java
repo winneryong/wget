@@ -16,8 +16,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
+import com.github.axet.wget.info.ex.DownloadMoved;
 
 public class WGet {
 
@@ -184,6 +184,8 @@ public class WGet {
 
     public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop) {
         String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
+            URL u = source;
+
             @Override
             public void retry(int delay, Throwable e) {
                 load.notifyRetry(delay, e);
@@ -191,35 +193,18 @@ public class WGet {
 
             @Override
             public String download() throws IOException {
-                URL u = source;
-                boolean moved = true;
                 HttpURLConnection conn = null;
-                while (moved) {
-                    if (stop.get())
-                        throw new DownloadInterruptedError("stop");
 
-                    load.notifyDownloading();
+                conn = (HttpURLConnection) u.openConnection();
 
-                    conn = (HttpURLConnection) u.openConnection();
+                conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
+                conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-                    conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
-                    conn.setReadTimeout(Direct.READ_TIMEOUT);
+                conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
 
-                    conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
-
-                    int code = conn.getResponseCode();
-                    switch (code) {
-                    case HttpURLConnection.HTTP_MOVED_TEMP:
-                        u = new URL(conn.getHeaderField("Location"));
-                        load.notifyMoved();
-                        continue;
-                    case HttpURLConnection.HTTP_OK:
-                        moved = false;
-                        break;
-                    default:
-                        throw new DownloadError(conn.getResponseMessage());
-                    }
-                }
+                int code = conn.getResponseCode();
+                if (code == HttpURLConnection.HTTP_MOVED_TEMP)
+                    throw new DownloadMoved(conn);
 
                 InputStream is = conn.getInputStream();
 
@@ -250,6 +235,12 @@ public class WGet {
                 }
 
                 return contents.toString();
+            }
+
+            @Override
+            public void moved(URL url) {
+                u = url;
+                load.notifyMoved();
             }
 
         });
