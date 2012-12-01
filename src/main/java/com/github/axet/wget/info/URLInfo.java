@@ -235,11 +235,13 @@ public class URLInfo {
     synchronized public void setState(States state) {
         this.state = state;
         this.exception = null;
+        this.delay = 0;
     }
 
     synchronized public void setState(States state, Throwable e) {
         this.state = state;
         this.exception = e;
+        this.delay = 0;
     }
 
     synchronized public Throwable getException() {
