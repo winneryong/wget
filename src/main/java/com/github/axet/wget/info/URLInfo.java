@@ -106,6 +106,12 @@ public class URLInfo {
                     setDelay(d, ee);
                     notify.run();
                 }
+
+                @Override
+                public void moved(URL url) {
+                    setState(States.RETRYING);
+                    notify.run();
+                }
             });
 
             contentType = conn.getContentType();

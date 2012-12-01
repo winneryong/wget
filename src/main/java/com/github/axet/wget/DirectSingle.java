@@ -95,6 +95,12 @@ public class DirectSingle extends Direct {
                     info.setDelay(delay, e);
                     notify.run();
                 }
+
+                @Override
+                public void moved(URL url) {
+                    info.setState(URLInfo.States.RETRYING);
+                    notify.run();
+                }
             });
 
             info.setState(URLInfo.States.DONE);
