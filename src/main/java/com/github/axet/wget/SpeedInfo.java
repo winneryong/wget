@@ -98,7 +98,7 @@ public class SpeedInfo {
      * @return bytes per second
      */
     synchronized public int getAverageSpeed() {
-        if (getRowSamples() < 2)
+        if (start == null || getRowSamples() < 2)
             return 0;
 
         Sample s2 = samples.get(samples.size() - 1);
