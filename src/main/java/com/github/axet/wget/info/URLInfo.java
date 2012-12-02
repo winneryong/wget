@@ -157,14 +157,7 @@ public class URLInfo {
         // may raise an exception if not supported by server
         conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
 
-        int code = conn.getResponseCode();
-        switch (code) {
-        case HttpURLConnection.HTTP_OK:
-        case HttpURLConnection.HTTP_PARTIAL:
-            break;
-        default:
-            throw new DownloadError(conn.getResponseMessage());
-        }
+        RetryWrap.check(conn);
 
         String range = conn.getHeaderField("Content-Range");
         if (range == null)
@@ -195,14 +188,7 @@ public class URLInfo {
 
         setRange(false);
 
-        int code = conn.getResponseCode();
-        switch (code) {
-        case HttpURLConnection.HTTP_OK:
-        case HttpURLConnection.HTTP_PARTIAL:
-            break;
-        default:
-            throw new DownloadError(conn.getResponseMessage());
-        }
+        RetryWrap.check(conn);
 
         int len = conn.getContentLength();
         if (len >= 0) {

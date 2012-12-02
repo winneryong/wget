@@ -54,6 +54,8 @@ public class DirectSingle extends Direct {
             byte[] bytes = new byte[BUF_SIZE];
             int read = 0;
 
+            RetryWrap.check(conn);
+
             BufferedInputStream binaryreader = new BufferedInputStream(conn.getInputStream());
 
             while ((read = binaryreader.read(bytes)) > 0) {

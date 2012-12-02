@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.HttpRetryException;
+import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.SocketException;
 import java.net.URL;
@@ -11,6 +12,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.ex.DownloadError;
+import com.github.axet.wget.info.ex.DownloadIOCodeError;
 import com.github.axet.wget.info.ex.DownloadIOError;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
 import com.github.axet.wget.info.ex.DownloadMoved;
@@ -132,5 +134,24 @@ public class RetryWrap {
         };
 
         RetryWrap.run(stop, rr);
+    }
+
+    public static void check(HttpURLConnection c) {
+        try {
+            int code = c.getResponseCode();
+            switch (code) {
+            case HttpURLConnection.HTTP_OK:
+            case HttpURLConnection.HTTP_PARTIAL:
+                return;
+            case HttpURLConnection.HTTP_MOVED_TEMP:
+                throw new DownloadMoved(c);
+            case HttpURLConnection.HTTP_FORBIDDEN:
+                throw new DownloadIOCodeError(HttpURLConnection.HTTP_FORBIDDEN);
+            case 416:
+                throw new DownloadIOCodeError(416);
+            }
+        } catch (IOException e) {
+            throw new DownloadIOError(e);
+        }
     }
 }
