@@ -136,22 +136,19 @@ public class RetryWrap {
         RetryWrap.run(stop, rr);
     }
 
-    public static void check(HttpURLConnection c) {
-        try {
-            int code = c.getResponseCode();
-            switch (code) {
-            case HttpURLConnection.HTTP_OK:
-            case HttpURLConnection.HTTP_PARTIAL:
-                return;
-            case HttpURLConnection.HTTP_MOVED_TEMP:
-                throw new DownloadMoved(c);
-            case HttpURLConnection.HTTP_FORBIDDEN:
-                throw new DownloadIOCodeError(HttpURLConnection.HTTP_FORBIDDEN);
-            case 416:
-                throw new DownloadIOCodeError(416);
-            }
-        } catch (IOException e) {
-            throw new DownloadIOError(e);
+    public static void check(HttpURLConnection c) throws IOException {
+        int code = c.getResponseCode();
+        switch (code) {
+        case HttpURLConnection.HTTP_OK:
+        case HttpURLConnection.HTTP_PARTIAL:
+            return;
+        case HttpURLConnection.HTTP_MOVED_TEMP:
+            throw new DownloadMoved(c);
+        case HttpURLConnection.HTTP_FORBIDDEN:
+            throw new DownloadIOCodeError(HttpURLConnection.HTTP_FORBIDDEN);
+        case 416:
+            // HTTP Error 416 - Requested Range Not Satisfiable
+            throw new DownloadIOCodeError(416);
         }
     }
 }
