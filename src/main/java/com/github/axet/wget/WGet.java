@@ -202,9 +202,7 @@ public class WGet {
 
                 conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
 
-                int code = conn.getResponseCode();
-                if (code == HttpURLConnection.HTTP_MOVED_TEMP)
-                    throw new DownloadMoved(conn);
+                RetryWrap.check(conn);
 
                 InputStream is = conn.getInputStream();
 
