@@ -15,12 +15,12 @@ public abstract class Direct {
     /**
      * connect socket timeout
      */
-    static public final int CONNECT_TIMEOUT = 5000;
+    static public final int CONNECT_TIMEOUT = 10000;
 
     /**
      * read socket timeout
      */
-    static public final int READ_TIMEOUT = 5000;
+    static public final int READ_TIMEOUT = 10000;
 
     /**
      * size of read buffer
