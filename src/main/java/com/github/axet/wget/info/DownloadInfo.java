@@ -267,7 +267,7 @@ public class DownloadInfo extends URLInfo {
     }
 
     @Override
-    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
+    public void extract(final AtomicBoolean stop, final Runnable notify) {
         super.extract(stop, notify);
     }
 }
