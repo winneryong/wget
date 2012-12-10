@@ -74,7 +74,7 @@ public class URLInfo {
         this.source = source;
     }
 
-    synchronized public void extract() {
+    public void extract() {
         extract(new AtomicBoolean(false), new Runnable() {
             @Override
             public void run() {
@@ -82,7 +82,7 @@ public class URLInfo {
         });
     }
 
-    synchronized public void extract(final AtomicBoolean stop, final Runnable notify) {
+    public void extract(final AtomicBoolean stop, final Runnable notify) {
         try {
             HttpURLConnection conn;
 
@@ -114,7 +114,7 @@ public class URLInfo {
                 }
             });
 
-            contentType = conn.getContentType();
+            setContentType(conn.getContentType());
 
             String contentDisposition = conn.getHeaderField("Content-Disposition");
             if (contentDisposition != null) {
@@ -126,10 +126,10 @@ public class URLInfo {
                 Pattern cp = Pattern.compile("filename=[\"]*([^\"]*)[\"]*");
                 Matcher cm = cp.matcher(contentDisposition);
                 if (cm.find())
-                    contentFilename = cm.group(1);
+                    setContentFilename(cm.group(1));
             }
 
-            extract = true;
+            setEmpty(true);
 
             setState(States.EXTRACTING_DONE);
             notify.run();
@@ -142,6 +142,10 @@ public class URLInfo {
 
     synchronized public boolean empty() {
         return !extract;
+    }
+
+    synchronized public void setEmpty(boolean b) {
+        extract = b;
     }
 
     // if range failed - do plain download with no retrys's
@@ -166,7 +170,7 @@ public class URLInfo {
         Pattern p = Pattern.compile("bytes \\d+-\\d+/(\\d+)");
         Matcher m = p.matcher(range);
         if (m.find()) {
-            length = new Long(m.group(1));
+            setLength(new Long(m.group(1)));
         } else {
             throw new RuntimeException("range not supported");
         }
@@ -192,7 +196,7 @@ public class URLInfo {
 
         int len = conn.getContentLength();
         if (len >= 0) {
-            length = new Long(len);
+            setLength(new Long(len));
         }
 
         return conn;
@@ -202,8 +206,16 @@ public class URLInfo {
         return contentType;
     }
 
+    synchronized public void setContentType(String ct) {
+        contentType = ct;
+    }
+
     synchronized public Long getLength() {
         return length;
+    }
+
+    synchronized public void setLength(Long l) {
+        length = l;
     }
 
     synchronized public URL getSource() {
@@ -212,6 +224,10 @@ public class URLInfo {
 
     synchronized public String getContentFilename() {
         return contentFilename;
+    }
+
+    synchronized public void setContentFilename(String f) {
+        contentFilename = f;
     }
 
     synchronized public States getState() {
@@ -248,11 +264,11 @@ public class URLInfo {
         this.state = URLInfo.States.RETRYING;
     }
 
-    public boolean getRange() {
+    synchronized public boolean getRange() {
         return range;
     }
 
-    public void setRange(boolean range) {
+    synchronized public void setRange(boolean range) {
         this.range = range;
     }
 
