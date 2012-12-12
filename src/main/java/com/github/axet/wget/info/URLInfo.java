@@ -87,17 +87,19 @@ public class URLInfo {
             HttpURLConnection conn;
 
             conn = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<HttpURLConnection>() {
+                URL url = source;
+
                 @Override
                 public HttpURLConnection download() throws IOException {
                     setState(States.EXTRACTING);
                     notify.run();
 
                     try {
-                        return extractRange();
+                        return extractRange(url);
                     } catch (DownloadRetry e) {
                         throw e;
                     } catch (RuntimeException e) {
-                        return extractNormal();
+                        return extractNormal(url);
                     }
                 }
 
@@ -108,7 +110,9 @@ public class URLInfo {
                 }
 
                 @Override
-                public void moved(URL url) {
+                public void moved(URL u) {
+                    url = u;
+
                     setState(States.RETRYING);
                     notify.run();
                 }
@@ -149,7 +153,7 @@ public class URLInfo {
     }
 
     // if range failed - do plain download with no retrys's
-    protected HttpURLConnection extractRange() throws IOException {
+    protected HttpURLConnection extractRange(URL source) throws IOException {
         URL url = source;
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -181,7 +185,7 @@ public class URLInfo {
     }
 
     // if range failed - do plain download with no retrys's
-    protected HttpURLConnection extractNormal() throws IOException {
+    protected HttpURLConnection extractNormal(URL source) throws IOException {
         URL url = source;
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
