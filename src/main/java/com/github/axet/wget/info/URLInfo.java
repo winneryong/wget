@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 
 import com.github.axet.wget.Direct;
 import com.github.axet.wget.RetryWrap;
-import com.github.axet.wget.info.ex.DownloadError;
 import com.github.axet.wget.info.ex.DownloadRetry;
 
 /**
