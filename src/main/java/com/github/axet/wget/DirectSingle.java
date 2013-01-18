@@ -6,12 +6,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.github.axet.wget.info.DownloadInfo;
-import com.github.axet.wget.info.DownloadInfo.Part;
-import com.github.axet.wget.info.DownloadInfo.Part.States;
 import com.github.axet.wget.info.URLInfo;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
 
@@ -43,7 +40,9 @@ public class DirectSingle extends Direct {
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
 
-            conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+            conn.setRequestProperty("User-Agent", info.getUserAgent());
+            if (info.getReferer() != null)
+                conn.setRequestProperty("Referer", info.getReferer().toExternalForm());
 
             File f = target;
             info.setCount(0);

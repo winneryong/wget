@@ -1,6 +1,5 @@
 package com.github.axet.wget.info.ex;
 
-import java.io.IOException;
 
 public class DownloadInterruptedError extends DownloadError {
 

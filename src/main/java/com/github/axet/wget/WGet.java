@@ -17,7 +17,6 @@ import org.apache.commons.io.FilenameUtils;
 
 import com.github.axet.wget.info.DownloadInfo;
 import com.github.axet.wget.info.ex.DownloadInterruptedError;
-import com.github.axet.wget.info.ex.DownloadMoved;
 
 public class WGet {
 
@@ -183,8 +182,12 @@ public class WGet {
     }
 
     public static String getHtml(final URL source, final HtmlLoader load, final AtomicBoolean stop) {
+        return getHtml(new DownloadInfo(source), load, stop);
+    }
+
+    public static String getHtml(final DownloadInfo source, final HtmlLoader load, final AtomicBoolean stop) {
         String html = RetryWrap.wrap(stop, new RetryWrap.WrapReturn<String>() {
-            URL u = source;
+            DownloadInfo info = source;
 
             @Override
             public void retry(int delay, Throwable e) {
@@ -195,12 +198,14 @@ public class WGet {
             public String download() throws IOException {
                 HttpURLConnection conn = null;
 
-                conn = (HttpURLConnection) u.openConnection();
+                conn = (HttpURLConnection) info.getSource().openConnection();
 
                 conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
                 conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-                conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+                conn.setRequestProperty("User-Agent", info.getUserAgent());
+                if (info.getReferer() != null)
+                    conn.setRequestProperty("Referer", info.getReferer().toExternalForm());
 
                 RetryWrap.check(conn);
 
@@ -237,7 +242,10 @@ public class WGet {
 
             @Override
             public void moved(URL url) {
-                u = url;
+                DownloadInfo old = info;
+                info = new DownloadInfo(url);
+                info.setReferer(old.getReferer());
+
                 load.notifyMoved();
             }
 
