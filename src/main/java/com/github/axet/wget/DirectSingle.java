@@ -40,7 +40,9 @@ public class DirectSingle extends Direct {
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
 
-            conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+            conn.setRequestProperty("User-Agent", info.getUserAgent());
+            if (info.getReferer() != null)
+                conn.setRequestProperty("Referer", info.getReferer().toExternalForm());
 
             File f = target;
             info.setCount(0);

@@ -27,11 +27,6 @@ public abstract class Direct {
     static public final int BUF_SIZE = 4 * 1024;
 
     /**
-     * fake user agent for Vimeo.
-     */
-    static public final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11";
-
-    /**
      * 
      * @param info
      *            download file information

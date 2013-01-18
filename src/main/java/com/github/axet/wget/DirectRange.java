@@ -32,7 +32,9 @@ public class DirectRange extends Direct {
             conn.setConnectTimeout(CONNECT_TIMEOUT);
             conn.setReadTimeout(READ_TIMEOUT);
 
-            conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+            conn.setRequestProperty("User-Agent", info.getUserAgent());
+            if (info.getReferer() != null)
+                conn.setRequestProperty("Referer", info.getReferer().toExternalForm());
 
             File f = target;
             if (!f.exists())
@@ -55,7 +57,7 @@ public class DirectRange extends Direct {
             int read = 0;
 
             RetryWrap.check(conn);
-            
+
             binaryreader = new BufferedInputStream(conn.getInputStream());
 
             while ((read = binaryreader.read(bytes)) > 0) {

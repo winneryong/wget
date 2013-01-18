@@ -17,7 +17,7 @@ import com.github.axet.wget.info.ex.DownloadRetry;
  * @author axet
  * 
  */
-public class URLInfo {
+public class URLInfo extends BrowserInfo {
     /**
      * source url
      */
@@ -110,6 +110,8 @@ public class URLInfo {
 
                 @Override
                 public void moved(URL u) {
+                    setReferer(url);
+
                     url = u;
 
                     setState(States.RETRYING);
@@ -159,7 +161,9 @@ public class URLInfo {
         conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
         conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-        conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+        conn.setRequestProperty("User-Agent", getUserAgent());
+        if (getReferer() != null)
+            conn.setRequestProperty("Referer", getReferer().toExternalForm());
 
         // may raise an exception if not supported by server
         conn.setRequestProperty("Range", "bytes=" + 0 + "-" + 0);
@@ -191,7 +195,9 @@ public class URLInfo {
         conn.setConnectTimeout(Direct.CONNECT_TIMEOUT);
         conn.setReadTimeout(Direct.READ_TIMEOUT);
 
-        conn.setRequestProperty("User-Agent", Direct.USER_AGENT);
+        conn.setRequestProperty("User-Agent", getUserAgent());
+        if (getReferer() != null)
+            conn.setRequestProperty("Referer", getReferer().toExternalForm());
 
         setRange(false);
 
