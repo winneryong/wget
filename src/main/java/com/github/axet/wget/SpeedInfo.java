@@ -109,6 +109,35 @@ public class SpeedInfo {
         return (int) (current * 1000 / time);
     }
 
+    /**
+     * Average speed for maximum stepsBack steps
+     * 
+     * @param stepsBack
+     * @return bytes per second
+     */
+    synchronized public int getAverageSpeed(int stepsBack) {
+        if (start == null || getRowSamples() < 2)
+            return 0;
+
+        int is2 = samples.size() - 1;
+        int is1 = is2 - stepsBack;
+        if (is1 < 0)
+            is1 = 0;
+
+        Sample s1 = samples.get(is1);
+
+        // if steps back below start download, then use start mark
+        if (s1.now < start.now)
+            s1 = start;
+
+        Sample s2 = samples.get(is2);
+
+        long current = s2.current - s1.current;
+        long time = s2.now - s1.now;
+
+        return (int) (current * 1000 / time);
+    }
+
     synchronized public int getSamples() {
         return samples.size();
     }
