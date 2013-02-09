@@ -192,7 +192,7 @@ public class DownloadInfo extends URLInfo {
         if (count > 2) {
             parts = new ArrayList<Part>();
 
-            int start = 0;
+            long start = 0;
             for (int i = 0; i < count; i++) {
                 Part part = new Part();
                 part.setNumber(i);
